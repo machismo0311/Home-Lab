@@ -7,20 +7,19 @@ Documentation for my personal home lab — a multi-node Proxmox cluster with Jun
 ### Compute
 | Node | Hardware | IP | Role |
 |---|---|---|---|
-| pve1 | Apple Mac mini (2011, Intel Sandy Bridge) | 192.168.1.193 | Lightweight always-on services |
-| pve2 | HP EliteDesk 800 G4 SFF (i7-8700, 32GB) | 192.168.1.200 | OPNsense host, network gateway |
-| pve3 | HP EliteDesk 800 G4 SFF (i7-8700, 48GB) | 192.168.1.201 | General compute |
-| pve4 | HP EliteDesk 800 G3 Mini (i5-7500T, 32GB) | 192.168.1.202 | General compute |
-| pve5 | HP EliteDesk 800 G3 Mini (i5-7500T, 32GB) | 192.168.1.203 | General compute |
-| pve-r730-ml | Dell R730 (28c/56t, 384GB) | — | ML / CUDA workloads |
-| pve-r730-gen | Dell R730 (24c/48t, 64GB) | — | General VM host |
-| pve-supermicro | SuperMicro CSE-219U (24c/48t, 64GB) | — | Mixed / storage-adjacent |
+| pve1 | Apple Mac mini (2011, Intel Sandy Bridge) | 192.168.10.193 | Lightweight always-on services |
+| pve2 | HP EliteDesk 800 G4 SFF (i7-8700, 32GB) | 192.168.10.200 | OPNsense host, network gateway |
+| pve3 | HP EliteDesk 800 G4 SFF (i7-8700, 48GB) | 192.168.10.201 | General compute |
+| pve4 | HP EliteDesk 800 G3 Mini (i5-7500T, 32GB) | 192.168.10.202 | General compute |
+| pve5 | HP EliteDesk 800 G3 Mini (i5-7500T, 32GB) | 192.168.10.203 | General compute |
+| QuarkyLab-r730-ml | Dell R730 (28c/56t, 512GB) | — | ML / CUDA workloads |
+| Jarvis-r730-gen | Dell R730 (24c/48t, 384GB) | — | General VM host |
+| pve-supermicro | SuperMicro CSE-219U (24c/48t, 128GB) | — | Mixed / storage-adjacent |
 
 ### Networking
 | Device | Role | Management |
 |---|---|---|
 | Juniper EX3400-48P | Core PoE+ switch | `192.168.10.50` |
-| Juniper EX2300-48P | Secondary switch | — |
 | UniFi USW-24-250W | Access / PoE switch | — |
 
 ### Storage
