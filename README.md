@@ -43,7 +43,7 @@ The `vault/` directory is an Obsidian knowledge base with detailed notes on ever
 
 - **Compute** — R730 ML node, R730 general, SuperMicro, small node cluster
 - **Infrastructure** — Proxmox cluster config, VM layout, storage architecture
-- **Networking** — EX3400, EX2300, UniFi switch configs and JunOS notes
+- **Networking** — EX3400, UniFi switch configs and JunOS notes
 - **Power Distribution** — dual UPS bus diagram and load calculations
 - **Rack Layout** — physical layout, depth notes, thermal zones
 - **Projects** — VoIP/FreePBX, IMU gesture control, server scraper
