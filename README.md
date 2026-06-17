@@ -13,7 +13,7 @@ Documentation for my personal home lab — a multi-node Proxmox cluster with Jun
 | pve4 | HP EliteDesk 800 G3 Mini (i5-7500T, 32GB) | 192.168.10.202 | General compute |
 | pve5 | HP EliteDesk 800 G3 Mini (i5-7500T, 32GB) | 192.168.10.203 | General compute |
 | QuarkyLab-r730-ml | Dell R730 (28c/56t, 512GB) | — | ML / CUDA workloads |
-| Jarvis-r730-gen | Dell R730 (24c/48t, 384GB) | — | General VM host |
+| Jarvis-r730- LLM | Dell R730 (24c/48t, 384GB) | — | General VM host |
 | pve-supermicro | SuperMicro CSE-219U (24c/48t, 128GB) | — | Mixed / storage-adjacent |
 
 ### Networking
@@ -23,7 +23,7 @@ Documentation for my personal home lab — a multi-node Proxmox cluster with Jun
 | UniFi USW-24-250W | Access / PoE switch | — |
 
 ### Storage
-- NetApp DS4246 — 24-bay JBOD, 6× HGST 2TB SATA currently populated, connected via SAS HBA
+- NetApp DS4246 — 24-bay JBOD, 11× HGST 4TB SATA currently populated, connected via SAS HBA
 
 ### Power
 - Tripp Lite SMART1500VA (UPS A) — networking + small compute
