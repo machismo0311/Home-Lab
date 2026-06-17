@@ -8,8 +8,8 @@ This document covers the setup of a Proxmox virtualization server on an Intel Ma
 ## Hardware
 - **Virtualization Host:** Apple Mac Mini (Intel, 2018 or earlier)
 - **Daily Driver:** Dell laptop running Debian KDE (Ares)
-- **DNS Backup:** Raspberry Pi 4 (4GB) running Pi-hole at `192.168.1.170`
-- **Network:** Spectrum modem → AirPort Extreme → TP-Link TL-SG1024D 24-port unmanaged switch
+- **DNS Backup:** Mac-Mini (16GB) running Pi-hole at `192.168.1.177`
+- **Network:** OPNsense → UniFi UER → JUniper EX3400
 
 ---
 
@@ -65,9 +65,9 @@ Follow the Terminal UI installer prompts:
 | Filesystem | ext4 |
 | Target disk | /dev/sda (Mac Mini internal) |
 | Hostname | pve.lan |
-| IP Address | 192.168.1.193/24 |
-| Gateway | 192.168.1.1 |
-| DNS | 192.168.1.1 |
+| IP Address | 192.168.10.193/24 |
+| Gateway | 192.168.10.1 |
+| DNS | 192.168.10.1 |
 
 - Set a strong root password and write it down
 - Allow auto-reboot after installation
