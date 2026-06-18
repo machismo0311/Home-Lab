@@ -1,45 +1,51 @@
 # 📋 Runbook — Network Procedures
-**Tags:** #runbook #networking #junos  
+**Tags:** #runbook #networking #junos
 **Related:** [[Networking/Juniper EX3400-48P]] · [[Networking/Network Overview]] · [[Runbook/Daily Operations]]
 
 ---
 
 ## 🔀 Switch Access
 
+> [!WARNING] WiFi → EX3400 path is broken. Must use wired `enp0s31f6` on Ares.
+
 ```bash
+# Set up wired access first (from Ares)
+sudo ip addr add 192.168.10.100/24 dev enp0s31f6
+sudo ip link set enp0s31f6 up
+
 # SSH to EX3400
-ssh machismo@10.0.10.2    # or root
+ssh mason@192.168.10.50
 
-# SSH to EX2300
-ssh machismo@10.0.10.4
+# SSH to EX2300 (IP TBD — not yet on network)
+# ssh mason@<ex2300-ip>
 
-# UniFi CLI (if needed)
-ssh admin@10.0.10.3
+# Access cluster nodes
+ssh root@192.168.10.204   # pve2
+ssh root@192.168.10.201   # pve3
+ssh root@192.168.10.202   # pve4
+ssh root@192.168.10.203   # pve5
+# pve1 (192.168.10.193): needs SSH key in authorized_keys first — use web console
 ```
 
 ---
 
 ## Junos — Safe Change Procedure
 
-> [!WARNING] Always use `commit confirmed` for risky changes. It auto-rolls back in 10 minutes if you don't confirm.
+> [!WARNING] Always use `commit confirmed` for risky changes. Auto-rolls back in 10 minutes if you don't confirm.
 
 ```junos
-# 1. Enter config mode
 configure
 
-# 2. Make your change
 set interfaces ge-0/0/5 unit 0 family ethernet-switching vlan members COMPUTE
 
-# 3. Preview the diff
 show | compare
 
-# 4. Commit with auto-rollback timer (10 min safety net)
 commit confirmed 10
 
-# 5. If all good — confirm permanently
+# If all good — confirm permanently
 commit
 
-# 6. If something broke — wait or manually rollback
+# If something broke — wait for auto-rollback or:
 rollback 1
 commit
 ```
@@ -68,25 +74,27 @@ commit
 
 ## Adding a New VLAN
 
+> [!NOTE] VLANs not yet active — will be implemented at OPNsense cutover. This is the procedure for when that happens.
+
 ```junos
 # Step 1: Create VLAN on EX3400
 configure
 set vlans <NAME> vlan-id <ID>
 commit
 
-# Step 2: Add VLAN to trunk ports (uplink to OPNsense, uplink to USW-24)
+# Step 2: Add to trunk ports
 set interfaces ge-0/0/46 unit 0 family ethernet-switching vlan members <NAME>
-set interfaces xe-0/0/0 unit 0 family ethernet-switching vlan members <NAME>
+# Note: do NOT add native-vlan-id — not supported on EX3400
 commit
 
-# Step 3: Create IRB interface for L3 (if routing this VLAN)
+# Step 3: Create IRB interface for routing
 set interfaces irb unit <ID> family inet address 10.0.<ID>.2/24
 set vlans <NAME> l3-interface irb.<ID>
 commit
 
-# Step 4: Create subinterface in OPNsense VM
+# Step 4: In OPNsense (VM 100 on pve2)
 # Interfaces > Other Types > VLAN > parent: vtnet1, tag: <ID>
-# Assign interface, enable DHCP server, add firewall rules
+# Assign interface, set static IP 10.0.<ID>.1/24, enable DHCP, add firewall rules
 
 # Step 5: Verify
 show vlans <NAME>
@@ -95,41 +103,52 @@ show interfaces irb.<ID>
 
 ---
 
-## OPNsense — Router-on-a-Stick Procedure
+## OPNsense Cutover Procedure
+
+> Pre-condition: VLANs configured on EX3400, OPNsense fully configured, tested from console.
 
 ```
-1. In Proxmox, ensure OPNsense VM has vtnet1 mapped to vmbr0 (trunk bridge)
-2. In OPNsense: Interfaces > Other Types > VLAN
-   - Parent: vtnet1
-   - VLAN tag: <ID>
-   - Description: <VLAN_NAME>
-3. Interfaces > Assignments > Add newly created VLAN interface
-4. Enable interface, set static IP: 10.0.<ID>.1/24
-5. Services > DHCPv4 > Enable for new interface, set range
-6. Firewall > Rules > Add rules for the interface
-7. Test from a client on that VLAN
+1. Open qm terminal 100 on pve2 (console access to OPNsense, doesn't need network)
+2. Verify OPNsense VLAN subinterfaces are all up
+3. Verify DHCP server configured per VLAN
+4. Verify firewall rules allow inter-VLAN traffic where needed
+5. Configure OPNsense WAN (vtnet0) to match Dream Router's uplink settings
+6. On EX3400: change ge-0/0/32 from access to trunk (no native-vlan-id)
+7. Patch OPNsense Proxmox host's vmbr0 uplink cable to EX3400 trunk port
+8. Unplug Dream Router uplink
+9. Verify routing from a client on each VLAN
+10. ~2 min downtime during cable swap
+```
+
+---
+
+## Fix ge-0/0/32 Trunk (current open issue)
+
+```junos
+# Current: access port (only default VLAN passes)
+# Fix: plain trunk, no native-vlan-id
+configure
+set interfaces ge-0/0/32 unit 0 family ethernet-switching interface-mode trunk
+set interfaces ge-0/0/32 unit 0 family ethernet-switching vlan members all
+commit confirmed 5
+# Verify connectivity, then: commit
 ```
 
 ---
 
 ## DAC / SFP+ Troubleshooting
 
+xe-0/2/3 → UniFi SFP 2 is currently DOWN (speed mismatch on 10Gtek passive DAC).
+
 ```bash
 # Check interface status on EX3400
-show interfaces xe-0/0/0 detail
-
-# Expected output includes:
-# Physical link is Up
-# Speed: 10Gbps, Link-mode: Full-duplex
-
-# Check for errors
-show interfaces xe-0/0/0 | match error
+show interfaces xe-0/2/3 detail
 
 # If DAC shows down:
 # - Reseat both ends
 # - Try different SFP+ port
-# - Verify same speed on both ends (10G/10G)
-# - Check for Junos compatibility (passive DAC should work without override)
+# - Verify same speed on both ends
+# Permanent fix: replace DAC with 10G SFP+ optics + LC fiber
 ```
 
 ---
@@ -137,15 +156,10 @@ show interfaces xe-0/0/0 | match error
 ## PoE Troubleshooting (EX3400)
 
 ```bash
-# Check PoE status
 show poe interface ge-0/0/X
 show poe controller
 
-# If device not powering on:
-# 1. Check PoE budget (show poe controller — look at power used vs available)
-# 2. Verify cable is CAT5e or better
-# 3. Verify device supports 802.3af or 802.3at
-# 4. Try cycling the port:
+# Cycle port if device not powering
 configure
 set poe interface ge-0/0/X disable
 commit
@@ -158,34 +172,24 @@ commit
 ## Spanning Tree Verification
 
 ```bash
-# Verify EX3400 is root bridge
 show spanning-tree bridge
+# EX3400 should be root: Priority 4096
 
-# Expected:
-# Root ID   Priority 4096
-# This bridge is the root
-
-# Check port states
 show spanning-tree interface
-
-# Ports should be:
-# Forwarding (FWD) — active
-# Discarding (DSC) — blocked loops
+# Active ports: Forwarding (FWD)
+# Blocked loops: Discarding (DSC)
 ```
 
 ---
 
-## Config Backup Procedure
+## Config Backup
 
 ```bash
-# On EX3400 (Junos)
+# On EX3400
 show configuration | save /tmp/ex3400-backup-$(date +%Y%m%d).conf
 
-# SCP to Proxmox backup host
-scp root@10.0.10.2:/tmp/ex3400-backup-*.conf root@10.0.10.30:/backups/network/
-
-# Automate weekly via cron on Proxmox
-0 3 * * 0 sshpass -p '<pass>' scp root@10.0.10.2:/tmp/ex3400-cfg.conf /backups/network/
+# SCP to Proxmox node
+scp root@192.168.10.50:/tmp/ex3400-backup-*.conf root@192.168.10.201:/root/switch-backups/
 ```
 
 ---
@@ -193,13 +197,10 @@ scp root@10.0.10.2:/tmp/ex3400-backup-*.conf root@10.0.10.30:/backups/network/
 ## Emergency — Switch Unreachable
 
 ```bash
-# Physical console access (RJ45 console cable)
+# Physical console (RJ45 console cable → Ares USB)
 screen /dev/ttyUSB0 9600
 
-# Or via iDRAC console to a host on the management network
-# Try to ping the switch management IP from the host
-
-# Last resort: factory reset EX3400
-# Hold MODE button on front panel for 15 seconds during boot
-# Note: THIS WIPES ALL CONFIG — have backup ready
+# Last resort: factory reset (WIPES ALL CONFIG)
+# Hold MODE button 15 seconds during boot
+# Have backup config ready before doing this
 ```

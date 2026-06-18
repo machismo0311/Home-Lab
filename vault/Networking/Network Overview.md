@@ -1,63 +1,98 @@
 # 🌐 Network Overview
-**Tags:** #networking #topology #vlans  
+**Tags:** #networking #topology #vlans
 **Related:** [[Networking/Juniper EX3400-48P]] · [[Networking/UniFi USW-24-250W]] · [[Networking/Juniper EX2300-48P]] · [[Rack Layout]] · [[00 - Homelab MOC]]
 
 ---
 
-## Physical Topology
+> [!NOTE] Current vs Planned State
+> The network is currently a **flat 192.168.10.0/24** subnet — VLANs are planned but not yet implemented. OPNsense (VM 100 on pve2) is configured with wildcard SSL and Tailscale but **not yet in the routing path** — the UniFi Dream Router is still the gateway. The 10.0.x.x VLAN subnets below are the post-cutover target state.
+
+---
+
+## Current Physical Topology
 
 ```mermaid
 flowchart TB
-    WAN[🌍 WAN / ISP] --> OPN[OPNsense VM\nRouter-on-a-Stick\nProxmox Hosted]
+    WAN[🌍 WAN / ISP] --> UDR[UniFi Dream Router\n⚠️ Temporary gateway\npending OPNsense cutover]
 
-    OPN <-->|Trunk — all VLANs| EX3400
+    UDR <-->|Uplink| EX3400
 
-    subgraph CORE["Core Switching Layer"]
-        EX3400[Juniper EX3400-48P\nCore PoE+ Switch\n48-port / Dual PSU\nU40]
-        DAC[0.25m SFP+ DAC\n10Gtek passive]
-        USW[UniFi USW-24-250W\nAccess / PoE\nU39]
-        EX2300[Juniper EX2300-48P\nSecondary / Lab\nU38]
-        EX3400 <-->|DAC 10G uplink| USW
+    subgraph CORE["Core Switching (192.168.10.0/24)"]
+        EX3400[Juniper EX3400-48P\n192.168.10.50\nJunOS 23.4R2-S7.4]
+        USW[UniFi USW-24-250W\nU39]
+        EX2300[Juniper EX2300-48P\nU38]
+        EX3400 <-->|ge-0/0/32 access port ⚠️ not trunk| USW
         EX3400 <-->|1G trunk| EX2300
     end
 
-    subgraph COMPUTE["Compute Nodes"]
-        R730ML[Dell R730 ML\niDRAC + 4× 1G\nU18–19]
-        R730GEN[Dell R730 General\niDRAC + 4× 1G\nU15–16]
-        SM[SuperMicro CSE-219U\n4× 1G\nU13–14]
-        G4A[EliteDesk G4 SFF A\n1G]
-        G4B[EliteDesk G4 SFF B\n1G]
-        G3A[EliteDesk G3 Mini A\n1G]
-        G3B[EliteDesk G3 Mini B\n1G]
+    subgraph PVE["Active Proxmox Nodes"]
+        PVE1[pve1 · 192.168.10.193\nMac Mini 2011]
+        PVE2[pve2 · 192.168.10.204\nEliteDesk G4]
+        PVE3[pve3 · 192.168.10.201\nEliteDesk G4\nNPM · Vault · Grafana]
+        PVE4[pve4 · 192.168.10.202\nEliteDesk G3]
+        PVE5[pve5 · 192.168.10.203\nEliteDesk G3]
     end
 
-    subgraph EDGE["Edge & IoT"]
-        MAC[Mac mini 2011\nProxmox]
-        RPI[Raspberry Pi 4\nPi-hole / HA]
-        PHONES[Cisco CP-8841 ×5\nVoIP - planned]
-        APS[UniFi APs\nWireless]
+    subgraph PENDING["Pending Hardware"]
+        R730A[quarkylab\niDRAC: 192.168.10.20]
+        R730B[Jarvis\niDRAC: 192.168.10.21]
     end
 
-    EX3400 --> R730ML
-    EX3400 --> R730GEN
-    EX3400 --> SM
-    EX3400 --> G4A
-    EX3400 --> G4B
-    USW --> G3A
-    USW --> G3B
-    USW --> MAC
-    USW --> RPI
-    USW --> PHONES
-    USW --> APS
+    EX3400 --> PVE1
+    EX3400 --> PVE2
+    EX3400 --> PVE3
+    EX3400 --> PVE4
+    EX3400 --> PVE5
 
+    style UDR fill:#cc4400,color:#fff
     style EX3400 fill:#1a1a2e,color:#eee
-    style OPN fill:#0f3460,color:#eee
-    style R730ML fill:#16213e,color:#eee
+    style PVE3 fill:#163016,color:#eee
 ```
 
 ---
 
-## VLAN Plan
+## ⚠️ Known Network Issues
+
+| Issue | Status |
+|---|---|
+| ge-0/0/32 uplink to UniFi is **access port** (not trunk) — VLANs not passing | Open |
+| WiFi → EX3400 path **broken** — Ares on WiFi cannot reach EX3400 or cluster nodes | Open |
+| DAC uplink xe-0/2/3 → UniFi SFP 2 **down** — speed mismatch (EX3400 reads 10G, UniFi reads 1G) | Open |
+| OPNsense **not in routing path** — Dream Router still active | Open |
+
+**Workaround for Ares → EX3400 access (wired only):**
+```bash
+sudo ip addr add 192.168.10.100/24 dev enp0s31f6
+sudo ip link set enp0s31f6 up
+ssh mason@192.168.10.50   # EX3400
+```
+
+---
+
+## Current Static IP Assignments
+
+| Device | IP | Notes |
+|--------|-----|-------|
+| pve1 (Mac Mini) | 192.168.10.193 | Tailscale: 100.116.237.31 |
+| pve2 | 192.168.10.204 | Hosts OPNsense VM 100 |
+| pve3 | 192.168.10.201 | Hosts NPM, Vaultwarden, Grafana |
+| pve4 | 192.168.10.202 | |
+| pve5 | 192.168.10.203 | |
+| Ares (laptop wired) | 192.168.10.100 | Static via `ip addr add` |
+| Juniper EX3400 | 192.168.10.50 | Renumbered 2026-06-05 |
+| quarkylab iDRAC | 192.168.10.20 | R730 svc tag 1S8WR22 |
+| Jarvis iDRAC | 192.168.10.21 | MAC: 18:66:da:97:0f:8e |
+| Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3 |
+| Vaultwarden | 192.168.10.182 | CT 102 on pve3 |
+| Grafana | 192.168.10.183 | CT 103 on pve3 |
+| Pi-hole primary | 192.168.1.47 | pve1 LXC |
+| Pi-hole backup | 192.168.1.170 | Raspberry Pi 4 |
+
+---
+
+## Post-Cutover VLAN Plan
+
+> These VLANs will be live after OPNsense cutover. Currently unimplemented.
 
 | VLAN ID | Name | Subnet | Purpose |
 |---|---|---|---|
@@ -65,77 +100,49 @@ flowchart TB
 | 10 | MGMT | 10.0.10.0/24 | iDRAC, switch OOB, UPS |
 | 20 | COMPUTE | 10.0.20.0/24 | Proxmox hosts, VMs |
 | 30 | STORAGE | 10.0.30.0/24 | NFS/iSCSI traffic isolation |
-| 40 | SERVICES | 10.0.40.0/24 | Jellyfin, Vaultwarden, Uptime Kuma |
+| 40 | SERVICES | 10.0.40.0/24 | NPM, Vaultwarden, Grafana |
 | 50 | IOT | 10.0.50.0/24 | Home Assistant, Frigate, IMUs |
 | 60 | VOIP | 10.0.60.0/24 | CP-8841 phones, FreePBX |
 | 70 | LAB | 10.0.70.0/24 | Experimental / CCNA lab |
 | 99 | GUEST | 10.0.99.0/24 | Isolated guest WiFi |
 
-> [!NOTE] Router-on-a-Stick
-> OPNsense VM handles inter-VLAN routing via a single trunk link to EX3400. Each VLAN is a subinterface on the OPNsense uplink. See [[Networking/Juniper EX3400-48P]] for trunk config.
-
 ---
 
-## Routing Architecture
+## OPNsense Cutover Plan
 
-```mermaid
-flowchart LR
-    subgraph PROXMOX["Proxmox Host"]
-        OPN_VM[OPNsense VM]
-        VMBR0[vmbr0\nTrunk bridge]
-        OPN_VM <--> VMBR0
-    end
+Current routing: Dream Router → EX3400 access port
 
-    EX3400 <-->|802.1Q Trunk\nAll VLANs tagged| VMBR0
+Post-cutover routing: OPNsense VM 100 (pve2) → EX3400 trunk → all VLANs
 
-    OPN_VM -->|Routes between VLANs| FW{Firewall Rules}
-    FW -->|Allow| INTER[Inter-VLAN traffic\nper policy]
-    FW -->|Block| BLOCKED[IOT ↔ COMPUTE\nGUEST → all\netc.]
-
-    OPN_VM --> WAN2[WAN uplink]
+```
+Pre-cutover checklist:
+1. Fix ge-0/0/32 to trunk mode (remove native-vlan-id workaround)
+2. Configure VLANs in OPNsense (vtnet1 subinterfaces)
+3. Configure DHCP per VLAN in OPNsense
+4. Set firewall rules
+5. Test from console (not over network!)
+6. Cutover: patch OPNsense uplink cable, verify routing, remove Dream Router
+~2 min downtime during swap
 ```
 
----
-
-## DNS & DHCP
-
-| Service | Host | VLAN |
-|---|---|---|
-| Pi-hole (primary DNS) | RPi 4 | 50 (IoT) / serves all |
-| OPNsense DHCP | OPNsense VM | Per-VLAN |
-| Local domain | `homelab.local` | All |
+> Emergency access during cutover: `qm terminal 100` from pve2 shell
 
 ---
 
 ## Switching — Quick Reference
 
-| Device | See Note | Role |
-|---|---|---|
-| Juniper EX3400-48P | [[Networking/Juniper EX3400-48P]] | Core, PoE+, dual PSU, 10G |
-| UniFi USW-24-250W | [[Networking/UniFi USW-24-250W]] | Access, PoE+, UniFi managed |
-| Juniper EX2300-48P | [[Networking/Juniper EX2300-48P]] | Secondary / lab isolation |
+| Device | IP | Role |
+|--------|-----|------|
+| Juniper EX3400-48P | 192.168.10.50 | Core, PoE+, dual PSU, 10G |
+| UniFi USW-24-250W | — | Access, PoE+ |
+| Juniper EX2300-48P | — | Secondary / lab isolation |
 
 ---
 
-## DAC Interconnect
+## DNS
 
-| Link | Cable | Speed |
-|---|---|---|
-| EX3400 ↔ USW-24 | 10Gtek 0.25m passive SFP+ DAC | 10 Gbps |
-| EX3400 ↔ EX2300 | 1G copper (temp) → upgrade to DAC | 1 Gbps |
-
----
-
-## Addresses — Static Assignments (MGMT VLAN 10)
-
-| Device | IP | Notes |
-|---|---|---|
-| OPNsense | 10.0.10.1 | Gateway |
-| EX3400-48P | 10.0.10.2 | |
-| USW-24-250W | 10.0.10.3 | |
-| EX2300-48P | 10.0.10.4 | |
-| R730 ML iDRAC | 10.0.10.10 | |
-| R730 Gen iDRAC | 10.0.10.11 | |
-| SuperMicro IPMI | 10.0.10.12 | |
-| RPi 4 | 10.0.10.20 | |
-| Mac mini | 10.0.10.21 | |
+| Service | IP | Notes |
+|---------|-----|-------|
+| Pi-hole primary | 192.168.1.47 | pve1 LXC |
+| Pi-hole backup | 192.168.1.170 | Raspberry Pi 4 |
+| Tailscale DNS | 100.100.100.100 | — set `--accept-dns=false` on nodes |
