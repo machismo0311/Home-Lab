@@ -1,69 +1,56 @@
 # 📋 Runbook — Daily Operations
-**Tags:** #runbook #operations  
+**Tags:** #runbook #operations
 **Related:** [[Runbook/Network Procedures]] · [[Runbook/Recovery Procedures]] · [[00 - Homelab MOC]]
 
 ---
 
-> [!INFO] Runbook Purpose
-> This runbook covers routine operational tasks, health checks, and common maintenance procedures for the homelab. Keep this updated as the lab evolves.
+> [!INFO] Current cluster: pve1–pve5 (192.168.10.193/201/202/203/204). All IPs are on flat 192.168.10.0/24 — VLANs not yet active.
 
 ---
 
-## 🩺 Daily Health Check
+## 🩺 Health Check
 
 ```bash
 # 1. Proxmox cluster status
 pvecm status
 pvecm nodes
 
-# 2. VM/CT status across all nodes
-for node in pve-r730-ml pve-r730-gen pve-supermicro pve-g4a pve-g4b; do
-  echo "=== $node ===" 
-  ssh root@$node "qm list && pct list"
+# 2. VM/CT status across active nodes
+for node in 192.168.10.193 192.168.10.204 192.168.10.201 192.168.10.202 192.168.10.203; do
+  echo "=== $node ==="
+  ssh root@$node "qm list 2>/dev/null; pct list 2>/dev/null"
 done
 
-# 3. ZFS pool health
-zpool status datastore
+# 3. Deployed services on pve3
+ssh root@192.168.10.201 "cd /opt/nginx-proxy-manager && docker compose ps; cd /opt/vaultwarden && docker compose ps; cd /opt/grafana && docker compose ps"
 
-# 4. UPS status (NUT)
-upsc tripplite@localhost
-upsc middleatlantic@localhost
+# 4. CrowdSec status (pve3 host)
+ssh root@192.168.10.201 "cscli metrics && cscli decisions list | head -20"
 
-# 5. Disk health (smart)
-for dev in /dev/sd{a..f}; do
-  smartctl -H $dev | grep -E "SMART|overall"
-done
+# 5. Network — verify core switch
+ping -c 1 192.168.10.50 && echo "EX3400 OK"
 
-# 6. Network — verify core switches up
-ping -c 1 10.0.10.2 && echo "EX3400 OK"
-ping -c 1 10.0.10.3 && echo "USW-24 OK"
-ping -c 1 10.0.10.4 && echo "EX2300 OK"
-
-# 7. Service health (Uptime Kuma covers this visually)
-curl -s http://10.0.40.5:3001/api/status-page/default | python3 -m json.tool
+# 6. iDRAC reachability (pending R730s)
+ping -c 1 -W 2 192.168.10.20 && echo "quarkylab iDRAC reachable"
+ping -c 1 -W 2 192.168.10.21 && echo "Jarvis iDRAC reachable"
 ```
 
 ---
 
 ## 🔌 Startup Sequence
 
-> [!TIP] Follow this order on cold start to avoid IP/routing issues.
+> [!TIP] Follow this order on cold start.
 
 ```
 1. Power on Middle Atlantic UPS-2200R (UPS B) → wait for output stable
-2. Power on Tripp Lite SMART1500VA (UPS A) → wait for output stable  
-3. Power on Furman RP-8 (already on if UPS is on)
-4. Power on NetApp DS4246 (storage first)
-5. Power on Juniper EX3400-48P (core switch)
-6. Power on UniFi USW-24-250W
-7. Power on Juniper EX2300-48P
-8. Power on Proxmox nodes (start with R730 General — has OPNsense VM)
-9. Start OPNsense VM → verify routing
-10. Power on remaining Proxmox nodes
-11. Start remaining VMs (Vaultwarden, Jellyfin, etc.)
-12. Power on small nodes (EliteDesks, Mac mini)
-13. Verify Pi-hole running on RPi 4
-14. Verify IMU gesture service: `systemctl status imu-gesture`
+2. Power on Tripp Lite SMART1500VA (UPS A) → wait for output stable
+3. Furman RP-8 should already be live off UPS
+4. Power on Juniper EX3400-48P → wait ~60s for boot
+5. Power on UniFi USW-24-250W
+6. Power on Proxmox small nodes (pve1–pve5)
+7. Verify Pi-hole LXC on pve1 is running
+8. Verify Docker containers on pve3: NPM, Vaultwarden, Grafana
+9. Power on pending hardware as available (R730s, Supermicro)
 ```
 
 ---
@@ -71,61 +58,104 @@ curl -s http://10.0.40.5:3001/api/status-page/default | python3 -m json.tool
 ## 🛑 Shutdown Sequence (reverse)
 
 ```
-1. Gracefully shut down VMs (via Proxmox UI or pvesh)
-2. Shut down Proxmox nodes (small nodes first, then R730s)
-3. Shut down switches (EX2300, USW-24, EX3400)
-4. Shut down storage (DS4246)
-5. Let UPS drain gracefully (or use NUT: upsmon -c fsd)
+1. docker compose stop on pve3 (/opt/nginx-proxy-manager, /opt/vaultwarden, /opt/grafana)
+2. Gracefully shut down any other VMs/CTs
+3. Shut down pve1–pve5: shutdown -h now (or Proxmox UI)
+4. Shut down switches (EX3400, USW-24)
+5. Let UPS units handle graceful power-off
 ```
 
 ---
 
-## 📡 iDRAC / IPMI Access
+## 📡 iDRAC Access (R730s — pending)
 
-| Node | iDRAC/IPMI IP | Default Login |
+| Node | IP | Status |
 |---|---|---|
-| R730 ML Node | 10.0.10.10 | root / calvin (change immediately!) |
-| R730 General | 10.0.10.11 | root / calvin |
-| SuperMicro | 10.0.10.12 | ADMIN / ADMIN (change immediately!) |
+| quarkylab | 192.168.10.20 | iDRAC accessible — BIOS update in progress |
+| Jarvis | 192.168.10.21 | iDRAC SSH confirmed — firmware update needed |
 
 ```bash
 # SSH to iDRAC
-ssh root@10.0.10.10
+ssh root@192.168.10.21   # Jarvis
+ssh root@192.168.10.20   # quarkylab
 
-# Power on via racadm
-racadm -r 10.0.10.10 -u root -p <pass> serveraction powerup
-
-# Force power cycle
-racadm -r 10.0.10.10 -u root -p <pass> serveraction hardreset
-
-# Get system info
-racadm -r 10.0.10.10 -u root -p <pass> getsysinfo
+# Power control via racadm
+racadm -r 192.168.10.21 -u root -p <pass> serveraction powerup
+racadm -r 192.168.10.21 -u root -p <pass> serveraction hardreset
+racadm -r 192.168.10.21 -u root -p <pass> getsysinfo
+racadm -r 192.168.10.21 -u root -p <pass> getsel   # event log
 ```
 
 ---
 
-## 🔄 Proxmox VM Operations
+## 🔄 Proxmox VM/CT Operations
 
 ```bash
-# List all VMs on a node
-qm list
+# List containers/VMs on a node
+qm list && pct list
 
-# Start / stop VM
+# Start/stop
 qm start <vmid>
-qm stop <vmid>
 qm shutdown <vmid>
+pct start <ctid>
+pct stop <ctid>
 
-# Migrate VM to another node
-qm migrate <vmid> <target-node>
-
-# Create snapshot
-qm snapshot <vmid> <snapname> --description "Pre-update snapshot"
-
-# Rollback snapshot
+# Snapshot
+qm snapshot <vmid> <snapname> --description "Pre-update"
 qm rollback <vmid> <snapname>
 
-# Clone VM
-qm clone <vmid> <newid> --name <newname> --full
+# OPNsense console access (VM 100 on pve2 — no network needed)
+ssh root@192.168.10.204
+qm terminal 100
+```
+
+---
+
+## 🐳 Docker Services (pve3 — 192.168.10.201)
+
+```bash
+ssh root@192.168.10.201
+
+# Nginx Proxy Manager (CT 101)
+# Access CT first: pct enter 101
+cd /opt/nginx-proxy-manager
+docker compose ps
+docker compose logs --tail=50 app
+docker compose restart app
+
+# Vaultwarden (CT 102)
+# pct enter 102
+cd /opt/vaultwarden
+docker compose ps
+docker compose logs --tail=50 vaultwarden
+docker compose restart vaultwarden
+
+# Grafana stack (CT 103)
+# pct enter 103
+cd /opt/grafana
+docker compose ps
+docker compose logs --tail=50
+docker compose restart prometheus   # reload after adding scrape targets
+```
+
+---
+
+## 🛡️ CrowdSec (pve3 host)
+
+```bash
+ssh root@192.168.10.201
+
+# Status
+cscli metrics
+cscli decisions list
+cscli hub list
+
+# Unban an IP
+cscli decisions delete --ip <ip>
+
+# Update hub
+cscli hub update && cscli hub upgrade
+systemctl restart crowdsec
 ```
 
 ---
@@ -133,57 +163,48 @@ qm clone <vmid> <newid> --name <newname> --full
 ## 🧹 Maintenance Tasks
 
 ### Weekly
-- [ ] `zpool scrub datastore` — verify ZFS data integrity
-- [ ] Check Proxmox Backup Server — verify backups completed
-- [ ] Review Uptime Kuma dashboard — any outages?
-- [ ] `pihole updateGravity` — update Pi-hole blocklists
-- [ ] Review Grafana dashboards — anomalies?
+- [ ] Check Proxmox backup status (once PBS is deployed)
+- [ ] `docker system prune -f` on pve3 CTs — remove unused images
+- [ ] Review Grafana dashboards for anomalies
+- [ ] `pihole updateGravity` on pve1 LXC
 
 ### Monthly
-- [ ] Check SMART data on all drives: `smartctl -a /dev/sdX`
-- [ ] Proxmox + package updates: `apt update && apt upgrade`
-- [ ] Junos config backup: `show configuration | save /tmp/backup.conf`
-- [ ] Review UPS battery health (NUT report)
+- [ ] Proxmox + package updates on all nodes: `apt update && apt upgrade`
+- [ ] Junos config backup from EX3400: `show configuration | save /tmp/backup.conf`
+- [ ] Review CrowdSec console — https://app.crowdsec.net
 - [ ] Check iDRAC firmware for R730s (Dell support site)
+- [ ] Renew Tailscale auth keys if needed
+
+---
+
+## 🔒 Tailscale
+
+```bash
+# Status on any node
+tailscale status
+tailscale ip
+
+# Key IPs
+# pve1: 100.116.237.31
+# Ares: 100.124.118.63
+
+# Remote Proxmox UI via Tailscale
+# https://100.116.237.31:8006
+
+# DNS fix (if Tailscale overwrites resolv.conf — affects pve3–pve5)
+tailscale set --accept-dns=false
+```
 
 ---
 
 ## ☎️ VoIP Troubleshooting
 
-> [!NOTE] VoIP project is deferred. This section is for when it goes live.
+> [!NOTE] VoIP project deferred. Section for when FreePBX goes live.
 
 ```bash
-# Check Asterisk/FreePBX status
 systemctl status asterisk
 asterisk -rvv
-
-# List registered phones
 asterisk -rx "sip show peers"
-
-# Check active calls
 asterisk -rx "core show channels"
-
-# Reload SIP config
-asterisk -rx "sip reload"
-
-# Check VoIP.ms trunk registration
 asterisk -rx "sip show registry"
-```
-
----
-
-## 🔋 UPS Events
-
-```bash
-# NUT — check UPS state
-upsc tripplite@localhost ups.status
-# OL = Online, OB = On Battery, LB = Low Battery
-
-# Force graceful shutdown on low battery (NUT auto)
-# Configure in /etc/nut/upsmon.conf:
-# MINSUPPLIES 1
-# SHUTDOWNCMD "/sbin/shutdown -h now"
-
-# Manual FSD (Forced Shutdown)
-upsmon -c fsd
 ```
