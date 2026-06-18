@@ -1,171 +1,210 @@
 # 🧩 Services & VMs
-**Tags:** #infrastructure #services #docker #selfhosted  
+**Tags:** #infrastructure #services #docker #selfhosted
 **Related:** [[Infrastructure/Proxmox Cluster]] · [[Infrastructure/Storage]] · [[Networking/Network Overview]]
 
 ---
 
 ## Service Status Dashboard
 
-| Service | Type | Status | Host | URL |
-|---|---|---|---|---|
-| OPNsense | VM | 🔴 Planned | pve-r730-gen | https://10.0.10.1 |
-| Vaultwarden | Docker CT | 🔴 Planned | pve-r730-gen | https://vault.homelab.local |
-| Jellyfin | VM | 🔴 Planned | pve-r730-gen | http://jellyfin.homelab.local:8096 |
-| Pi-hole | Native (RPi) | 🔴 Planned | RPi 4 | http://10.0.10.20/admin |
-| Home Assistant | Docker / RPi | 🔴 Planned | RPi 4 or VM | http://10.0.50.1:8123 |
-| Uptime Kuma | Docker CT | 🔴 Planned | pve-g4a | http://uptime.homelab.local:3001 |
-| Grafana | Docker CT | 🔴 Planned | pve-g4a | http://grafana.homelab.local:3000 |
-| Loki | Docker CT | 🔴 Planned | pve-g4a | — (Grafana data source) |
-| UniFi Controller | Docker CT | 🔴 Planned | pve-g4b | https://10.0.10.3:8443 |
-| PBS | VM | 🔴 Planned | pve-supermicro | https://10.0.10.30:8007 |
-| FreePBX | VM | ⏸️ Deferred | pve-r730-gen | http://10.0.60.5 |
-| Frigate | Docker CT | ⏸️ Future | pve-g4b + Coral | — |
-| NUT (UPS monitor) | Native | 🔴 Planned | RPi 4 | — |
+| Service | Type | Status | Host | IP | URL |
+|---|---|---|---|---|---|
+| Nginx Proxy Manager | Docker CT | 🟢 Active | pve3 CT 101 | 192.168.10.181 | http://192.168.10.181:81 (admin) |
+| Vaultwarden | Docker CT | 🟢 Active | pve3 CT 102 | 192.168.10.182 | https://vault.kylemason.org |
+| Grafana | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183 | https://grafana.kylemason.org |
+| Prometheus | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183:9090 | — |
+| Loki | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183:3100 | — |
+| CrowdSec | Native | 🟢 Active | pve3 host | — | https://app.crowdsec.net |
+| Pi-hole (primary) | LXC | 🟢 Active | pve1 | 192.168.1.47 | http://192.168.1.47/admin |
+| Pi-hole (backup) | Native | 🟢 Active | Raspberry Pi 4 | 192.168.1.170 | — |
+| OPNsense | VM 100 | ⏸️ Installed, not routing | pve2 | — | pending cutover |
+| Wazuh SIEM | VM | 🔴 Deferred | quarkylab (pending) | — | wazuh.kylemason.org |
+| Jellyfin | VM | 🔴 Planned | TBD | — | — |
+| Home Assistant | Docker / RPi | 🔴 Planned | TBD | — | — |
+| UniFi Controller | Docker CT | 🔴 Planned | TBD | — | — |
+| PBS | VM | 🔴 Planned | pve-supermicro | — | — |
+| FreePBX | VM | ⏸️ Deferred | TBD | — | — |
 
 ---
 
-## Service Configs
+## Deployed Configs (pve3)
 
-### Vaultwarden
+All services below run as Docker containers in LXC containers on pve3. Each CT uses a static IP, Debian 12, Docker installed via `curl -fsSL https://get.docker.com | sh`.
+
+### CT 101 — Nginx Proxy Manager
+
+**IP:** 192.168.10.181 | **Ports:** 80, 443, 81 (admin) | **Disk:** 8GB
 
 ```yaml
-# docker-compose.yml
+# /opt/nginx-proxy-manager/docker-compose.yml
+version: '3'
+services:
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+```
+
+**Proxy Hosts:**
+
+| Domain | Forward to | Port | SSL |
+|--------|-----------|------|-----|
+| vault.kylemason.org | 192.168.10.182 | 80 | Cloudflare DNS-01 |
+| grafana.kylemason.org | 192.168.10.183 | 3000 | Cloudflare DNS-01 |
+
+**Cloudflare DNS records** (for each subdomain):
+- Type: A → 192.168.10.181, DNS only (grey cloud)
+
+---
+
+### CT 102 — Vaultwarden
+
+**IP:** 192.168.10.182 | **URL:** https://vault.kylemason.org | **Disk:** 10GB
+
+```yaml
+# /opt/vaultwarden/docker-compose.yml
 version: '3'
 services:
   vaultwarden:
     image: vaultwarden/server:latest
-    container_name: vaultwarden
     restart: unless-stopped
-    volumes:
-      - ./vw-data:/data
     ports:
-      - "8080:80"
+      - '80:80'
+    volumes:
+      - ./data:/data
     environment:
-      WEBSOCKET_ENABLED: "true"
-      SIGNUPS_ALLOWED: "false"
-      ADMIN_TOKEN: "<generate-with-argon2>"
+      - DOMAIN=https://vault.kylemason.org
+      - SIGNUPS_ALLOWED=false
 ```
 
-### Jellyfin
+> Initial setup: set `SIGNUPS_ALLOWED=true`, create account, then set back to `false` and `docker compose up -d --force-recreate`.
+
+---
+
+### CT 103 — Grafana + Prometheus + Loki
+
+**IP:** 192.168.10.183 | **URL:** https://grafana.kylemason.org | **Disk:** 20GB, 2GB RAM
 
 ```yaml
-services:
-  jellyfin:
-    image: jellyfin/jellyfin:latest
-    container_name: jellyfin
-    restart: unless-stopped
-    volumes:
-      - ./config:/config
-      - /mnt/media:/media:ro
-    ports:
-      - "8096:8096"
-    devices:
-      - /dev/dri:/dev/dri  # HW transcoding (if available)
-```
-
-### Uptime Kuma
-
-```yaml
-services:
-  uptime-kuma:
-    image: louislam/uptime-kuma:1
-    container_name: uptime-kuma
-    restart: unless-stopped
-    volumes:
-      - ./data:/app/data
-    ports:
-      - "3001:3001"
-```
-
-### Grafana + Loki Stack
-
-```yaml
+# /opt/grafana/docker-compose.yml
+version: '3'
 services:
   grafana:
     image: grafana/grafana:latest
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
-      - grafana-data:/var/lib/grafana
+      - ./grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=changeme
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus-data:/prometheus
 
   loki:
     image: grafana/loki:latest
+    restart: unless-stopped
     ports:
-      - "3100:3100"
-
-  promtail:
-    image: grafana/promtail:latest
+      - '3100:3100'
     volumes:
-      - /var/log:/var/log:ro
-      - ./promtail-config.yml:/etc/promtail/config.yml
+      - ./loki-data:/loki
 ```
 
-### NUT (Network UPS Tools)
+> Pre-create data dirs: `mkdir -p grafana-data prometheus-data loki-data && chmod 777 grafana-data prometheus-data loki-data`
+
+**prometheus.yml** (add targets as nodes are onboarded):
+```yaml
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: 'proxmox-pve3'
+    static_configs:
+      - targets: ['192.168.10.201:9100']
+  - job_name: 'proxmox-pve2'
+    static_configs:
+      - targets: ['192.168.10.204:9100']
+  - job_name: 'proxmox-pve4'
+    static_configs:
+      - targets: ['192.168.10.202:9100']
+  - job_name: 'proxmox-pve5'
+    static_configs:
+      - targets: ['192.168.10.203:9100']
+```
+
+**Dashboard:** Node Exporter Full — ID 1860
+**Node exporter on each host:** `apt install -y prometheus-node-exporter`
+After adding targets: `docker compose restart prometheus`
+
+---
+
+## CrowdSec (pve3 host)
 
 ```bash
-# Install on Proxmox hosts
-apt install nut
+curl -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | bash
+apt install -y crowdsec crowdsec-firewall-bouncer
 
-# /etc/nut/ups.conf
-[tripplite]
-  driver = usbhid-ups
-  port = auto
-  desc = "Tripp Lite SMART1500VA"
+cscli hub update
+cscli collections install crowdsecurity/linux --force
+cscli collections install crowdsecurity/sshd --force
+systemctl restart crowdsec
 
-[middleatlantic]
-  driver = usbhid-ups
-  port = auto
-  desc = "Middle Atlantic UPS-2200R"
-
-# /etc/nut/nut.conf
-MODE=netserver
-
-# /etc/nut/upsd.conf
-LISTEN 0.0.0.0 3493
+cscli console enroll <YOUR_ENROLL_KEY>
+systemctl restart crowdsec
 ```
+
+Console: https://app.crowdsec.net
 
 ---
 
-## Pi-hole Setup (RPi 4)
+## Pi-hole (pve1)
+
+| Role | IP | Admin |
+|------|----|-------|
+| Primary | 192.168.1.47 | http://192.168.1.47/admin |
+| Backup | 192.168.1.170 | Raspberry Pi 4 |
 
 ```bash
-curl -sSL https://install.pi-hole.net | bash
-
-# Post-install
-pihole -a -p              # set admin password
-pihole updateGravity      # update blocklists
-
-# Set as DNS in OPNsense: Services > DHCPv4 > DNS = 10.0.10.20
+# Point clients to Pi-hole
+sudo nmcli con mod "YourWiFiName" ipv4.dns "192.168.1.47"
+sudo nmcli --ask con up "YourWiFiName"
 ```
 
 ---
 
-## Home Assistant
+## Adding New Services
 
-```bash
-# Via Docker (recommended for Proxmox VM or RPi)
-docker run -d \
-  --name homeassistant \
-  --privileged \
-  --restart=unless-stopped \
-  -v /home/machismo/ha-config:/config \
-  -p 8123:8123 \
-  ghcr.io/home-assistant/home-assistant:stable
-```
-
-See [[Projects/IMU Gesture Control]] for IMU → HA integration.
+For every new service:
+1. Deploy LXC on appropriate node (Debian 12, static IP)
+2. Add A record in Cloudflare: subdomain → 192.168.10.181, DNS only
+3. Add Proxy Host in NPM → container IP:port, Cloudflare DNS SSL
+4. Install CrowdSec agent on the new container
 
 ---
 
-## Frigate (Future — Coral TPU required)
+## Planned / Deferred
 
-> [!NOTE] Deferred
-> Frigate NVR requires a Google Coral TPU for efficient ML inference. Purchase Coral USB/PCIe before deploying. Will run as Docker CT on pve-g4b.
+### Wazuh SIEM
+- Deferred until quarkylab (Dell R730) is online
+- Deploy as VM (not LXC) — needs ≥4GB RAM for indexer
+- URL: wazuh.kylemason.org
+- Add agents on all nodes post-deploy
 
----
+### Jellyfin, Home Assistant, UniFi Controller
+- Pending additional node capacity (quarkylab / Jarvis online)
+- See [[Infrastructure/Proxmox Cluster]] for hardware status
 
-## SSL / Reverse Proxy (Planned)
-
-- **Nginx Proxy Manager** or **Caddy** as reverse proxy
-- Let's Encrypt via DNS challenge (Cloudflare API)
-- Internal cert for `*.homelab.local`
+### Frigate (NVR)
+- Requires Google Coral TPU for ML inference
+- Future deployment on available node
