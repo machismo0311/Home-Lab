@@ -11,7 +11,7 @@
 
 | Node | Hardware | CPU | RAM | Storage | IP | Role |
 |------|----------|-----|-----|---------|-----|------|
-| pve1 | Apple Mac Mini (2011) | Core i5 | — | Internal SSD | 192.168.10.193 | Cluster management |
+| pve1 | Apple Mac Mini (2011) | Core i5 | — | Internal SSD | 192.168.10.193 | Stand alone PI-Hole |
 | pve2 | HP EliteDesk 800 G4 SFF | i7-8700 | 32GB | — | 192.168.10.204 | Services |
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 256GB NVMe + 1TB SATA | 192.168.10.201 | Primary services node |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | — | 192.168.10.202 | Services |
