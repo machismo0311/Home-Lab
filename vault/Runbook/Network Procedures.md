@@ -20,11 +20,11 @@ ssh mason@192.168.10.50
 # ssh mason@<ex2300-ip>
 
 # Access cluster nodes
+ssh root@192.168.10.193   # pve1
 ssh root@192.168.10.204   # pve2
 ssh root@192.168.10.201   # pve3
 ssh root@192.168.10.202   # pve4
 ssh root@192.168.10.203   # pve5
-# pve1 (192.168.10.193): needs SSH key in authorized_keys first — use web console
 ```
 
 ---

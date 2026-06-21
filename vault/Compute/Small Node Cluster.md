@@ -20,19 +20,12 @@
 ## SSH Access
 
 ```bash
-ssh root@192.168.10.193   # pve1 (Mac Mini) — ⚠️ needs key auth, add to authorized_keys first
+ssh root@192.168.10.193   # pve1 (Mac Mini)
 ssh root@192.168.10.204   # pve2
 ssh root@192.168.10.201   # pve3
 ssh root@192.168.10.202   # pve4
 ssh root@192.168.10.203   # pve5
 ```
-
-> **⚠️ pve1 SSH:** pve1 only accepts publickey auth. Ares key not yet in `authorized_keys`. To add, use pve1 web console at https://192.168.10.193:8006 and run:
-> ```bash
-> mkdir -p /root/.ssh && chmod 700 /root/.ssh
-> echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA9G5mqN1MTgsi+ddrJDJxVpDhhZ5oNNoa+Nmwn/l9BI fernanda@quarkylab" >> /root/.ssh/authorized_keys
-> chmod 600 /root/.ssh/authorized_keys
-> ```
 
 ---
 
