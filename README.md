@@ -14,7 +14,7 @@ Documentation for my personal home lab — a multi-node Proxmox cluster with Jun
 | pve5 | HP EliteDesk 800 G3 Mini (i5-7500T, 32GB) | 192.168.10.203 | General compute |
 | QuarkyLab-r730-ml | Dell R730 (28c/56t, 512GB) | — | ML / CUDA workloads |
 | Jarvis-r730- LLM | Dell R730 (24c/48t, 384GB) | — | General VM host |
-| pve-supermicro | SuperMicro CSE-219U (24c/48t, 128GB) | — | Mixed / storage-adjacent |
+| Randy-supermicro | SuperMicro CSE-219U (24c/48t, 128GB) | — | Mixed / storage-adjacent |
 
 ### Networking
 | Device | Role | Management |
