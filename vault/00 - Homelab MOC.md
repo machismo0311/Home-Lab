@@ -1,6 +1,6 @@
 # 🖥️ Homelab — Master Map of Content
 > **Operator:** Kyle Mason (`machismo`) · **Location:** Vermilion / Greater Cleveland, OH
-> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-06-17
+> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-06-20
 
 ---
 
@@ -73,6 +73,7 @@ mindmap
 | Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3 |
 | Vaultwarden | 192.168.10.182 | CT 102 on pve3 |
 | Grafana | 192.168.10.183 | CT 103 on pve3 |
+| Headscale | 192.168.10.186 | CT 105 on pve3, WireGuard control plane |
 | Pi-hole (primary) | 192.168.1.47 | pve1 LXC |
 | Pi-hole (backup) | 192.168.1.170 | Raspberry Pi 4 |
 | Ares (laptop) | DHCP / 192.168.10.100 wired | Tailscale: 100.124.118.63 |
@@ -95,6 +96,9 @@ mindmap
 - [[Infrastructure/Storage]] — NetApp DS4246, drive inventory
 - [[Infrastructure/Proxmox Cluster]] — Cluster config, node table, OPNsense
 - [[Infrastructure/Services & VMs]] — All deployed/planned services
+
+### VPN
+- [[Projects/Headscale]] — Self-hosted Tailscale control plane (pve3 CT 105)
 
 ### Switching
 - [[Networking/Juniper EX3400-48P]] — Core switch config & Junos notes
@@ -123,6 +127,7 @@ mindmap
 - [x] Core services deployed on pve3: NPM, Vaultwarden, Grafana+Prometheus+Loki, CrowdSec
 - [x] Wildcard SSL cert issued (*.kylemason.org via Let's Encrypt + Cloudflare)
 - [x] vault.kylemason.org and grafana.kylemason.org live
+- [x] Headscale v0.29.1 deployed (pve3 CT 105) — Ares registered, self-hosted VPN control plane live
 - [ ] Add Ares SSH key to pve1 (currently publickey-only, key not authorized)
 - [ ] Fix EX3400 uplink ge-0/0/32: access port → proper trunk (VLANs not passing)
 - [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
@@ -132,5 +137,8 @@ mindmap
 - [ ] Stand up quarkylab + Jarvis as Proxmox nodes
 - [ ] Deploy Wazuh SIEM on quarkylab
 - [ ] Add all nodes to Grafana monitoring (node exporter)
+- [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error
+- [ ] Headscale Phase 3: migrate Kyle + Fernanda devices off commercial Tailscale
+- [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs
 - [ ] VoIP project (deferred — post core infra)
 - [ ] CCNA study cadence established (VetTec 2.0 pathway)

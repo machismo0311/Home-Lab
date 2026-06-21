@@ -177,7 +177,25 @@ systemctl restart crowdsec
 
 ---
 
-## 🔒 Tailscale
+## 🔒 Headscale (self-hosted VPN control plane)
+
+> Headscale runs on pve3 CT 105 (192.168.10.186). Ares uses Headscale. Fernanda's devices still on commercial Tailscale — migration pending.
+
+```bash
+# Health check
+curl http://192.168.10.186:8080/health   # expect: {"status":"pass"}
+
+# Node list
+pct exec 105 -- headscale nodes list
+
+# Logs
+pct exec 105 -- journalctl -u headscale -n 30 --no-pager
+
+# Restart
+pct exec 105 -- systemctl restart headscale
+```
+
+## 🔒 Tailscale (commercial — Fernanda's devices)
 
 ```bash
 # Status on any node
@@ -186,7 +204,7 @@ tailscale ip
 
 # Key IPs
 # pve1: 100.116.237.31
-# Ares: 100.124.118.63
+# Ares: 100.64.0.1 (Headscale) — was 100.124.118.63 on commercial
 
 # Remote Proxmox UI via Tailscale
 # https://100.116.237.31:8006
