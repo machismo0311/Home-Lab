@@ -33,9 +33,12 @@ flowchart TB
         PVE5[pve5 · 192.168.10.203\nEliteDesk G3]
     end
 
-    subgraph PENDING["Pending Hardware"]
-        R730A[quarkylab\niDRAC: 192.168.10.20]
+    subgraph RACK["R730s"]
+        QUARK[quarkylab · 192.168.10.179\nWazuh VM 104 · 192.168.10.184]
         R730B[Jarvis\niDRAC: 192.168.10.21]
+    end
+
+    subgraph PENDING["Pending Hardware"]
     end
 
     EX3400 --> PVE1
@@ -43,6 +46,7 @@ flowchart TB
     EX3400 --> PVE3
     EX3400 --> PVE4
     EX3400 --> PVE5
+    EX3400 --> QUARK
 
     style UDR fill:#cc4400,color:#fff
     style EX3400 fill:#1a1a2e,color:#eee
@@ -80,7 +84,9 @@ ssh mason@192.168.10.50   # EX3400
 | pve5 | 192.168.10.203 | |
 | Ares (laptop wired) | 192.168.10.100 | Static via `ip addr add` |
 | Juniper EX3400 | 192.168.10.50 | Renumbered 2026-06-05 |
+| quarkylab | 192.168.10.179 | R730 Proxmox host (node 5) |
 | quarkylab iDRAC | 192.168.10.20 | R730 svc tag 1S8WR22 |
+| Wazuh VM (quarkylab) | 192.168.10.184 | VM 104 |
 | Jarvis iDRAC | 192.168.10.21 | MAC: 18:66:da:97:0f:8e |
 | Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3 |
 | Vaultwarden | 192.168.10.182 | CT 102 on pve3 |

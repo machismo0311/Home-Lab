@@ -18,7 +18,7 @@
 | Pi-hole (primary) | LXC | 🟢 Active | pve1 | 192.168.1.47 | http://192.168.1.47/admin |
 | Pi-hole (backup) | Native | 🟢 Active | Raspberry Pi 4 | 192.168.1.170 | — |
 | OPNsense | VM 100 | ⏸️ Installed, not routing | pve2 | — | pending cutover |
-| Wazuh SIEM | VM | 🟢 Active | quarkylab | — | wazuh.kylemason.org |
+| Wazuh SIEM | VM 104 | 🟢 Active | quarkylab (192.168.10.179) | 192.168.10.184 | wazuh.kylemason.org |
 | Jellyfin | VM | 🔴 Planned | TBD | — | — |
 | Home Assistant | Docker / RPi | 🔴 Planned | TBD | — | — |
 | UniFi Controller | Docker CT | 🔴 Planned | TBD | — | — |
