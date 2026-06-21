@@ -136,7 +136,7 @@ mindmap
 - [ ] VLAN segmentation implemented post-cutover
 - [ ] Install both Dell R730s (quarkylab BIOS update in progress — CPU stepping mismatch)
 - [ ] Stand up quarkylab + Jarvis as Proxmox nodes
-- [ ] Deploy Wazuh SIEM on quarkylab
+- [x] Deploy Wazuh SIEM on quarkylab
 - [ ] Add all nodes to Grafana monitoring (node exporter)
 - [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error
 - [ ] Headscale Phase 3: migrate Kyle + Fernanda devices off commercial Tailscale
