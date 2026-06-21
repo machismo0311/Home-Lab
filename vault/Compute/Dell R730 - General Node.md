@@ -4,12 +4,11 @@
 
 ---
 
-## Status: ⏸️ Pending — BIOS update in progress
+## Status: 🟢 Online — Proxmox cluster node (node ID 5)
 
-- iDRAC reachable at **192.168.10.20**
-- iDRAC/LC needs update to 2.86 first (same TFTP procedure as Jarvis)
-- BIOS update blocked by suspected **mismatched CPU steppings** (silent QPI hang)
-- Not yet installed as a Proxmox cluster node
+- **Host IP:** 192.168.10.179
+- **iDRAC:** 192.168.10.20
+- Wazuh SIEM VM (ID 104) running — 192.168.10.184
 
 ---
 
@@ -18,7 +17,8 @@
 | Component | Spec |
 |---|---|
 | Model | Dell PowerEdge R730 |
-| Hostname (planned) | quarkylab |
+| Hostname | quarkylab |
+| **Host IP** | **192.168.10.179** |
 | Service Tag | **1S8WR22** |
 | Form Factor | 2U |
 | Rack Position | U15–U16 |
