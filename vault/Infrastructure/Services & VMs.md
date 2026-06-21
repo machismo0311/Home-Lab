@@ -13,6 +13,7 @@
 | Grafana | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183 | https://grafana.kylemason.org |
 | Prometheus | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183:9090 | — |
 | Loki | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183:3100 | — |
+| Headscale | LXC | 🟢 Active | pve3 CT 105 | 192.168.10.186 | http://192.168.10.186:8080/health |
 | CrowdSec | Native | 🟢 Active | pve3 host | — | https://app.crowdsec.net |
 | Pi-hole (primary) | LXC | 🟢 Active | pve1 | 192.168.1.47 | http://192.168.1.47/admin |
 | Pi-hole (backup) | Native | 🟢 Active | Raspberry Pi 4 | 192.168.1.170 | — |
@@ -146,6 +147,36 @@ scrape_configs:
 **Dashboard:** Node Exporter Full — ID 1860
 **Node exporter on each host:** `apt install -y prometheus-node-exporter`
 After adding targets: `docker compose restart prometheus`
+
+---
+
+### CT 105 — Headscale
+
+**IP:** 192.168.10.186 | **Ports:** 8080 (HTTP), 50443 (gRPC) | **Disk:** 4GB | **RAM:** 512MB
+
+Self-hosted Tailscale control plane (WireGuard mesh coordination). Replaces commercial Tailscale for student access to QuarkyLab ML environment.
+
+| Detail | Value |
+|--------|-------|
+| Version | v0.29.1 |
+| MagicDNS domain | netframe.local |
+| Tailscale IPv4 range | 100.64.0.0/10 |
+| DNS pushed to clients | 192.168.10.170 (Pi-hole) |
+| Registered nodes | Ares (100.64.0.1) |
+
+```bash
+# Health check
+curl http://192.168.10.186:8080/health
+
+# Node list
+pct exec 105 -- headscale nodes list
+
+# Add student user
+pct exec 105 -- headscale users create <username>
+pct exec 105 -- headscale preauthkeys create --user <id> --expiration 168h
+```
+
+> Full runbook: `Home-Lab/headscale/HEADSCALE.md` · See also [[Projects/Headscale]]
 
 ---
 
