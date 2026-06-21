@@ -60,7 +60,7 @@ Headscale runs as LXC container **105** on **pve3**.
 | pve5 | HP EliteDesk G3 Mini | Fernanda ML node | 192.168.10.203 |
 | QuarkyLab | Dell R730 | ML inference, RTX 6000 | 192.168.10.x |
 | Jarvis | Dell R730 | LLM inference, RTX 8000 | 192.168.10.x |
-| Arturito | SuperMicro CSE-219U | TrueNAS / storage | 192.168.10.x |
+| Randy | SuperMicro CSE-219U | TrueNAS / storage | 192.168.10.x |
 
 ### Container Inventory on pve3
 
