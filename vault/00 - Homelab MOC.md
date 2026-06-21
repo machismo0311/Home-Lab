@@ -70,6 +70,7 @@ mindmap
 | Juniper EX3400 | 192.168.10.50 | JunOS 23.4R2-S7.4 |
 | quarkylab | 192.168.10.179 | R730 Proxmox host |
 | quarkylab iDRAC | 192.168.10.20 | R730 svc tag 1S8WR22 |
+| Wazuh SIEM (quarkylab) | 192.168.10.184 | VM 104 |
 | Jarvis iDRAC | 192.168.10.21 | R730 384GB |
 | Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3 |
 | Vaultwarden | 192.168.10.182 | CT 102 on pve3 |
