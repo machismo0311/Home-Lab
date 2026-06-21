@@ -1,0 +1,205 @@
+\documentclass[11pt, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+
+\definecolor{netblue}{HTML}{5a9bff}
+\definecolor{netdark}{HTML}{040c17}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=netblue,
+    urlcolor=netblue
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{NetFRAME Technologies}
+\lhead{Infrastructure Update}
+\rfoot{Page \thepage}
+\lfoot{June 21, 2026}
+
+\titleformat{\section}{\large\bfseries\color{netblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE \textbf{NetFRAME Infrastructure Update}}\\[0.5em]
+    {\large June 21, 2026}\\[0.3em]
+    {\normalsize Randy Commissioning $\cdot$ GPU Swap $\cdot$ DUNE Agent Planning}
+\end{center}
+
+\vspace{1em}
+
+%% ─────────────────────────────────────────────────────────
+\section{Randy — SuperMicro SYS-2028U-E1CNRT+}
+
+\subsection{Hardware Inventory}
+
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Component} & \textbf{Detail} \\
+\midrule
+Motherboard     & Supermicro X10DRU-i+ \\
+Chassis         & SYS-2028U-E1CNRT+ (219U-10) \\
+Board Serial    & OM15CS036459 \\
+CPUs            & Dual Intel Xeon E5-2690 v4 @ 2.60 GHz \\
+RAM             & 128GB ECC DDR4 2133 MHz \\
+BIOS            & 3.5 (flashed from 2.0 on 06/21/2026) \\
+IPMI            & 192.168.10.22, BMC firmware 03.94, user ADMIN \\
+NIC             & Mellanox ConnectX-3 EN 10GbE (MCX312A-XCB7) \\
+RAID Card       & LSI MegaRAID (MR RMB L3-25376-00A) + Tecate supercapacitor \\
+GPU             & AMD RX 580 8GB DDR5 (installed, awaiting power cable) \\
+GPU PWR Headers & 3$\times$ onboard (GPU PWR2/3/4) — SuperMicro proprietary \\
+Drive Bays      & 2.5" native bays, 22 caddies total \\
+Riser           & RSC-R10W-E8R \\
+\bottomrule
+\end{tabularx}
+
+\subsection{BIOS Flash — Completed \checkmark}
+
+\textbf{Method:} UEFI Shell via IKVM console (IPMI web UI at 192.168.10.22)
+
+\begin{enumerate}[leftmargin=*, nosep]
+    \item Downloaded \texttt{X10DRU2.427.zip} from Supermicro support portal
+    \item Created FAT32 UEFI bootable USB on Ares (\texttt{/dev/sda}) via \texttt{parted} + \texttt{mkfs.fat}
+    \item Copied UEFI folder contents to \texttt{/EFI/BOOT/} on USB; added \texttt{BOOTX64.EFI}
+    \item Fixed broken Java KVM via IKVM Reset (Maintenance $\rightarrow$ IKVM Reset in IPMI)
+    \item Booted Randy to UEFI Built-in EFI Shell via F11 boot menu
+    \item Navigated: \texttt{fs0:} $\rightarrow$ \texttt{cd EFI\textbackslash BOOT} $\rightarrow$ \texttt{flash.nsh X10DRU2.427}
+    \item Two-stage flash: FDT difference detected $\rightarrow$ reboot $\rightarrow$ \texttt{STARTUP.NSH} auto-resumed
+    \item \textbf{Result:} BIOS 3.5, ME Entire Image update success
+\end{enumerate}
+
+\textit{Key lesson: Supermicro BIOS jumps with different FDT require two boot cycles. First run creates STARTUP.NSH and reboots. Boot back to EFI Shell and let STARTUP.NSH run automatically without pressing ESC.}
+
+\subsection{Parts Ordered — June 21, 2026}
+
+\begin{tabularx}{\textwidth}{llXr}
+\toprule
+\textbf{Part} & \textbf{Part Number} & \textbf{Purpose} & \textbf{Qty} \\
+\midrule
+Dell GPU power cable    & N08NH              & Aux power for QuarkyLab dual RTX 6000 & 2 \\
+SuperMicro GPU cable    & CBL-PWEX-0665      & 8-pin CPU $\rightarrow$ 8-pin PCIe for RX 580 in Randy & 1 \\
+SuperMicro drive caddy  & MCP-220-00075-0B   & 2.5" native caddies for Randy & 2 \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Randy's Role in Cluster}
+
+Randy is the \textbf{infrastructure backbone} — not a compute node.
+
+\textbf{Services (priority order):}
+\begin{enumerate}[leftmargin=*, nosep]
+    \item \textbf{Proxmox Backup Server (PBS)} — critical; cluster currently has no backup
+    \item \textbf{NFS/ZFS storage} — serves DS4246 JBOD + internal bays to cluster via NFS
+    \item \textbf{Jellyfin} — media server; RX 580 handles transcoding via AMD ROCm
+    \item \textbf{Prometheus + Grafana + Loki} — migrate from management G4 EliteDesk
+    \item \textbf{Scrutiny} — drive health monitoring for 22+ drives
+    \item \textbf{MinIO} — S3-compatible object storage for Fernanda's datasets
+    \item \textbf{Vaultwarden} — password manager (current node TBD)
+\end{enumerate}
+
+\textbf{Randy does NOT run:} ML/LLM workloads, Ollama inference, or GPU compute. The RX 580 is for display output and media transcoding only.
+
+\subsection{Pending Before Proxmox Install}
+
+\begin{itemize}[leftmargin=*, nosep]
+    \item[$\square$] CBL-PWEX-0665 arrives $\rightarrow$ power RX 580
+    \item[$\square$] Confirm video output via RX 580 HDMI $\rightarrow$ KVM drawer
+    \item[$\square$] Install Proxmox via external USB (not internal thumb drive)
+    \item[$\square$] Determine LSI MegaRAID fate (flash to IT mode vs retain for RAID)
+    \item[$\square$] Add Randy to Proxmox cluster
+\end{itemize}
+
+%% ─────────────────────────────────────────────────────────
+\section{GPU Swap Decision}
+
+\subsection{New GPU Configuration}
+
+\begin{tabularx}{\textwidth}{llllX}
+\toprule
+\textbf{Server} & \textbf{GPU} & \textbf{VRAM} & \textbf{CUDA} & \textbf{Role} \\
+\midrule
+QuarkyLab & RTX 8000 (from Jarvis)      & 48GB       & Yes & Fernanda DUNE agent \\
+Jarvis    & 2$\times$ RTX 6000 (from QuarkyLab) & 48GB total & Yes & LLM inference/Ollama \\
+Randy     & RX 580                      & 8GB        & No (ROCm) & Display + transcoding \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Rationale}
+
+\textbf{QuarkyLab gets RTX 8000:} Fernanda's DUNE RAG agent needs maximum single-GPU VRAM. 48GB holds a large code model and embedding model simultaneously without splitting. Single GPU means cleaner inference with no PCIe overhead.
+
+\textbf{Jarvis gets dual RTX 6000:} LLM inference workloads are bursty, not sustained. Ollama handles multi-GPU natively. 48GB aggregate VRAM matches the RTX 8000. PCIe overhead is acceptable for the llm\_router query routing use case.
+
+\textbf{NVLink:} Not required for either server. Fernanda's workload is inference and RAG retrieval, not distributed training. No unified VRAM pool is needed.
+
+%% ─────────────────────────────────────────────────────────
+\section{Fernanda's DUNE Agent Project}
+
+\subsection{Overview}
+\begin{itemize}[leftmargin=*, nosep]
+    \item \textbf{Goal:} RAG agent over the DUNE experiment codebase
+    \item \textbf{Purpose:} Help new scientists understand the full codebase during onboarding at SURF (South Dakota)
+    \item \textbf{Host:} QuarkyLab (after RTX 8000 swap)
+    \item \textbf{Claude Project:} ``DUNE Agent — Fernanda'' (created 06/21/2026)
+\end{itemize}
+
+\subsection{Architecture}
+\begin{itemize}[leftmargin=*, nosep]
+    \item RAG pipeline (inference workload, not training)
+    \item Embedding model dedicated to RTX 8000 GPU allocation
+    \item Inference model on RTX 8000 (48GB accommodates large code model)
+    \item Suggested models: Qwen2.5-Coder 32B unquantized or 72B Q4\_K\_M
+    \item Vector store: ChromaDB or Qdrant (TBD)
+\end{itemize}
+
+%% ─────────────────────────────────────────────────────────
+\section{Sandbox / Lab Node}
+
+\begin{itemize}[leftmargin=*, nosep]
+    \item \textbf{Hardware:} Spare HP EliteDesk G4 (unused, in rack)
+    \item \textbf{Status:} Standalone — do NOT add to Proxmox cluster
+    \item \textbf{Purpose:} Safe learning environment; CCNA lab; service testing before Randy deployment
+    \item \textbf{Tools:} GNS3, EVE-NG, k3s (future)
+    \item \textbf{Network:} VLAN 70 (lab), IP range \texttt{192.168.70.x}
+    \item \textbf{Hostname:} TBD
+\end{itemize}
+
+%% ─────────────────────────────────────────────────────────
+\section{Claude Projects Created}
+
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Project} & \textbf{Scope} \\
+\midrule
+NetFRAME --- LLM Infrastructure & Jarvis, Ollama, llm\_router, GPU swap \\
+DUNE Agent --- Fernanda          & RAG pipeline, codebase ingestion, QuarkyLab ML env \\
+\bottomrule
+\end{tabularx}
+
+%% ─────────────────────────────────────────────────────────
+\section{Full Cluster GPU Inventory}
+
+\begin{tabularx}{\textwidth}{lllllX}
+\toprule
+\textbf{Server} & \textbf{GPU} & \textbf{VRAM} & \textbf{CUDA} & \textbf{ROCm} & \textbf{Primary Use} \\
+\midrule
+QuarkyLab & RTX 8000      & 48GB       & Yes & No  & Fernanda ML / DUNE agent \\
+Jarvis    & 2$\times$ RTX 6000 & 48GB total & Yes & No  & LLM inference (Ollama) \\
+Randy     & RX 580        & 8GB        & No  & Yes & Display + Jellyfin transcode \\
+\bottomrule
+\end{tabularx}
+
+Every node in the cluster now has a GPU. This enables distributed inference routing across all GPU nodes via \texttt{llm\_router.py} and provides full cluster-wide redundancy for GPU workloads.
+
+\end{document}
