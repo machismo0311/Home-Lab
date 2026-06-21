@@ -129,6 +129,7 @@ mindmap
 - [x] vault.kylemason.org and grafana.kylemason.org live
 - [x] Headscale v0.29.1 deployed (pve3 CT 105) — Ares registered, self-hosted VPN control plane live
 - [x] Add Ares SSH key to pve1 (added via pve2 cluster hop, 2026-06-20)
+- [x] NetFRAME logo deployed to all five Proxmox nodes (pve1–pve5, 2026-06-20)
 - [ ] Fix EX3400 uplink ge-0/0/32: access port → proper trunk (VLANs not passing)
 - [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
 - [ ] OPNsense VM cutover (VM 100 on pve2 → replace Dream Router)

@@ -29,6 +29,19 @@ ssh root@192.168.10.203   # pve5
 
 ---
 
+## Proxmox Web UI Branding
+
+NetFRAME logo installed on all five nodes (replaces default Proxmox logo in the web UI header). Applied to both logo paths via `~/Downloads/netframe_logo_install.sh`:
+
+| Path | Served via |
+|------|-----------|
+| `/usr/share/javascript/proxmox-widget-toolkit/images/proxmox_logo.svg` | `/pwt/images/` (header — primary) |
+| `/usr/share/pve-manager/images/proxmox_logo.*` | `/pve2/images/` (secondary) |
+
+Originals backed up as `proxmox_logo.svg.bak` / `proxmox_logo.png.bak` in the same directories. Rollback: `bash netframe_logo_install.sh rollback [node]`
+
+---
+
 ## Physical Notes
 
 - **pve2 + pve3** (EliteDesk G4 SFF): mounted on 3U vented shelf at U34–U36, secured with velcro + zip ties
