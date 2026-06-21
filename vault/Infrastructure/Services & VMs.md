@@ -18,7 +18,7 @@
 | Pi-hole (primary) | LXC | 🟢 Active | pve1 | 192.168.1.47 | http://192.168.1.47/admin |
 | Pi-hole (backup) | Native | 🟢 Active | Raspberry Pi 4 | 192.168.1.170 | — |
 | OPNsense | VM 100 | ⏸️ Installed, not routing | pve2 | — | pending cutover |
-| Wazuh SIEM | VM | 🔴 Deferred | quarkylab (pending) | — | wazuh.kylemason.org |
+| Wazuh SIEM | VM | 🟢 Active | quarkylab | — | wazuh.kylemason.org |
 | Jellyfin | VM | 🔴 Planned | TBD | — | — |
 | Home Assistant | Docker / RPi | 🔴 Planned | TBD | — | — |
 | UniFi Controller | Docker CT | 🔴 Planned | TBD | — | — |
@@ -225,12 +225,6 @@ For every new service:
 ---
 
 ## Planned / Deferred
-
-### Wazuh SIEM
-- Deferred until quarkylab (Dell R730) is online
-- Deploy as VM (not LXC) — needs ≥4GB RAM for indexer
-- URL: wazuh.kylemason.org
-- Add agents on all nodes post-deploy
 
 ### Jellyfin, Home Assistant, UniFi Controller
 - Pending additional node capacity (quarkylab / Jarvis online)
