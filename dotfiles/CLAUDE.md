@@ -1,126 +1,67 @@
-# NetFRAME Home Lab — Claude Code Context
+# CLAUDE.md
 
-## Who I Am
-- Kyle Mason, USMC veteran, aviation professional transitioning to network engineering
-- Pursuing CCNA via VetTec 2.0, MIS degree at Cleveland State University
-- GitHub: machismo0311 | Site: kylemason.org
-- Primary workstation: Ares (Debian 12, user: machismo, 192.168.10.199)
-- Editor preference: nano
-- Style: open-source tooling, step-by-step CLI, code blocks with separate explanation blocks
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Cluster Overview
+## Context
 
-### Proxmox Nodes (pve1–pve5)
-| Node | Hardware | Role |
+This is the home directory of Kyle Mason (masonkr@gmail.com), a Greater Cleveland, OH-based individual. It is tracked as the `machismo0311/dotfiles` git repo (public). Each subdirectory is an independent project — there is no single build system or test runner at this level.
+
+## Repo Structure
+
+### Submodules
+| Directory | Remote | Notes |
 |---|---|---|
-| pve1-pve4 | HP EliteDesk G4 | Proxmox cluster nodes |
-| pve5 | HP EliteDesk G4 (i5-7500) | Proxmox cluster node |
-| sandbox | HP EliteDesk G4 (spare) | Standalone lab/learning — NOT in cluster |
+| `Home-Lab/` | `machismo0311/Home-Lab` (public) | Homelab docs + Obsidian vault |
+| `kylemason.org/` | `machismo0311/kylemason.org` (public) | Personal site |
+| `manstuffco/` | `machismo0311/Manstuffco` (public) | Personal site |
+| `claude-desktop-debian/` | `aaddrick/claude-desktop-debian` (public) | Upstream project, not a fork |
+| `pacextractor/` | `divinebird/pacextractor` (public) | Upstream project, not a fork |
+| `CVE-2022-38694_unlock_bootloader/` | `TomKing062/CVE-2022-38694_unlock_bootloader` (public) | Upstream project, not a fork |
+| `spreadtrum_flash/` | `TomKing062/spreadtrum_flash` (public) | Upstream project, not a fork |
 
-### R730 Compute Nodes
-| Node | Service Tag | CPUs | RAM | GPU | Role |
-|---|---|---|---|---|---|
-| QuarkyLab | 1S8WR22 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 8000 48GB | Fernanda ML / DUNE agent |
-| Jarvis | DWG7HH2 | 2x E5-2687W v4 | 384GB LRDIMM | 2x RTX 6000 24GB | LLM inference (Ollama) |
+After pushing to any submodule's own remote, update the pointer here:
+```bash
+git submodule update --remote <name>
+git add <name>
+git commit -m "Update <name> submodule to latest"
+git push
+```
 
-### Randy (SuperMicro)
-| Field | Value |
-|---|---|
-| Model | SYS-2028U-E1CNRT+ |
-| Motherboard | X10DRU-i+ |
-| CPUs | 2x E5-2690 v4 |
-| RAM | 128GB ECC |
-| BIOS | 3.5 (flashed 06/21/2026) |
-| IPMI | 192.168.10.22 |
-| GPU | RX 580 8GB (ROCm, display/transcoding only) |
-| NIC | Mellanox ConnectX-3 10GbE |
-| RAID | LSI MegaRAID + Tecate supercapacitor |
-| Role | Storage, PBS, Jellyfin, monitoring, NFS |
+### Direct files
+- `jobscraper/` — single-script Python project with no upstream remote
+- `Vaults/homelab-vault/` — Obsidian vault (also copied into `Home-Lab/vault/`)
+- Dotfiles: `.bashrc`, `.bash_aliases`, `.profile`, `.bash_logout`, `.gitconfig`, `.ssh/config`, `CLAUDE.md`
 
-## Networking
-| Device | IP | Role |
-|---|---|---|
-| EX3400 | 192.168.10.50 | Core switch, JunOS 23.4R2-S7.4 |
-| OPNsense | 192.168.10.200/204 | Firewall/router (VM 100 on pve2) |
-| Headscale | 192.168.10.186 | VPN (LXC 105 on pve3) |
-| Ares | 192.168.10.199 | Admin workstation |
-| QuarkyLab iDRAC | 192.168.10.20 | root/calvin |
-| Jarvis iDRAC | 192.168.10.21 | root/calvin |
-| Randy IPMI | 192.168.10.22 | ADMIN |
+## Key Projects
 
-### VLANs (EX3400)
-| VLAN | ID | Subnet |
-|---|---|---|
-| Management | 1 | 192.168.10.0/24 |
-| Trusted/iDRAC | 20 | 192.168.20.0/24 |
-| Servers | 30 | 192.168.30.0/24 |
-| IoT | 40 | — |
-| VoIP | 50 | — |
-| Guest | 60 | — |
-| Lab | 70 | 192.168.70.0/24 |
+### `claude-desktop-debian/`
+Unofficial Linux build scripts for Claude Desktop, producing `.deb`, `.rpm`, AppImage, AUR, and Nix flake packages. **Has its own detailed `CLAUDE.md`** — read it before working here.
 
-## Key Services
-| Service | Location | Notes |
-|---|---|---|
-| Proxmox Backup Server | Randy (planned) | Highest priority |
-| Ollama / llm_router.py | Jarvis | FastAPI, Qwen2.5 72B Q4_K_M |
-| OPNsense | VM 100, pve2 | v25.7 |
-| Headscale | LXC 105, pve3 | v0.29.1 |
-| Pi-hole | LXC, cluster | DNS |
-| Wazuh | VM 104 | SIEM |
-| Prometheus/Grafana/Loki | Management G4 | Pending migration to Randy |
-| Step-CA | pve3 | *.netframe.local TLS |
-| Vaultwarden | TBD | Passwords |
+- Build: `./build.sh --build appimage --clean no`
+- Lint: `/lint` skill (shellcheck + actionlint)
+- Shell style: tabs for indentation, `[[ ]]` conditionals, lowercase variables, no `set -e`
 
-## Active Projects
+### `Home-Lab/`
+Homelab documentation for a 7-node Proxmox VE 9.1 cluster (km-cluster) — R730s, SuperMicro Randy, EliteDesk nodes, Juniper switching, and services. Also contains the Obsidian vault at `Home-Lab/vault/`.
 
-### llm_router.py (Jarvis)
-- FastAPI service, OpenAI-compatible endpoint
-- Routes queries between local Ollama (Qwen2.5 72B) and Claude API fallback
-- Logprob confidence scoring for routing decisions
-- Target endpoint: llm.netframe.local
-- Discussed in r/LocalLLM
+- Proxmox web UI: `https://192.168.10.193:8006` (local) or `https://100.116.237.31:8006` (Tailscale)
+- Pi-hole admin: `http://192.168.10.177/admin`
+- EX3400 management: `192.168.10.50`
+- PBS: `https://192.168.10.187:8007`
 
-### DUNE Agent (QuarkyLab — Fernanda)
-- RAG pipeline over DUNE experiment codebase
-- Helps new scientists understand codebase during onboarding
-- RTX 8000 48GB: embedding model + inference model
-- Vector store: ChromaDB or Qdrant (TBD)
-- Model: Qwen2.5-Coder 32B unquantized or 72B Q4_K_M
+### `jobscraper/`
+Single-file Python script that fetches remote job listings from RemoteOK and We Work Remotely and generates a static `jobs.html`.
 
-### NetFRAME Dashboard
-- Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx)
-- Runs on Dell P2722H monitor
-- Displays all 8 cluster nodes, GPU strip, Pi-hole stats, OPNsense WAN sparklines
+- Run: `python3 jobs.py` → writes `jobs.html`
 
-## Storage
-- NetApp DS4246 JBOD: 13x Toshiba 1.8TB 10K SAS + 19x Dell/Seagate 2TB 7.2K SAS
-- LSI 9207-8e HBA (IT mode) in Randy for DS4246 passthrough
-- Planned ZFS pools: fast (5x Toshiba RAIDZ2) + bulk (18x Dell, 2x RAIDZ2 9-wide)
-- Randy internal bays: 22x 2.5" SAS drives
+### `kylemason.org/` and `manstuffco/`
+Static HTML personal websites. Edit `index.html` directly — no build process. Both deployed via GitHub Pages.
 
-## Pending Hardware (parts in transit)
-- 2x Dell N08NH GPU power cables (QuarkyLab dual RTX 6000)
-- 1x Supermicro CBL-PWEX-0665 (RX 580 power in Randy)
-- 2x SuperMicro MCP-220-00075-0B 2.5" drive caddies
+### `pacextractor/`, `spreadtrum_flash/`, `CVE-2022-38694_unlock_bootloader/`
+Low-level C tools for working with Spreadtrum/UNISOC Android firmware. Build each with `make`.
 
-## GPU Swap (pending parts arrival)
-- RTX 8000 moves: Jarvis → QuarkyLab
-- 2x RTX 6000 move: QuarkyLab → Jarvis
-- No NVLink bridge needed on either server
+## Shell Environment
 
-## Coding Conventions
-- All scripts use bash unless Python is explicitly required
-- Python scripts use venv, requirements.txt
-- Configs go in /etc or service-appropriate locations
-- Systemd unit files for all persistent services
-- No Docker unless explicitly requested (prefer LXC on Proxmox)
-- Secrets go in Vaultwarden, never hardcoded
-- Label convention: [DEVICE]-[PORT], TIA-606 cable colors
-
-## Important Safety Notes
-- ALWAYS search prior conversation history before touching pve2 network config
-- Prior June 15 network outage caused by incorrect interface changes on pve2
-- QuarkyLab kernel must be pinned to 6.14.11-9-pve (6.17 breaks NVIDIA 550 driver)
-- Randy LSI MegaRAID fate TBD — do not assume IT mode until confirmed
-- Do not mix RDIMMs and LRDIMMs — confirmed incompatible
+- Shell: bash, with nvm managing Node.js (loaded from `~/.nvm/nvm.sh`)
+- Arduino IDE 2.x configured in `~/.arduino15/`
+- VS Code available at `/usr/bin/code`
