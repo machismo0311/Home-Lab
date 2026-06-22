@@ -92,10 +92,11 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | nginx-proxy | LXC 101, pve3 | — | Container running, service inactive |
 | Vaultwarden | LXC 102, pve3 | — | Container running, service inactive |
 | Grafana/Docker | LXC 103, pve3 | — | Docker host, no stack deployed yet |
+| Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2; SSH not set up from Ares |
 | step-ca | pve3 | — | *.netframe.local TLS, currently inactive |
 | Ollama | Jarvis | llm.netframe.local | Inactive — no GPU installed yet |
 
-**Wazuh VM 104 was deleted from pve2.**
+**Wazuh VM 104 is on QuarkyLab** (migrated from pve2). IP: 192.168.10.184 (DHCP). Dashboard: `https://192.168.10.184`.
 
 ## Storage
 - **Randy ZFS:** `datastore` — 3x RAIDZ2 of 6x Toshiba 1.636TB 10K SAS, 29.4TB raw / 19.5TB usable

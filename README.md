@@ -70,6 +70,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.7 |
 | Pi-hole | pve3 (LXC) | `192.168.10.177` | DNS filter |
 | Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
+| Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
 | step-ca | pve3 | — | Internal CA, `*.netframe.local` TLS |
 | Vaultwarden | pve3 (LXC 102) | — | Installed, pending activation |
 | Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | Pending RTX 8000 installation |
