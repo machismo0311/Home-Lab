@@ -3,21 +3,24 @@
 > **Kyle Mason** · USMC Aviation Veteran · EC-135/145 Instructor Pilot · Network Engineering Candidate (VetTec 2.0 / CCNA)
 > [`kylemason.org`](https://kylemason.org) · [`machismo0311`](https://github.com/machismo0311)
 
-A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, running a 7-node Proxmox VE 9.1 cluster (km-cluster). Purpose-built as a live CCNA lab, LLM inference platform, ML research node, and backup infrastructure — documented here as a technical portfolio.
+A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, running a 7-node Proxmox VE 9.2.3 cluster (km-cluster). Purpose-built as a live CCNA lab, LLM inference platform, ML research node, and backup infrastructure — documented here as a technical portfolio.
 
 ---
 
 ## Cluster Nodes
 
-| Hostname | Role | IP | CPU | RAM | GPU |
-|---|---|---|---|---|---|
-| **Randy** | Storage / PBS | 192.168.10.187 | 2× E5-2690 v4 | 128 GB | RX 580 8GB |
-| **QuarkyLab** | ML / Fernanda | 192.168.10.30 | 2× E5-2699 v4 | 512 GB | RTX 6000 24GB |
-| **Jarvis** | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | RTX 8000 48GB |
-| **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 48 GB | — |
-| **pve3** | Cluster node | 192.168.10.201 | i7-8700 | 32 GB | — |
-| **pve4** | Cluster node | 192.168.10.202 | i5-7500T | 32 GB | — |
-| **pve5** | Cluster node | 192.168.10.203 | i5-7500T | 32 GB | — |
+| Hostname | Role | IP | CPU | RAM | GPU | PVE | Kernel |
+|---|---|---|---|---|---|---|---|
+| **Randy** | Storage / PBS | 192.168.10.187 | 2× E5-2690 v4 | 128 GB | RX 580 8GB | 9.1.1 | 7.0.12-1 |
+| **QuarkyLab** | ML / Fernanda | 192.168.10.179 | 2× E5-2699 v4 | 512 GB | RTX 6000 24GB | 9.2.3 | 6.14.11-9-pve† |
+| **Jarvis** | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | — ‡ | 9.2.3 | 7.0.12-1 |
+| **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 48 GB | — | 9.2.3 | 7.0.12-1 |
+| **pve3** | Cluster node | 192.168.10.201 | i7-8700 | 32 GB | — | 9.2.3 | 7.0.12-1 |
+| **pve4** | Cluster node | 192.168.10.202 | i5-7500T | 32 GB | — | 9.2.3 | 7.0.12-1 |
+| **pve5** | Cluster node | 192.168.10.203 | i5-7500T | 32 GB | — | 9.2.3 | 7.0.12-1 |
+
+†Kernel pinned — NVIDIA 550.163.01 driver requires 6.14.11-9-pve.  
+‡RTX 8000 swap pending parts arrival (Dell N08NH aux power cables).
 
 ---
 
@@ -55,6 +58,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 - 13× Toshiba 1.8TB 10K SAS + 19× Dell/Seagate 2TB 7.2K SAS
 - Connected via LSI 9207-8e HBA (IT mode) using SFF-8644→SFF-8088 cables
+- Passthrough to Randy in progress
 
 ---
 
@@ -62,19 +66,19 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 | Service | Host | URL / Port | Notes |
 |---|---|---|---|
-| Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS datastore |
+| Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS datastore ~19.5TB |
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.7 |
 | Pi-hole | pve3 (LXC) | `192.168.10.177` | DNS filter |
 | Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
-| step-ca | pve2 | — | Internal CA, `*.netframe.local` TLS |
-| Wazuh | pve2 (VM 104) | — | SIEM |
-| Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | Q4_K_M, hybrid LLM router |
+| step-ca | pve3 | — | Internal CA, `*.netframe.local` TLS |
+| Vaultwarden | pve3 (LXC 102) | — | Installed, pending activation |
+| Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | Pending RTX 8000 installation |
 
 ---
 
 ## LLM Infrastructure
 
-Jarvis runs **Ollama** serving **Qwen2.5 72B Q4_K_M** on the RTX 8000 (48GB VRAM).
+Jarvis will run **Ollama** serving **Qwen2.5 72B Q4_K_M** on the RTX 8000 (48GB VRAM) once the GPU swap is complete.
 
 A **FastAPI `llm_router.py`** implements hybrid routing:
 - Default: local Ollama inference
@@ -97,11 +101,16 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 
 ## Planned / In Progress
 
-- [ ] NVIDIA 550 driver on QuarkyLab (pin kernel to 6.14.11-9-pve first)
-- [ ] VLAN activation (pve2 trunk to EX3400)
+- [x] Randy commissioned — PBS live, ZFS datastore ~19.5TB
+- [x] Full cluster upgrade — all nodes PVE 9.2.3 / kernel 7.0.12-1 (2026-06-22)
+- [x] NVIDIA 550 driver on QuarkyLab — kernel pinned to 6.14.11-9-pve
+- [ ] RTX 8000 swap into Jarvis (Dell N08NH aux power cables on order)
+- [ ] Backup schedules on all cluster nodes → randy-pbs
 - [ ] DS4246 → Randy via LSI 9207-8e passthrough
-- [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
+- [ ] VLAN activation (pve2 trunk to EX3400)
 - [ ] Jellyfin on Randy (RX 580 ROCm transcoding)
+- [ ] Scrutiny — drive health web UI on Randy
+- [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
 - [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
 - [ ] Cyberpunk monitoring dashboard — live API integration
 - [ ] IMU gesture control (nRF52 trackers → Home Assistant)
@@ -114,17 +123,20 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 ```
 Home-Lab/
 ├── README.md
+├── CLAUDE.md                         # Homelab context for Claude Code
+├── CLAUDE.dotfiles.md                # Dotfiles repo context
 ├── docs/
-│   ├── netframe-runbook.pdf      # Full infrastructure runbook (LaTeX)
-│   ├── netframe-runbook.tex      # LaTeX source
-│   └── *.md                      # Session runbooks / incident reports
+│   ├── netframe-runbook.pdf          # Full infrastructure runbook (LaTeX)
+│   ├── netframe-runbook.tex          # LaTeX source
+│   ├── randy-commissioning-runbook.md
+│   └── *.md                          # Session runbooks / incident reports
 ├── dotfiles/
-│   ├── .bashrc                   # Ares admin workstation
-│   ├── .bash_aliases             # Homelab aliases
-│   └── .ssh/config               # SSH host shortcuts
-└── scripts/
-    ├── gpu-fan-control.sh        # QuarkyLab GPU fan daemon
-    └── llm_router.py             # Hybrid LLM routing (Ollama + Claude API)
+│   ├── .bashrc                       # Ares admin workstation
+│   ├── .bash_aliases                 # Homelab aliases
+│   ├── .ssh/config                   # SSH host shortcuts
+│   ├── CLAUDE.netframe.md
+│   └── CLAUDE.dotfiles.md
+└── vault/                            # Obsidian knowledge base
 ```
 
 ---
