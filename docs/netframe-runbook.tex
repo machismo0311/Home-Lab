@@ -1,0 +1,493 @@
+\documentclass[11pt,letterpaper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false,protrusion=false]{microtype}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\usepackage{multirow}
+\usepackage{tabularx}
+
+\tcbuselibrary{listings,skins,breakable}
+
+% ── Colors ────────────────────────────────────────────────────────────────────
+\definecolor{nfcyan}{HTML}{00FFF0}
+\definecolor{nfdark}{HTML}{040C17}
+\definecolor{nfyellow}{HTML}{FCEE0A}
+\definecolor{nfred}{HTML}{FF2A6D}
+\definecolor{nfviolet}{HTML}{7B2FFF}
+\definecolor{nfgreen}{HTML}{00FF9F}
+\definecolor{codebg}{HTML}{1A1A2E}
+\definecolor{codetext}{HTML}{E0E0E0}
+\definecolor{cmtgray}{HTML}{888888}
+\definecolor{sectionblue}{HTML}{1E3A5F}
+
+% ── Code Listings ─────────────────────────────────────────────────────────────
+\lstdefinestyle{shell}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{codetext},
+  breaklines=true,
+  frame=single,
+  framerule=0pt,
+  rulecolor=\color{nfcyan},
+  commentstyle=\color{cmtgray},
+  keywordstyle=\color{nfcyan},
+  stringstyle=\color{nfgreen},
+  showstringspaces=false,
+  tabsize=2,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+}
+\lstset{style=shell}
+
+% ── Section Styling ───────────────────────────────────────────────────────────
+\titleformat{\section}
+  {\large\bfseries\color{white}\colorbox{sectionblue}}
+  {\colorbox{sectionblue}{\thesection}}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{nfcyan}}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{nfyellow}}{\thesubsubsection}{0.5em}{}
+
+% ── Header/Footer ─────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{nfcyan}\textbf{NETFRAME} Homelab Runbook}
+\fancyhead[R]{\small\color{cmtgray}km-cluster — Kyle Mason}
+\fancyfoot[C]{\small\color{cmtgray}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{nfcyan}\leaders\hrule height \headrulewidth\hfill}}
+
+% ── Hyperref ──────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=nfcyan,
+  urlcolor=nfcyan,
+  pdftitle={NetFRAME Homelab Runbook},
+  pdfauthor={Kyle Mason},
+}
+
+% ── Info Box ──────────────────────────────────────────────────────────────────
+\newtcolorbox{infobox}[1][]{
+  colback=codebg, colframe=nfcyan, coltitle=nfdark,
+  fonttitle=\bfseries, title=#1, breakable,
+}
+\newtcolorbox{warnbox}[1][]{
+  colback=codebg, colframe=nfred, coltitle=white,
+  fonttitle=\bfseries, title=#1, breakable,
+}
+\newtcolorbox{successbox}[1][]{
+  colback=codebg, colframe=nfgreen, coltitle=nfdark,
+  fonttitle=\bfseries, title=#1, breakable,
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title Page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+\pagecolor{nfdark}
+\color{white}
+\vspace*{2cm}
+\begin{center}
+  {\Huge\bfseries\color{nfcyan} NETFRAME}\\[0.3cm]
+  {\Large\color{white} Homelab Infrastructure Runbook}\\[0.5cm]
+  {\large\color{cmtgray} km-cluster \textbar{} NetFRAME CS9000 42U}\\[2cm]
+  \rule{0.8\textwidth}{0.4pt}\\[1cm]
+  {\normalsize
+    \begin{tabular}{rl}
+      \color{nfcyan}Author:    & Kyle Mason \\
+      \color{nfcyan}GitHub:    & machismo0311/Home-Lab \\
+      \color{nfcyan}Revised:   & June 22, 2026 \\
+      \color{nfcyan}Cluster:   & km-cluster (7 nodes) \\
+      \color{nfcyan}Site:      & kylemason.org \\
+    \end{tabular}
+  }\\[2cm]
+  \rule{0.8\textwidth}{0.4pt}\\[0.5cm]
+  {\small\color{cmtgray}
+    USMC Aviation Veteran $\cdot$ EC-135/145 Instructor Pilot \\
+    Senior FOQA Officer, Metro Aviation \\
+    Network Engineering Candidate, VetTec 2.0 / CCNA
+  }
+\end{center}
+\end{titlepage}
+\nopagecolor
+
+% ── TOC ───────────────────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Infrastructure Overview}
+% =============================================================================
+
+NetFRAME is a professional-grade homelab built inside a NetFRAME CS9000 42U rack,
+purpose-built as a live CCNA lab, LLM inference platform, ML research node,
+and backup infrastructure. The cluster is named \textbf{km-cluster} and runs
+Proxmox VE 9.1 across seven nodes as of June 2026.
+
+\subsection{Cluster Nodes}
+
+\begin{longtable}{llllll}
+\toprule
+\textbf{Hostname} & \textbf{Role} & \textbf{IP} & \textbf{CPU} & \textbf{RAM} & \textbf{Notes} \\
+\midrule
+\endhead
+Randy     & Storage / PBS  & 192.168.10.187 & 2x E5-2690 v4 & 128 GB & SuperMicro CSE-219U \\
+QuarkyLab & ML / Fernanda  & 192.168.10.30  & 2x E5-2699 v4 & 512 GB & R730, RTX 6000 24GB \\
+Jarvis    & LLM Inference  & 192.168.10.31  & 2x E5-2687W v4& 384 GB & R730, RTX 8000 48GB \\
+pve2      & OPNsense host  & 192.168.10.204 & i7-8700       & 48 GB  & HP EliteDesk G4 SFF \\
+pve3      & Cluster node   & 192.168.10.201 & i7-8700       & 32 GB  & HP EliteDesk G4 SFF \\
+pve4      & Cluster node   & 192.168.10.202 & i5-7500T      & 32 GB  & HP EliteDesk G3 Mini \\
+pve5      & Cluster node   & 192.168.10.203 & i5-7500T      & 32 GB  & HP EliteDesk G3 Mini \\
+\bottomrule
+\end{longtable}
+
+\subsection{Management IPs}
+
+\begin{tabular}{ll}
+\toprule
+\textbf{Device} & \textbf{IP} \\
+\midrule
+EX3400 (switch) & 192.168.10.50 \\
+OPNsense LAN    & 192.168.10.1  \\
+Randy IPMI      & 192.168.10.22 \\
+QuarkyLab iDRAC & 192.168.10.20 \\
+Jarvis iDRAC    & 192.168.10.21 \\
+Pi-hole / DNS   & 192.168.10.177 \\
+Ares (admin)    & 192.168.10.100 (wired) / .199 (WiFi) \\
+\bottomrule
+\end{tabular}
+
+% =============================================================================
+\section{Network Architecture}
+% =============================================================================
+
+\subsection{VLAN Design}
+
+\begin{tabular}{llll}
+\toprule
+\textbf{VLAN} & \textbf{Name} & \textbf{Subnet} & \textbf{Notes} \\
+\midrule
+1   & mgmt    & 192.168.10.0/24 & Management, all servers \\
+20  & trusted & 192.168.20.0/24 & Trusted devices \\
+30  & servers & 192.168.30.0/24 & Service VMs \\
+40  & IoT     & 192.168.40.0/24 & IoT devices \\
+50  & VoIP    & 192.168.50.0/24 & Cisco 8841 phones \\
+60  & guest   & 192.168.60.0/24 & Guest WiFi \\
+70  & lab     & 192.168.70.0/24 & CCNA lab segment \\
+\bottomrule
+\end{tabular}
+
+\subsection{Switching}
+
+\begin{itemize}
+  \item \textbf{Juniper EX3400-48P} — enterprise fabric, JunOS 23.4R2-S7.4, IP 192.168.10.50
+  \item \textbf{UniFi Switch 24 PRO (PoE+)} — consumer fabric (IoT, VoIP, guest)
+  \item Inter-switch uplink: ge-0/0/32 (copper RJ45, active); xe-0/2/3 DAC (link-down, speed mismatch)
+\end{itemize}
+
+\subsection{10G Fabric — ConnectX-3 DAC Links}
+
+\begin{tabular}{lll}
+\toprule
+\textbf{Node} & \textbf{NIC Port} & \textbf{EX3400 Port} \\
+\midrule
+Randy (nic3)     & Port 1 & xe-0/2/0 — Up 10G \\
+Randy (nic2)     & Port 2 & xe-0/2/2 — awaiting 4th DAC \\
+QuarkyLab        & ConnectX & xe-0/2/x \\
+Jarvis           & ConnectX & xe-0/2/x \\
+\bottomrule
+\end{tabular}
+
+\subsection{OPNsense}
+
+OPNsense runs as VM 100 on pve2 (192.168.10.204). Version 25.7.
+Handles inter-VLAN routing, firewall, DHCP for all VLANs, and WAN.
+Serial console access: \texttt{qm terminal 100} from pve2.
+
+% =============================================================================
+\section{Randy — SuperMicro CSE-219U}
+\label{sec:randy}
+% =============================================================================
+
+\begin{infobox}[Randy — Commissioned June 22, 2026]
+\textbf{Role:} Primary storage node, Proxmox Backup Server \\
+\textbf{IP:} 192.168.10.187 \quad \textbf{IPMI:} 192.168.10.22 \\
+\textbf{OS:} Proxmox VE 9.1 (kernel 6.17.2-1-pve) \\
+\textbf{CPU:} Dual Intel E5-2690 v4 (2x14c/28t = 48 logical) \\
+\textbf{RAM:} 128 GB ECC DDR4
+\end{infobox}
+
+\subsection{Storage Layout}
+
+\begin{tabular}{lll}
+\toprule
+\textbf{Device} & \textbf{Type} & \textbf{Purpose} \\
+\midrule
+/dev/sda (RAID-1) & 185.8 GB SAS SSD x2 & Proxmox OS boot mirror \\
+/dev/sdb--sdu     & 18x 1.6TB Toshiba AL15SEB18EQ 10K SAS & ZFS datastore pool \\
+sdc, sdg          & 2x 1.8TB Seagate ST2000NX0423 SATA & Spare / unallocated \\
+\bottomrule
+\end{tabular}
+
+\subsubsection{RAID Controller — AVAGO 3108 MegaRAID}
+
+\begin{itemize}
+  \item Boot mirror: RAID-1 on slots 0:0 and 0:1 (Seagate ST200FM0053 SSDs)
+  \item Data drives: JBOD mode enabled, all 20 data drives passed through to OS
+  \item StorCLI installed at: \texttt{/opt/MegaRAID/storcli/storcli64}
+  \item Symlink: \texttt{/usr/sbin/storcli64}
+\end{itemize}
+
+\begin{lstlisting}[language=bash, caption={Useful StorCLI commands}]
+# Show all drives and state
+storcli64 /c0/eall/sall show
+
+# Show controller info
+storcli64 /c0 show
+
+# Enable JBOD mode (if needed after reboot)
+storcli64 /c0 set jbod=on
+storcli64 /c0/eall/sall set jbod
+\end{lstlisting}
+
+\subsubsection{ZFS Pool — datastore}
+
+\begin{lstlisting}[language=bash, caption={ZFS pool layout}]
+zpool status datastore
+# pool: datastore
+# state: ONLINE
+#   raidz2-0: sdb sdd sde sdf sdh sdi
+#   raidz2-1: sdj sdk sdl sdm sdn sdo
+#   raidz2-2: sdp sdq sdr sds sdt sdu
+# 29.4TB raw / 19.5TB usable
+\end{lstlisting}
+
+\subsection{Proxmox Backup Server}
+
+\begin{itemize}
+  \item PBS version: 4.2.2
+  \item Web UI: \texttt{https://192.168.10.187:8007}
+  \item Datastore: \texttt{datastore} at \texttt{/datastore}
+  \item Fingerprint: \texttt{da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9}
+  \item Storage ID in cluster: \texttt{randy-pbs} (Shared: Yes, all nodes)
+\end{itemize}
+
+\subsection{Networking}
+
+\begin{itemize}
+  \item \textbf{nic3} (Mellanox ConnectX-3 port 1): 10G UP $\rightarrow$ xe-0/2/0 on EX3400
+  \item \textbf{nic2} (ConnectX-3 port 2): DOWN — awaiting 4th DAC cable $\rightarrow$ xe-0/2/2
+  \item \textbf{nic0, nic1} (onboard Intel): DOWN / unused
+  \item vmbr0 bridges nic3 for management
+\end{itemize}
+
+\subsubsection{Randy Commissioning Procedure (for rebuild reference)}
+
+\begin{lstlisting}[language=bash, caption={Full Randy rebuild procedure}]
+# 1. Boot IPMI BIOS -- hit Ctrl+H for MegaRAID WebBIOS
+#    Create RAID-1 VD on two 185GB Seagate SSDs (slots 0:0, 0:1)
+
+# 2. Install Proxmox VE 9.1 via USB
+#    Target: /dev/sda (the RAID-1 VD, 185.78GiB, SMC3108)
+#    Filesystem: ext4
+#    Hostname: randy.netframe.local
+#    IP: 192.168.10.187/24  GW: 192.168.10.1  DNS: 192.168.10.177
+
+# 3. Post-install repo fix
+echo "# disabled" > /etc/apt/sources.list.d/pve-enterprise.list
+echo "# disabled" > /etc/apt/sources.list.d/ceph.list
+echo "" > /etc/apt/sources.list.d/pve-enterprise.sources
+echo "" > /etc/apt/sources.list.d/ceph.sources
+echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
+  > /etc/apt/sources.list.d/pve-no-subscription.list
+apt update && apt dist-upgrade -y
+
+# 4. Join cluster
+echo "192.168.10.204 pve2.netframe.local pve2" >> /etc/hosts
+pvecm add 192.168.10.204 --use_ssh
+
+# 5. Enable JBOD passthrough
+storcli64 /c0 set jbod=on
+storcli64 /c0/eall/sall set jbod
+
+# 6. Create ZFS pool
+zpool create -f -o ashift=12 datastore \
+  raidz2 sdb sdd sde sdf sdh sdi \
+  raidz2 sdj sdk sdl sdm sdn sdo \
+  raidz2 sdp sdq sdr sds sdt sdu
+
+# 7. Install PBS
+echo "deb http://download.proxmox.com/debian/pbs trixie pbs-no-subscription" \
+  > /etc/apt/sources.list.d/pbs-no-subscription.list
+apt update && apt install proxmox-backup-server -y
+
+# 8. Create PBS datastore
+proxmox-backup-manager datastore create datastore /datastore
+\end{lstlisting}
+
+% =============================================================================
+\section{QuarkyLab — Dell R730 \#1}
+% =============================================================================
+
+\begin{infobox}[QuarkyLab]
+\textbf{Role:} Fernanda's ML research node \\
+\textbf{Service Tag:} 1S8WR22 \quad \textbf{iDRAC:} 192.168.10.20 (root/calvin) \\
+\textbf{CPU:} Dual E5-2699 v4 (matched stepping) \quad \textbf{RAM:} 512 GB LRDIMM ECC \\
+\textbf{GPU:} RTX 6000 24 GB \quad \textbf{BIOS:} 2.19.0
+\end{infobox}
+
+\textbf{Pending:} NVIDIA driver install requires kernel pinned to 6.14.11-9-pve before install
+(current kernel 6.17 has DRM API incompatibility with nvidia-550 driver).
+
+\begin{lstlisting}[language=bash, caption={Pin kernel before NVIDIA driver install}]
+apt install pve-kernel-6.14.11-9-pve
+# Set as default in /etc/default/grub, then:
+update-grub && reboot
+# Then install nvidia-550 driver
+\end{lstlisting}
+
+% =============================================================================
+\section{Jarvis — Dell R730 \#2}
+% =============================================================================
+
+\begin{infobox}[Jarvis]
+\textbf{Role:} LLM inference node (Ollama, Qwen2.5 72B) \\
+\textbf{Service Tag:} DWG7HH2 \quad \textbf{iDRAC:} 192.168.10.21 \\
+\textbf{CPU:} Dual E5-2687W v4 \quad \textbf{RAM:} 384 GB LRDIMM ECC \\
+\textbf{GPU:} RTX 8000 48 GB
+\end{infobox}
+
+Ollama serves Qwen2.5 72B Q4\_K\_M. FastAPI \texttt{llm\_router.py} implements hybrid
+routing — local Ollama by default, escalates to Claude API when logprob confidence
+falls below threshold.
+
+% =============================================================================
+\section{Services}
+% =============================================================================
+
+\subsection{Running Services}
+
+\begin{tabular}{lllll}
+\toprule
+\textbf{Service} & \textbf{Host} & \textbf{VM/CT ID} & \textbf{IP} & \textbf{Notes} \\
+\midrule
+OPNsense   & pve2      & VM 100  & 192.168.10.1    & Router/firewall \\
+Pi-hole    & pve3      & LXC     & 192.168.10.177  & DNS filter \\
+Headscale  & pve3      & LXC 105 & 192.168.10.186  & VPN, v0.29.1 \\
+Wazuh      & pve2      & VM 104  & —               & SIEM \\
+step-ca    & pve2      & —       & —               & Internal CA \\
+PBS        & Randy     & —       & 192.168.10.187:8007 & Backup server \\
+\bottomrule
+\end{tabular}
+
+\subsection{Headscale}
+
+Headscale v0.29.1 running as LXC 105 on pve3. Ares connected as first node
+(Tailscale IP 100.64.0.1). Remaining devices still on commercial Tailscale
+pending migration.
+
+\subsection{Internal CA (step-ca)}
+
+step-ca 0.30.2 on pve2 issuing \texttt{*.netframe.local} TLS certificates.
+
+% =============================================================================
+\section{Power Infrastructure}
+% =============================================================================
+
+\begin{tabular}{lll}
+\toprule
+\textbf{UPS} & \textbf{Feeds} & \textbf{Battery} \\
+\midrule
+Middle Atlantic UPS-OL2200R & R730s, Randy, DS4246 & 6x 12V 9Ah AGM in series (76.4V) \\
+Tripp Lite SMART1500VA & EX3400, UniFi, small compute & Stock \\
+\bottomrule
+\end{tabular}
+
+PDU: APC AP7901 (ge-0/0/38 on EX3400, MAC 00:c0:b7:b4:88:4a).
+
+% =============================================================================
+\section{Pending / To-Do}
+% =============================================================================
+
+\begin{itemize}[leftmargin=*]
+  \item[\color{nfred}$\square$] Order 4th DAC cable for Randy nic2 $\rightarrow$ xe-0/2/2
+  \item[\color{nfred}$\square$] Pin QuarkyLab kernel to 6.14.11-9-pve, install NVIDIA 550 driver
+  \item[\color{nfred}$\square$] Configure backup schedules on all nodes pointing to randy-pbs
+  \item[\color{nfred}$\square$] Activate VLANs (pve2 trunk connection to EX3400 pending)
+  \item[\color{nfred}$\square$] Migrate Fernanda devices from commercial Tailscale to Headscale
+  \item[\color{nfred}$\square$] DS4246 connection to Randy via LSI 9207-8e HBA
+  \item[\color{nfred}$\square$] FreePBX VoIP (5x Cisco CP-8841 phones acquired)
+  \item[\color{nfred}$\square$] Jellyfin on Randy with RX 580 ROCm transcoding
+  \item[\color{nfred}$\square$] UPS NMC IP assignment (requires USB console access)
+  \item[\color{nfred}$\square$] Cyberpunk monitoring dashboard live API integration
+  \item[\color{nfred}$\square$] RKE2 / Kubernetes planning (Cilium, MetalLB, NVIDIA GPU Operator)
+\end{itemize}
+
+% =============================================================================
+\section{Quick Reference Commands}
+% =============================================================================
+
+\subsection{Cluster Health}
+
+\begin{lstlisting}[language=bash]
+# From any node
+pvecm status
+pvecm nodes
+
+# PBS status
+systemctl status proxmox-backup
+proxmox-backup-manager datastore list
+
+# ZFS pool health
+zpool status datastore
+zpool list
+\end{lstlisting}
+
+\subsection{EX3400 Switch}
+
+\begin{lstlisting}[language=bash]
+ssh mason@192.168.10.50
+# Always exit to > operational mode before show commands
+# Paste one line at a time
+
+show interfaces xe-0/2/0 brief   # Randy 10G port 1
+show interfaces xe-0/2/2 brief   # Randy 10G port 2
+show ethernet-switching table     # MAC table
+show lldp neighbors               # Connected devices
+\end{lstlisting}
+
+\subsection{Randy Storage}
+
+\begin{lstlisting}[language=bash]
+ssh root@192.168.10.187
+
+# Check all drives
+storcli64 /c0/eall/sall show
+
+# ZFS status
+zpool status datastore
+zfs list
+
+# If drives go dark after reboot (JBOD mode reset)
+storcli64 /c0 set jbod=on
+storcli64 /c0/eall/sall set jbod
+\end{lstlisting}
+
+\vfill
+\begin{center}
+\small\color{cmtgray}
+NetFRAME Homelab $\cdot$ Kyle Mason $\cdot$ machismo0311/Home-Lab $\cdot$ kylemason.org
+\end{center}
+
+\end{document}
