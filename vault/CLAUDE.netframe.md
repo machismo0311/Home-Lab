@@ -30,17 +30,24 @@
 ### Randy (SuperMicro — Storage / PBS)
 | Field | Value |
 |---|---|
-| Model | SYS-2028U-E1CNRT+ / X10DRU-i+ |
+| Chassis | SuperMicro CSE-219U 2U 24-bay / X10DRU-i+ |
 | IP | 192.168.10.187 |
 | IPMI | 192.168.10.22 (ADMIN) |
-| CPUs | 2x E5-2690 v4 |
-| RAM | 128GB ECC |
+| CPUs | 2x E5-2690 v4 (56 cores / 48 logical) |
+| RAM | 128GB ECC DDR4 |
 | BIOS | 3.5 (flashed 06/21/2026) |
-| Boot | RAID-1 mirror, 2x Seagate SAS SSDs via AVAGO 3108 MegaRAID |
+| NIC | Mellanox ConnectX-3 MCX312A dual-port 10GbE |
+| 10G link | nic3 → EX3400 xe-0/2/0 (10000Mb/s full duplex) |
+| Headscale IP | 100.64.0.2 |
+| Boot | RAID-1 mirror, 2x Seagate ST200FM0053 185.8GB SAS via AVAGO 3108 MegaRAID |
+| Data drives | 18x Toshiba AL15SEB18EQ 1.636TB 10K SAS (3x RAIDZ2 vdevs of 6) |
+| Spare drives | 2x Seagate ST2000NX0423 1.818TB SATA (unallocated) |
 | GPU | RX 580 8GB (ROCm, display/transcoding only) |
-| NIC | Mellanox ConnectX-3 10GbE |
-| PBS | https://192.168.10.187:8007 (v4.2.2) |
+| Proxmox UI | https://192.168.10.187:8006 |
+| PBS UI | https://192.168.10.187:8007 (v4.2.2) |
 | PBS fingerprint | `da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9` |
+
+Randy is a **km-cluster member** (joined 06/22/2026). StorCLI installed at `/usr/sbin/storcli64`. JBOD mode enabled on AVAGO 3108 for data drives.
 
 ## Networking
 | Device | IP | Role |
@@ -81,14 +88,16 @@
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1 |
 | Pi-hole | LXC, pve3 | 192.168.10.177 | DNS |
 | Wazuh | VM 104, pve2 | — | SIEM |
+| Prometheus/Grafana/Loki | LXC 103, pve3 | — | Pending migration to Randy |
 | step-ca | pve3 | — | *.netframe.local TLS |
 | Vaultwarden | TBD | — | Passwords |
 
 ## Storage
-- **Randy ZFS pool:** `datastore` — 3x RAIDZ2 vdevs of 6x Toshiba AL15SEB18EQ 1.6TB 10K SAS, ~19.5TB usable
+- **Randy ZFS pool:** `datastore` — 3x RAIDZ2 of 6x Toshiba AL15SEB18EQ 1.636TB 10K SAS, 29.4TB raw / 19.5TB usable
+- **Randy boot:** RAID-1 mirror, 2x Seagate ST200FM0053 via AVAGO 3108 MegaRAID
+- **Randy spares:** 2x Seagate ST2000NX0423 1.818TB SATA (unallocated in bays)
 - **DS4246 JBOD:** 13x Toshiba 1.8TB 10K SAS + 19x Dell/Seagate 2TB 7.2K SAS
-- Connected to Randy via LSI 9207-8e HBA (IT mode), SFF-8644 → SFF-8088 cables
-- DS4246 passthrough still in progress
+- DS4246 → Randy via LSI 9207-8e HBA (IT mode), SFF-8644 → SFF-8088 — passthrough in progress
 
 ## Active Projects
 
@@ -125,6 +134,10 @@
 - Prior June 15 network outage caused by incorrect interface changes on pve2
 - QuarkyLab kernel must be pinned to 6.14.11-9-pve (6.17 breaks NVIDIA 550 driver)
 - Randy boot drives are RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
-- Randy DS4246 uses separate LSI 9207-8e HBA in IT mode — these are two different cards
+- Randy data drives use separate LSI 9207-8e HBA in IT mode — two different cards
+- Randy JBOD mode may reset after reboot — re-run `storcli64 /c0 set jbod=on && storcli64 /c0/eall/sall set jbod` if drives disappear
 - Do not mix RDIMMs and LRDIMMs (confirmed incompatible on R730s)
 - Supermicro BIOS flash with FDT difference requires two-stage boot — let STARTUP.NSH auto-run
+- Proxmox 9.1 + PBS ship enterprise repos in both .list AND .sources formats — disable all 6 files
+- Tailscale must set --accept-dns=false on Headscale nodes (MagicDNS not configured)
+- StorCLI not in apt — download from Broadcom portal manually, SCP to node
