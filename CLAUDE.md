@@ -24,8 +24,8 @@
 ### R730 Compute Nodes
 | Node | Service Tag | IP | CPUs | RAM | GPU | Role |
 |---|---|---|---|---|---|---|
-| QuarkyLab | 1S8WR22 | 192.168.10.30 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 6000 24GB | Fernanda ML / DUNE agent |
-| Jarvis | DWG7HH2 | 192.168.10.31 | 2x E5-2687W v4 | 384GB LRDIMM | RTX 8000 48GB | LLM inference (Ollama) |
+| QuarkyLab | 1S8WR22 | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 6000 24GB | Fernanda ML / DUNE agent |
+| Jarvis | DWG7HH2 | 192.168.10.31 | 2x E5-2687W v4 | 384GB LRDIMM | RTX 8000 48GB | LLM inference (Ollama) — currently offline |
 
 ### Randy (SuperMicro — Storage / PBS)
 | Field | Value |
