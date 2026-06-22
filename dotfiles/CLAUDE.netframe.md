@@ -10,22 +10,25 @@
 
 ## Cluster Overview
 
-**km-cluster** — 7-node Proxmox VE 9.1
+**km-cluster** — 7-node Proxmox VE 9.2.3 (upgraded 2026-06-22)
 
 ### Proxmox Nodes
-| Node | Hardware | IP | RAM | Role |
-|---|---|---|---|---|
-| pve2 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.204 | 48GB | OPNsense host |
-| pve3 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.201 | 32GB | Cluster node |
-| pve4 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.202 | 32GB | Cluster node |
-| pve5 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.203 | 32GB | Cluster node |
-| sandbox | HP EliteDesk G4 (spare) | 192.168.70.x | — | Standalone lab — NOT in cluster |
+| Node | Hardware | IP | RAM | PVE | Kernel | Role |
+|---|---|---|---|---|---|---|
+| pve2 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.204 | 48GB | 9.2.3 | 7.0.12-1 | OPNsense host |
+| pve3 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.201 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
+| pve4 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.202 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
+| pve5 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.203 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
+| sandbox | HP EliteDesk G4 (spare) | 192.168.70.x | — | — | — | Standalone lab — NOT in cluster |
 
 ### R730 Compute Nodes
-| Node | Service Tag | IP | CPUs | RAM | GPU | Role |
-|---|---|---|---|---|---|---|
-| QuarkyLab | 1S8WR22 | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 6000 24GB | Fernanda ML / DUNE agent |
-| Jarvis | DWG7HH2 | 192.168.10.31 | 2x E5-2687W v4 | 384GB LRDIMM | RTX 8000 48GB | LLM inference (Ollama) — currently offline |
+| Node | Service Tag | IP | CPUs | RAM | GPU | PVE | Role |
+|---|---|---|---|---|---|---|---|
+| QuarkyLab | 1S8WR22 | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 6000 24GB | unknown | Fernanda ML / DUNE agent |
+| Jarvis | DWG7HH2 | 192.168.10.31 | 2x E5-2687W v4 | 384GB LRDIMM | none† | 9.2.3 | LLM inference (offline — no GPU) |
+
+†RTX 8000 swap into Jarvis still pending (Dell N08NH power cables on order). No GPU installed.
+QuarkyLab: no SSH key — access via iDRAC console only (192.168.10.20).
 
 ### Randy (SuperMicro — Storage / PBS)
 | Field | Value |
@@ -35,19 +38,19 @@
 | IPMI | 192.168.10.22 (ADMIN) |
 | CPUs | 2x E5-2690 v4 (56 cores / 48 logical) |
 | RAM | 128GB ECC DDR4 |
-| BIOS | 3.5 (flashed 06/21/2026) |
+| Kernel | 7.0.12-1-pve |
 | NIC | Mellanox ConnectX-3 MCX312A dual-port 10GbE |
-| 10G link | nic3 → EX3400 xe-0/2/0 (10000Mb/s full duplex) |
+| 10G link | nic3 → EX3400 xe-0/2/0 |
 | Headscale IP | 100.64.0.2 |
 | Boot | RAID-1 mirror, 2x Seagate ST200FM0053 185.8GB SAS via AVAGO 3108 MegaRAID |
-| Data drives | 18x Toshiba AL15SEB18EQ 1.636TB 10K SAS (3x RAIDZ2 vdevs of 6) |
+| Data drives | 18x Toshiba AL15SEB18EQ 1.636TB 10K SAS (3x RAIDZ2 of 6) |
 | Spare drives | 2x Seagate ST2000NX0423 1.818TB SATA (unallocated) |
 | GPU | RX 580 8GB (ROCm, display/transcoding only) |
 | Proxmox UI | https://192.168.10.187:8006 |
 | PBS UI | https://192.168.10.187:8007 (v4.2.2) |
 | PBS fingerprint | `da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9` |
 
-Randy is a **km-cluster member** (joined 06/22/2026). StorCLI installed at `/usr/sbin/storcli64`. JBOD mode enabled on AVAGO 3108 for data drives.
+Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAGO 3108.
 
 ## Networking
 | Device | IP | Role |
@@ -82,62 +85,55 @@ Randy is a **km-cluster member** (joined 06/22/2026). StorCLI installed at `/usr
 ## Key Services
 | Service | Location | URL/Port | Notes |
 |---|---|---|---|
-| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS datastore ~19.5TB |
-| Ollama / llm_router.py | Jarvis | llm.netframe.local | Qwen2.5 72B Q4_K_M, RTX 8000 |
-| OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7 |
-| Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1 |
-| Pi-hole | LXC, pve3 | 192.168.10.177 | DNS |
-| Wazuh | VM 104, pve2 | — | SIEM |
-| Prometheus/Grafana/Loki | LXC 103, pve3 | — | Pending migration to Randy |
-| step-ca | pve3 | — | *.netframe.local TLS |
-| Vaultwarden | TBD | — | Passwords |
+| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS ~19.5TB, shared cluster |
+| OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
+| Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
+| Pi-hole | LXC, pve3 | 192.168.10.177 | DNS, onboot=1 |
+| nginx-proxy | LXC 101, pve3 | — | Container running, service inactive |
+| Vaultwarden | LXC 102, pve3 | — | Container running, service inactive |
+| Grafana/Docker | LXC 103, pve3 | — | Docker host, no stack deployed yet |
+| step-ca | pve3 | — | *.netframe.local TLS, currently inactive |
+| Ollama | Jarvis | llm.netframe.local | Inactive — no GPU installed yet |
+
+**Wazuh VM 104 was deleted from pve2.**
 
 ## Storage
-- **Randy ZFS pool:** `datastore` — 3x RAIDZ2 of 6x Toshiba AL15SEB18EQ 1.636TB 10K SAS, 29.4TB raw / 19.5TB usable
-- **Randy boot:** RAID-1 mirror, 2x Seagate ST200FM0053 via AVAGO 3108 MegaRAID
-- **Randy spares:** 2x Seagate ST2000NX0423 1.818TB SATA (unallocated in bays)
-- **DS4246 JBOD:** 13x Toshiba 1.8TB 10K SAS + 19x Dell/Seagate 2TB 7.2K SAS
-- DS4246 → Randy via LSI 9207-8e HBA (IT mode), SFF-8644 → SFF-8088 — passthrough in progress
+- **Randy ZFS:** `datastore` — 3x RAIDZ2 of 6x Toshiba 1.636TB 10K SAS, 29.4TB raw / 19.5TB usable
+- **Randy boot:** RAID-1, 2x Seagate ST200FM0053 via AVAGO 3108 MegaRAID
+- **Jarvis root:** pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade
+- **DS4246 JBOD:** 13x Toshiba 1.8TB + 19x Dell/Seagate 2TB SAS, via LSI 9207-8e (IT mode) — passthrough pending
 
 ## Active Projects
 
 ### llm_router.py (Jarvis)
-- FastAPI service, OpenAI-compatible endpoint
-- Routes queries between local Ollama (Qwen2.5 72B, RTX 8000) and Claude API fallback
-- Logprob confidence scoring for routing decisions
-- Target endpoint: llm.netframe.local
-- Discussed in r/LocalLLM
+FastAPI, OpenAI-compatible. Routes between local Ollama (Qwen2.5 72B, RTX 8000) and Claude API fallback. **Currently inactive** — awaiting RTX 8000 installation.
 
-### DUNE Agent (QuarkyLab — Fernanda)
-- RAG pipeline over DUNE experiment codebase
-- Helps new scientists understand codebase during onboarding
-- RTX 6000 24GB: embedding model + inference model
-- Vector store: ChromaDB or Qdrant (TBD)
-- Model: Qwen2.5-Coder 32B unquantized or 72B Q4_K_M
+### DUNE Agent — Fernanda (QuarkyLab)
+RAG pipeline over DUNE experiment codebase. RTX 6000 24GB. Vector store: ChromaDB or Qdrant (TBD).
 
 ### NetFRAME Dashboard
-- Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx)
-- Runs on Dell P2722H monitor
-- Displays cluster nodes, GPU strip, Pi-hole stats, OPNsense WAN sparklines
+Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 
 ## Coding Conventions
 - All scripts use bash unless Python is explicitly required
 - Python scripts use venv, requirements.txt
-- Configs go in /etc or service-appropriate locations
 - Systemd unit files for all persistent services
 - No Docker unless explicitly requested (prefer LXC on Proxmox)
 - Secrets go in Vaultwarden, never hardcoded
 - Label convention: [DEVICE]-[PORT], TIA-606 cable colors
 
 ## Important Safety Notes
-- ALWAYS search prior conversation history before touching pve2 network config
-- Prior June 15 network outage caused by incorrect interface changes on pve2
+- ALWAYS check prior conversation before touching pve2 network config (June 15 outage)
 - QuarkyLab kernel must be pinned to 6.14.11-9-pve (6.17 breaks NVIDIA 550 driver)
-- Randy boot drives are RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
+- QuarkyLab has no SSH key — iDRAC console only (192.168.10.20, root/calvin)
+- Tailscale overwrites /etc/resolv.conf on ALL nodes — run `tailscale set --accept-dns=false` and set nameserver to 192.168.10.177 before any apt operations
+- Randy boot drives RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
 - Randy data drives use separate LSI 9207-8e HBA in IT mode — two different cards
-- Randy JBOD mode may reset after reboot — re-run `storcli64 /c0 set jbod=on && storcli64 /c0/eall/sall set jbod` if drives disappear
+- Randy JBOD mode may reset after reboot — re-run `storcli64 /c0 set jbod=on && storcli64 /c0/eall/sall set jbod`
+- Randy corosync singleton after reboot: from pve2 `pvecm delnode Randy`, then on Randy `pkill pmxcfs; systemctl start pve-cluster`
+- Jarvis root was 6GB (disk-full during upgrade) — now 56GB with sda added to pve VG
+- pve3 LXCs (101/102/103/105) all have onboot=1 set — verify before rebooting pve3
+- Proxmox 9.x ships enterprise repos in .list AND .sources formats — disable all 6 files
 - Do not mix RDIMMs and LRDIMMs (confirmed incompatible on R730s)
-- Supermicro BIOS flash with FDT difference requires two-stage boot — let STARTUP.NSH auto-run
-- Proxmox 9.1 + PBS ship enterprise repos in both .list AND .sources formats — disable all 6 files
-- Tailscale must set --accept-dns=false on Headscale nodes (MagicDNS not configured)
 - StorCLI not in apt — download from Broadcom portal manually, SCP to node
+- Supermicro BIOS flash with FDT difference requires two-stage boot — let STARTUP.NSH auto-run
