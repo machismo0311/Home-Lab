@@ -24,11 +24,11 @@
 ### R730 Compute Nodes
 | Node | Service Tag | IP | CPUs | RAM | GPU | PVE | Role |
 |---|---|---|---|---|---|---|---|
-| QuarkyLab | 1S8WR22 | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 6000 24GB | unknown | Fernanda ML / DUNE agent |
+| QuarkyLab | 1S8WR22 | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 6000 24GB | 9.2.3 | Fernanda ML / DUNE agent |
 | Jarvis | DWG7HH2 | 192.168.10.31 | 2x E5-2687W v4 | 384GB LRDIMM | none† | 9.2.3 | LLM inference (offline — no GPU) |
 
 †RTX 8000 swap into Jarvis still pending (Dell N08NH power cables on order). No GPU installed.
-QuarkyLab: no SSH key — access via iDRAC console only (192.168.10.20).
+QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed25519 on Ares). Kernel pinned to 6.14.11-9-pve via GRUB_DEFAULT. NVIDIA 550.163.01 verified working post-upgrade.
 
 ### Randy (SuperMicro — Storage / PBS)
 | Field | Value |
@@ -124,8 +124,8 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 
 ## Important Safety Notes
 - ALWAYS check prior conversation before touching pve2 network config (June 15 outage)
-- QuarkyLab kernel must be pinned to 6.14.11-9-pve (6.17 breaks NVIDIA 550 driver)
-- QuarkyLab has no SSH key — iDRAC console only (192.168.10.20, root/calvin)
+- QuarkyLab kernel MUST stay on 6.14.11-9-pve — GRUB_DEFAULT is pinned; 6.17+ breaks NVIDIA 550; never run kernel upgrades or change GRUB default on QuarkyLab
+- QuarkyLab SSH: `ssh quarkylab` (IP 192.168.10.179) via fernanda@quarkylab key (id_ed25519 on Ares)
 - Tailscale overwrites /etc/resolv.conf on ALL nodes — run `tailscale set --accept-dns=false` and set nameserver to 192.168.10.177 before any apt operations
 - Randy boot drives RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
 - Randy data drives use separate LSI 9207-8e HBA in IT mode — two different cards
