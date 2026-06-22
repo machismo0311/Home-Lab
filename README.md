@@ -66,7 +66,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 | Service | Host | URL / Port | Notes |
 |---|---|---|---|
-| Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS datastore ~19.5TB |
+| Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS ~19.5TB — daily backups 02:00/03:00 |
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.7 |
 | Pi-hole | pve3 (LXC) | `192.168.10.177` | DNS filter |
 | Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
@@ -106,7 +106,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] Full cluster upgrade — all nodes PVE 9.2.3 / kernel 7.0.12-1 (2026-06-22)
 - [x] NVIDIA 550 driver on QuarkyLab — kernel pinned to 6.14.11-9-pve
 - [ ] RTX 8000 swap into Jarvis (Dell N08NH aux power cables on order)
-- [ ] Backup schedules on all cluster nodes → randy-pbs
+- [x] Backup schedules configured — daily to randy-pbs, 7d+4w retention
 - [ ] DS4246 → Randy via LSI 9207-8e passthrough
 - [ ] VLAN activation (pve2 trunk to EX3400)
 - [ ] Jellyfin on Randy (RX 580 ROCm transcoding)

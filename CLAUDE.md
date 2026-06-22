@@ -85,7 +85,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 ## Key Services
 | Service | Location | URL/Port | Notes |
 |---|---|---|---|
-| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS ~19.5TB, shared cluster |
+| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS ~19.5TB — LXCs 02:00 daily, VMs 03:00 daily, 7d+4w retention |
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
 | Pi-hole | LXC, pve3 | 192.168.10.177 | DNS, onboot=1 |
