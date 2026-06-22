@@ -57,7 +57,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 |---|---|---|
 | EX3400-48P | 192.168.10.50 | Core switch, JunOS 23.4R2-S7.4 |
 | OPNsense | 192.168.10.1 (VM 100, pve2) | Router/firewall/DHCP, v25.7 |
-| Headscale | 192.168.10.186 (LXC 105, pve3) | VPN, v0.29.1 |
+| Headscale | 192.168.10.186 (LXC 105, pve3) | VPN, v0.29.1 — Ares (.1), Randy (.2), pve5 (.3), pve4 (.4), pve3 (.5), Jarvis (.6) |
 | Pi-hole | 192.168.10.177 (LXC, pve3) | DNS filter |
 | APC AP7901 PDU | EX3400 ge-0/0/38 | Managed PDU |
 | Ares | 192.168.10.199 | Admin workstation |
@@ -89,11 +89,11 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
 | Pi-hole | LXC, pve3 | 192.168.10.177 | DNS, onboot=1 |
-| nginx-proxy | LXC 101, pve3 | — | Container running, service inactive |
-| Vaultwarden | LXC 102, pve3 | — | Container running, service inactive |
-| Grafana/Docker | LXC 103, pve3 | — | Docker host, no stack deployed yet |
-| Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2; SSH not set up from Ares |
-| step-ca | pve3 | — | *.netframe.local TLS, currently inactive |
+| nginx-proxy | LXC 101, pve3 | — | Container running, onboot=1 |
+| Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
+| Grafana/Docker | LXC 103, pve3 | — | Docker host, no stack deployed yet, onboot=1 |
+| Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
+| step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
 | Ollama | Jarvis | llm.netframe.local | Inactive — no GPU installed yet |
 
 **Wazuh VM 104 is on QuarkyLab** (migrated from pve2). IP: 192.168.10.184 (DHCP). Dashboard: `https://192.168.10.184`.
@@ -128,6 +128,7 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - QuarkyLab kernel MUST stay on 6.14.11-9-pve — GRUB_DEFAULT is pinned; 6.17+ breaks NVIDIA 550; never run kernel upgrades or change GRUB default on QuarkyLab
 - QuarkyLab SSH: `ssh quarkylab` (IP 192.168.10.179) via fernanda@quarkylab key (id_ed25519 on Ares)
 - Tailscale overwrites /etc/resolv.conf on ALL nodes — run `tailscale set --accept-dns=false` and set nameserver to 192.168.10.177 before any apt operations
+- Headscale Phase 2 pending: QuarkyLab + Fernanda's Mac (ferpsihas@, fus22-009897) must migrate together — do not migrate one without the other
 - Randy boot drives RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
 - Randy data drives use separate LSI 9207-8e HBA in IT mode — two different cards
 - Randy JBOD mode may reset after reboot — re-run `storcli64 /c0 set jbod=on && storcli64 /c0/eall/sall set jbod`
