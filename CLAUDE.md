@@ -58,7 +58,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | EX3400-48P | 192.168.10.50 | Core switch, JunOS 23.4R2-S7.4 |
 | OPNsense | 192.168.10.1 (VM 100, pve2) | Router/firewall/DHCP, v25.7 |
 | Headscale | 192.168.10.186 (LXC 105, pve3) | VPN, v0.29.1 — Ares (.1), Randy (.2), pve5 (.3), pve4 (.4), pve3 (.5), Jarvis (.6) |
-| Pi-hole | 192.168.10.177 (LXC, pve3) | DNS filter |
+| Pi-hole | 192.168.10.177 (pve1 LXC 103) | DNS — on Mac Mini standalone node, NOT pve3 |
 | APC AP7901 PDU | EX3400 ge-0/0/38 | Managed PDU |
 | Ares | 192.168.10.199 | Admin workstation |
 | QuarkyLab iDRAC | 192.168.10.20 | root/calvin |
@@ -88,7 +88,8 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS ~19.5TB — LXCs 02:00 daily, VMs 03:00 daily, 7d+4w retention |
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
-| Pi-hole | LXC, pve3 | 192.168.10.177 | DNS, onboot=1 |
+| Pi-hole | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
+| Homepage | pve1 LXC 104 | http://192.168.10.174:3000 | Service dashboard, no auth (remediation pending) |
 | nginx-proxy | LXC 101, pve3 | — | Container running, onboot=1 |
 | Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
 | Grafana/Docker | LXC 103, pve3 | — | Docker host, no stack deployed yet, onboot=1 |
