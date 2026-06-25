@@ -107,6 +107,8 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] NVIDIA 550 driver on QuarkyLab — kernel pinned to 6.14.11-9-pve
 - [ ] RTX 8000 swap into Jarvis (Dell N08NH aux power cables on order)
 - [x] Backup schedules configured — daily to randy-pbs, 7d+4w retention
+- [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25\n- [x] Wazuh agent 4.9.2 on all 8 nodes → SIEM coverage ✅ 2026-06-25\n- [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25
+- [x] Wazuh agent 4.9.2 on all 8 nodes → full SIEM coverage ✅ 2026-06-25
 - [ ] DS4246 → Randy via LSI 9207-8e passthrough
 - [ ] VLAN activation (pve2 trunk to EX3400)
 - [x] Jellyfin installed on Randy v10.11.11 — http://192.168.10.187:8096 ✅ (GPU transcoding pending RX 580 power cable)
