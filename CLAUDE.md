@@ -89,10 +89,10 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
 | Pi-hole | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
-| Homepage | pve1 LXC 104 | http://192.168.10.174:3000 | Service dashboard, no auth (remediation pending) |
-| nginx-proxy | LXC 101, pve3 | — | Container running, onboot=1 |
+| Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Migrated from pve1; NPM auth (kyle); DOCKER-USER fw restricts :3000 to NPM only ✅ |
+| nginx-proxy (NPM) | LXC 101, pve3 (.181) | Admin http://192.168.10.181:81 | onboot=1; :81 restricted to Ares (.199) via DOCKER-USER fw (F-05) ✅ |
 | Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
-| Grafana/Docker | LXC 103, pve3 | — | Docker host, no stack deployed yet, onboot=1 |
+| Prometheus/Grafana/Loki | LXC 103, pve3 (.183) | Grafana http://192.168.10.183:3000 | Stack active ✅; Prom (9090) + Loki (3100) bound to 127.0.0.1 (F-03) |
 | Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
 | step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
 | Ollama | Jarvis | llm.netframe.local | Inactive — no GPU installed yet |

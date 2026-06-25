@@ -115,7 +115,8 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
 - [ ] Cyberpunk monitoring dashboard — live API integration
 - [ ] IMU gesture control (nRF52 trackers → Home Assistant)
-- [ ] Headscale migration (remaining devices off commercial Tailscale)
+- [x] Headscale Phase 1 — pve3/4/5/Jarvis migrated to self-hosted (2026-06-22)
+- [ ] Headscale Phase 2 — QuarkyLab + Fernanda's Mac (must migrate together)
 
 ---
 
