@@ -96,6 +96,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Scrutiny (drive health) | LXC 103, pve3 + collector on Randy | http://192.168.10.183:8080 | 41 drives monitored; InfluxDB backend; collector runs every 6h on Randy |
 | Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
 | step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
+| Jellyfin | Randy (host) | http://192.168.10.187:8096 | v10.11.11; media at /datastore/media/{movies,tv,music}; GPU transcoding pending RX 580 power cable |
 | Ollama | Jarvis | llm.netframe.local | Inactive — no GPU installed yet |
 
 **Wazuh VM 104 is on QuarkyLab** (migrated from pve2). IP: 192.168.10.184 (DHCP). Dashboard: `https://192.168.10.184`.
