@@ -98,3 +98,33 @@ ssh pve2 "
 - Move IoT devices to VLAN 40 (Fire Tablet, Echo ×5, BBL strip — pentest F-07/09/10)
 - Move Transmission client to VLAN 40
 - Decide permanent fate of nic2 cable (remove or repurpose)
+
+---
+
+## Post-Activation Fix: Tagged VLANs Not Reaching OPNsense from Network (2026-06-25)
+
+**Symptom:** Management (VLAN 1) worked, but WiFi IoT devices on the VLAN 40 SSID
+failed DHCP ("failed to obtain IP").
+
+**Cause:** pve2's VLAN-aware bridge `vmbr1` had VLANs 20-70 on the OPNsense VM port
+(`tap100i1`, from `trunks=1-70`) but the **physical uplink `nic1` was a member of VLAN 1
+only**. Tagged VLAN frames arriving from the network (AP → UniFi → nic1) were dropped at
+the bridge before reaching OPNsense. The earlier VLAN-20 DHCP test passed only because it
+originated inside the bridge and never traversed nic1.
+
+**Fix (runtime + persistent):**
+```bash
+# Runtime (immediate):
+ssh pve2 "for v in 20 30 40 50 60 70; do bridge vlan add dev nic1 vid \$v; done"
+
+# Persistent — add to vmbr1 in /etc/network/interfaces:
+#     bridge-vlan-aware yes
+#     bridge-vids 2-4094        ← makes the uplink carry all VLANs
+#     bridge-fd 0
+```
+
+**Verify:** `bridge vlan show dev nic1` → should list 20,30,40,50,60,70.
+Confirmed working: Fire Tablet obtained a VLAN 40 (IoT) lease on the IoT SSID.
+
+**Note:** `bridge-vids` is config-only until next reboot/ifreload; runtime `bridge vlan add`
+keeps it live in the meantime. Did NOT run `ifreload` to avoid disrupting active migration.
