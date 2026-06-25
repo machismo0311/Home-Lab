@@ -132,7 +132,7 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - QuarkyLab SSH: `ssh quarkylab` (IP 192.168.10.179) via fernanda@quarkylab key (id_ed25519 on Ares)
 - Tailscale overwrites /etc/resolv.conf on ALL nodes — run `tailscale set --accept-dns=false` and set nameserver to 192.168.10.177 before any apt operations
 - Headscale Phase 2 pending: QuarkyLab + Fernanda's Mac (ferpsihas@, fus22-009897) must migrate together — do not migrate one without the other
-- VLAN activation partial (2026-06-25): pve2 vmbr1 is VLAN-aware, OPNsense VM has trunks=1-70; blocked on UniFi port config for pve2. See VLAN-Activation-2026-06-25.md. Do NOT trunk EX3400 ge-0/0/46 until UniFi port for pve2 is set to trunk — it will break L2 through the UniFi
+- VLAN activation COMPLETE (2026-06-25): EX3400 ge-0/0/46 trunk live to UniFi Port 24, verified end-to-end. KEY: native-vlan-id goes at INTERFACE level on this EX3400 (ELS), NOT under unit 0 family ethernet-switching. pve2 vmbr2/nic2 auto-start DISABLED (unused bridge with live UniFi cable caused trunk loop) — do not re-enable without removing its cable. See VLAN-Activation-2026-06-25.md
 - Ares WiFi is on WAN side (192.168.1.x) — OPNsense outage = full loss of management network access from WiFi. Keep wired cable (enp0s31f6, 192.168.10.100) plugged in during any pve2/OPNsense maintenance
 - ifreload -a does NOT apply bridge-vlan-aware on pve2 — requires full reboot of pve2
 - Randy boot drives RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure

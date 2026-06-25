@@ -110,7 +110,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25\n- [x] Wazuh agent 4.9.2 on all 8 nodes → SIEM coverage ✅ 2026-06-25\n- [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25
 - [x] Wazuh agent 4.9.2 on all 8 nodes → full SIEM coverage ✅ 2026-06-25
 - [ ] DS4246 → Randy via LSI 9207-8e passthrough
-- [~] VLAN activation — pve2 vmbr1 VLAN-aware ✅, OPNsense trunks ✅; blocked on UniFi port config (see VLAN-Activation-2026-06-25.md)
+- [x] VLAN activation ✅ 2026-06-25 — EX3400 ge-0/0/46 trunk live, verified end-to-end (DHCP lease on VLAN 20). Fix: native-vlan-id at interface level (ELS)
 - [x] Jellyfin installed on Randy v10.11.11 — http://192.168.10.187:8096 ✅ (GPU transcoding pending RX 580 power cable)
 - [x] Prometheus node-exporter deployed on all 8 nodes (randy/pve2/pve3/pve4/pve5/quarkylab/jarvis/pve1) ✅
 - [x] Scrutiny — drive health UI live at http://192.168.10.183:8080 (41 drives, 6h collection) ✅
