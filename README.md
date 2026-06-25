@@ -1,6 +1,6 @@
 # NETFRAME Homelab
 
-> **Kyle Mason** · USMC Aviation Veteran · EC-135/145 Instructor Pilot · Network Engineering Candidate (VetTec 2.0 / CCNA)
+> **Kyle Mason** · USMC Veteran · EC-135/145 Instructor Pilot
 > [`kylemason.org`](https://kylemason.org) · [`machismo0311`](https://github.com/machismo0311)
 
 A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, running a 7-node Proxmox VE 9.2.3 cluster (km-cluster). Purpose-built as a live CCNA lab, LLM inference platform, ML research node, and backup infrastructure — documented here as a technical portfolio.
