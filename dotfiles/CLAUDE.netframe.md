@@ -92,7 +92,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Migrated from pve1; NPM auth (kyle); DOCKER-USER fw restricts :3000 to NPM only ✅ |
 | nginx-proxy (NPM) | LXC 101, pve3 (.181) | Admin http://192.168.10.181:81 | onboot=1; :81 restricted to Ares (.199) via DOCKER-USER fw (F-05) ✅ |
 | Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
-| Prometheus/Grafana/Loki | LXC 103, pve3 (.183) | Grafana http://192.168.10.183:3000 | Stack active ✅; Prom (9090) + Loki (3100) bound to 127.0.0.1 (F-03) |
+| Prometheus/Grafana/Loki | LXC 103, pve3 (.183) | Grafana http://192.168.10.183:3000 | Stack active ✅; 8 nodes scraped; Prom/Loki localhost-only (F-03) |
 | Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
 | step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
 | Ollama | Jarvis | llm.netframe.local | Inactive — no GPU installed yet |
