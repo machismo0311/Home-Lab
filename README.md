@@ -110,6 +110,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [ ] DS4246 → Randy via LSI 9207-8e passthrough
 - [ ] VLAN activation (pve2 trunk to EX3400)
 - [ ] Jellyfin on Randy (RX 580 ROCm transcoding)
+- [x] Prometheus node-exporter deployed on all 8 nodes (randy/pve2/pve3/pve4/pve5/quarkylab/jarvis/pve1) ✅
 - [ ] Scrutiny — drive health web UI on Randy
 - [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
 - [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
