@@ -11,13 +11,10 @@
             "id": "dd47179a6a187d0d",
             "type": "leaf",
             "state": {
-              "type": "bases",
-              "state": {
-                "file": "Untitled.base",
-                "viewName": "Table"
-              },
-              "icon": "lucide-table",
-              "title": "Untitled"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -93,7 +90,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Untitled.base",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +99,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for Untitled"
+              "title": "Backlinks"
             }
           },
           {
@@ -166,7 +162,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -179,12 +175,13 @@
       "bases:Create new base": false
     }
   },
-  "active": "853ce1774cbcf0a5",
+  "active": "dd47179a6a187d0d",
   "lastOpenFiles": [
+    "pentest-2026-06-23.md",
+    "Untitled.base",
     "Untitled 2.canvas",
     "Untitled 1.canvas",
     "Untitled.canvas",
-    "Untitled.base",
     "Untitled",
     "netframe-pentest-remediation-2026-06-24.pdf",
     "proxmox-node-postinstall-runbook.md",
@@ -197,7 +194,6 @@
     "pentest-remediation-log.md.tmp.21576.c461324b8b21",
     "pentest-remediation-log.md.tmp.21576.94025dd9e3a9",
     "pentest-remediation-log.md",
-    "pentest-2026-06-23.md",
     "opnsense-serial-console-2026-06-15.md"
   ]
 }
