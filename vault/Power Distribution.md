@@ -15,37 +15,37 @@ flowchart TB
     FURMAN --> UPSA
     FURMAN --> UPSB
 
-    subgraph UPSA_ZONE["UPS A — Top Half Bus"]
-        UPSA[Tripp Lite SMART1500VA\n1500VA / ~900W\nU4–U5]
-        UPSA --> EX3400[Juniper EX3400-48P]
-        UPSA --> USW[UniFi USW-24-250W]
-        UPSA --> EX2300[Juniper EX2300-48P]
-        UPSA --> PATCH[Patch Panels]
-        UPSA --> G4A[EliteDesk G4 SFF A]
-        UPSA --> G4B[EliteDesk G4 SFF B]
-        UPSA --> G3A[EliteDesk G3 Mini A]
-        UPSA --> G3B[EliteDesk G3 Mini B]
-        UPSA --> MACPI[Mac mini + RPi 4]
+    subgraph UPSA_ZONE["UPS A — Bottom Half / ML Bus"]
+        UPSA[Middle Atlantic UPS-2200R\n2200VA / ~1320W\nU1–U2]
+        UPSA --> R730ML[Dell R730 ML Node\n⚠️ HIGH DRAW]
+        UPSA --> R730GEN[Dell R730 General]
+        UPSA --> SM[SuperMicro CSE-219U]
+        UPSA --> DS4246[NetApp DS4246]
     end
 
-    subgraph UPSB_ZONE["UPS B — Bottom Half / ML Bus"]
-        UPSB[Middle Atlantic UPS-2200R\n2200VA / ~1320W\nU1–U2]
-        UPSB --> R730ML[Dell R730 ML Node\n⚠️ HIGH DRAW]
-        UPSB --> R730GEN[Dell R730 General]
-        UPSB --> SM[SuperMicro CSE-219U]
-        UPSB --> DS4246[NetApp DS4246]
+    subgraph UPSB_ZONE["UPS B — Top Half Bus"]
+        UPSB[Tripp Lite SMART1500VA\n1500VA / ~900W\nU4–U5]
+        UPSB --> EX3400[Juniper EX3400-48P]
+        UPSB --> USW[UniFi USW-24-250W]
+        UPSB --> EX2300[Juniper EX2300-48P]
+        UPSB --> PATCH[Patch Panels]
+        UPSB --> G4A[EliteDesk G4 SFF A]
+        UPSB --> G4B[EliteDesk G4 SFF B]
+        UPSB --> G3A[EliteDesk G3 Mini A]
+        UPSB --> G3B[EliteDesk G3 Mini B]
+        UPSB --> MACPI[Mac mini + RPi 4]
     end
 
     style R730ML fill:#ff4444,color:#fff
-    style UPSB fill:#1a1a2e,color:#eee
-    style UPSA fill:#162447,color:#eee
+    style UPSA fill:#1a1a2e,color:#eee
+    style UPSB fill:#162447,color:#eee
 ```
 
 ---
 
 ## UPS Specs
 
-### Tripp Lite SMART1500VA (UPS A — Top Half)
+### Tripp Lite SMART1500VA (UPS B — Top Half)
 | Field | Value |
 |---|---|
 | Model | SMART1500LCD |
@@ -56,7 +56,7 @@ flowchart TB
 | Bus Assignment | Networking + Small compute |
 | Output | 8 outlets (battery + surge) |
 
-### Middle Atlantic UPS-2200R (UPS B — Bottom / ML Bus)
+### Middle Atlantic UPS-2200R (UPS A — Bottom / ML Bus)
 | Field | Value |
 |---|---|
 | Model | UPS-2200R |
@@ -77,23 +77,23 @@ flowchart TB
 
 | Device | Est. Draw (W) | UPS |
 |---|---|---|
-| Juniper EX3400-48P | ~150W | A |
-| UniFi USW-24-250W | ~60W | A |
-| Juniper EX2300-48P | ~80W | A |
-| HP EliteDesk G4 SFF ×2 | ~130W | A |
-| HP EliteDesk G3 Mini ×2 | ~80W | A |
-| Mac mini + RPi 4 | ~30W | A |
-| **UPS A Total Est.** | **~530W** | — |
-| Dell R730 ML Node (idle) | ~200W | B |
-| Dell R730 ML Node (CUDA load) | ~500W+ | B |
-| Dell R730 General (idle) | ~150W | B |
-| SuperMicro CSE-219U (idle) | ~120W | B |
-| NetApp DS4246 | ~60W | B |
-| **UPS B Total Est. (idle)** | **~530W** | — |
-| **UPS B Total Est. (ML load)** | **~830W+** | — |
+| Juniper EX3400-48P | ~150W | B |
+| UniFi USW-24-250W | ~60W | B |
+| Juniper EX2300-48P | ~80W | B |
+| HP EliteDesk G4 SFF ×2 | ~130W | B |
+| HP EliteDesk G3 Mini ×2 | ~80W | B |
+| Mac mini + RPi 4 | ~30W | B |
+| **UPS B Total Est.** | **~530W** | — |
+| Dell R730 ML Node (idle) | ~200W | A |
+| Dell R730 ML Node (CUDA load) | ~500W+ | A |
+| Dell R730 General (idle) | ~150W | A |
+| SuperMicro CSE-219U (idle) | ~120W | A |
+| NetApp DS4246 | ~60W | A |
+| **UPS A Total Est. (idle)** | **~530W** | — |
+| **UPS A Total Est. (ML load)** | **~830W+** | — |
 
 > [!WARNING] CUDA Load
-> The RTX 6000 under full CUDA load can pull 250W by itself. Fernanda's ML workloads may push UPS B well above 1000W. Monitor via iDRAC and UPS display. UPS-2200R rated at 1320W continuous — should be fine, but watch it.
+> The RTX 6000 under full CUDA load can pull 250W by itself. Fernanda's ML workloads may push UPS A well above 1000W. Monitor via iDRAC and UPS display. UPS-2200R rated at 1320W continuous — should be fine, but watch it.
 
 ---
 
