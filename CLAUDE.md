@@ -89,11 +89,11 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
 | Pi-hole | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
-| Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Live widgets (Proxmox/Pi-hole/Jellyfin/Scrutiny); NPM proxy host id 4 + Lets Encrypt (CF DNS-01) + basic auth (kyle); :3000 firewalled to NPM; tokens in /opt/homepage/config (not git). See Homepage-Setup-2026-06-26.md |
+| Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Live widgets (Proxmox/Pi-hole/Jellyfin/Scrutiny/UPS); Power & UPS group via PeaNUT container (:8081→8080, NUT bridge); NPM proxy host id 4 + Lets Encrypt (CF DNS-01) + basic auth (kyle); :3000 firewalled to NPM; tokens/creds in /opt/homepage/config + compose (not git). See Homepage-Setup-2026-06-26.md & Power Distribution.md |
 | nginx-proxy (NPM) | LXC 101, pve3 (.181) | Admin http://192.168.10.181:81 | onboot=1; :81 restricted to Ares (.199) via DOCKER-USER fw (F-05) ✅ |
 | Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
 | Prometheus/Grafana/Loki | LXC 103, pve3 (.183) | Grafana http://192.168.10.183:3000 | Stack active ✅; 8 nodes scraped; Prom/Loki localhost-only (F-03) |
-| Scrutiny (drive health) | LXC 103, pve3 + collector on Randy | http://192.168.10.183:8080 | 41 drives monitored; InfluxDB backend; collector runs every 6h on Randy |
+| Scrutiny (drive health) | LXC 103, pve3 + collectors on Randy & QuarkyLab | http://192.168.10.183:8080 | ~50 drives monitored; InfluxDB backend; binary collector via systemd timer every 6h on Randy (43) and QuarkyLab (7); collector.yaml `host.id` + endpoint `192.168.10.183:8080` |
 | Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
 | step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
 | Jellyfin | Randy (host) | http://192.168.10.187:8096 | v10.11.11; media at /datastore/media/{movies,tv,music}; GPU transcoding pending RX 580 power cable |

@@ -71,3 +71,25 @@ SSL: issuer = Let's Encrypt, CN = homepage.kylemason.org
 ```
 
 Credentials delivered to user out-of-band (not stored here).
+
+---
+
+## Addendum — UPS widgets + tile fixes (2026-06-26)
+
+### Power & UPS group (PeaNUT)
+- Homepage v1.13 has **no `nut` widget** — NUT is surfaced only via the **`peanut`** widget, which needs a **PeaNUT** instance.
+- Added `peanut` container to `/opt/homepage/docker-compose.yml` (`brandawg93/peanut`, `8081→8080`, `NUT_HOST=192.168.10.201`, basic-auth user `homepage`).
+- `services.yaml` "Power & UPS" group: two `peanut` widgets — **UPS A** = Middle Atlantic (`midatlantic`), **UPS B** = Tripp Lite (`tripplite`). Full NUT→PeaNUT→Prometheus→Grafana→Discord stack documented in Power Distribution.md.
+
+### Tile siteMonitor fixes
+| Tile | Was | Now |
+|---|---|---|
+| Headscale | `:80` (refused) | `http://192.168.10.186:8080` |
+| Nginx Proxy Manager | siteMonitor `:81` (DROP-except-Ares, F-05) | siteMonitor `:80`; href stays `:81` |
+| Grafana | `:3000` (filtered from LXC 106) | `https://grafana.kylemason.org` (NPM path) |
+| Prometheus | `:9090` (127.0.0.1-only, F-03) | siteMonitor removed; label only |
+
+> Homepage `siteMonitor` checks run **server-side from the container**, so services firewalled away from LXC 106 (NPM admin :81, Prometheus localhost) can't be probed that way — point them at a reachable endpoint or drop the monitor.
+
+### Basic-auth note
+- NPM stores access-list passwords in **plaintext** in `/data/database.sqlite` (`access_list_auth`) to regenerate the apr1 `/data/access/<id>` htpasswd. The `kyle` homepage password is recoverable there — and is **distinct** from the Grafana admin password.
