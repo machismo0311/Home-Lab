@@ -126,8 +126,12 @@ exposing both UPS units on TCP 3493. Homepage (LXC 106) shows live `peanut` widg
   Homepage v1.13 has no direct `nut` widget — it integrates NUT only via PeaNUT. PeaNUT also serves its own UPS dashboard.
 - Homepage `peanut` widgets show battery %, load %, and status. See [[Runbook/Homepage-Setup-2026-06-26]].
 
-### Still planned
-| Tool | Target |
-|---|---|
-| Grafana dashboard | UPS load %, runtime remaining (scrape NUT via a prometheus nut-exporter) |
-| Alerting | upsmon `NOTIFYCMD` / Uptime Kuma → notify on battery event |
+### Grafana dashboard + alerting (live — 2026-06-26)
+- **Prometheus** (LXC 103) scrapes PeaNUT metrics — job `peanut-ups`, target `192.168.10.148:8081`, basic auth, 30s.
+- **Grafana dashboard** `/d/netframe-ups` ("NetFRAME — UPS Power"): battery %, load, runtime, real-power gauges + time-series per UPS.
+- **Alert rules** (folder "UPS Alerts"): `UPS battery low` (<50%) and `UPS runtime low` (<5 min), per UPS.
+- **Notifications → Discord**, two independent paths:
+  - Grafana contact point `discord-ups` (metric-based, ~30s) — default notification policy routes here.
+  - NUT `upsmon` → `/etc/nut/notify-discord.sh` (instant, event-driven: ONBATT/LOWBATT/ONLINE/COMMBAD/COMMOK/REPLBATT/SHUTDOWN).
+- Discord webhook URL is stored server-side only (Grafana DB + root-only `notify-discord.sh`, `chmod 700`) — **not** in git.
+- Grafana admin password was reset this session (stored in Vaultwarden). Prometheus stays localhost-bound (F-03); the scrape is outbound Prometheus→PeaNUT.
