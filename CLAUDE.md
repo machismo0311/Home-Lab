@@ -15,8 +15,8 @@
 ### Proxmox Nodes
 | Node | Hardware | IP | RAM | PVE | Kernel | Role |
 |---|---|---|---|---|---|---|
-| pve2 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.204 | 48GB | 9.2.3 | 7.0.12-1 | OPNsense host |
-| pve3 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.201 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
+| pve2 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.204 | 32GB | 9.2.3 | 7.0.12-1 | OPNsense host |
+| pve3 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.201 | 48GB | 9.2.3 | 7.0.12-1 | Cluster node |
 | pve4 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.202 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
 | pve5 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.203 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
 | sandbox | HP EliteDesk G4 (spare) | 192.168.70.x | — | — | — | Standalone lab — NOT in cluster |

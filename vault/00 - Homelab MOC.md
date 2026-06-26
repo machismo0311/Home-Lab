@@ -1,6 +1,6 @@
 # 🖥️ Homelab — Master Map of Content
 > **Operator:** Kyle Mason (`machismo`) · **Location:** Vermilion / Greater Cleveland, OH
-> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-06-20
+> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-06-26
 
 ---
 
@@ -46,39 +46,40 @@ mindmap
 | U33–U31 | HP EliteDesk G3 Mini ×2 (3U shelf) | pve4 + pve5 (32GB each) |
 | U30 | Mac mini (pve1) + RPi 4 (1U shelf) | Pi-hole / cluster mgmt |
 | U29–U21 | *Open / cable mgmt* | — |
-| U20–U18 | Dell R730 — Jarvis (ML Node) | AI/ML workloads (pending) |
-| U16–U15 | Dell R730 — quarkylab (General) | Heavy compute (pending) |
-| U14–U13 | SuperMicro CSE-219U | TrueNAS target (pending) |
+| U20–U18 | Dell R730 — Jarvis | LLM node (no GPU yet) |
+| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 6000 (Fernanda / DUNE) |
+| U14–U13 | SuperMicro CSE-219U — Randy | PBS, Jellyfin, ZFS storage |
 | U12–U7 | NetApp DS4246 (4U) | JBOD storage shelf |
 | U6 | Furman RP-8 | Power conditioning |
-| U5–U4 | Tripp Lite SMART1500VA | UPS A — top half bus |
-| U2–U1 | Middle Atlantic UPS-2200R | UPS B — bottom half / ML bus |
+| U5–U4 | Tripp Lite SMART1500VA | UPS B — top half bus |
+| U2–U1 | Middle Atlantic UPS-OL2200R | UPS A — bottom half / ML bus |
 
 ---
 
-## 🌐 Current Network (Flat — Pre-VLAN Cutover)
+## 🌐 Network (live — OPNsense + VLANs)
 
-> [!NOTE] VLANs are planned but not yet live. All devices are on a flat 192.168.10.0/24 subnet. OPNsense (VM 100 on pve2) is installed but not in the network path — Dream Router is still routing. VLAN segmentation happens at OPNsense cutover.
+> [!NOTE] OPNsense (VM 100 on pve2) is the **live LAN router/firewall/DHCP** for `192.168.10.0/24` (v25.7). The UniFi Dream Router is the **upstream WAN edge** (`192.168.1.x` WiFi/WAN). **VLANs are live** (2026-06-25). See [[Networking/Network Overview]].
 
 | Device | IP | Notes |
 |--------|-----|-------|
-| pve1 (Mac Mini) | 192.168.10.193 | Tailscale: 100.116.237.31 |
-| pve2 (EliteDesk G4) | 192.168.10.204 | Hosts OPNsense VM 100 |
-| pve3 (EliteDesk G4) | 192.168.10.201 | Primary services node |
-| pve4 (EliteDesk G3) | 192.168.10.202 | |
-| pve5 (EliteDesk G3) | 192.168.10.203 | |
-| Juniper EX3400 | 192.168.10.50 | JunOS 23.4R2-S7.4 |
-| quarkylab | 192.168.10.179 | R730 Proxmox host |
-| quarkylab iDRAC | 192.168.10.20 | R730 svc tag 1S8WR22 |
-| Wazuh SIEM (quarkylab) | 192.168.10.184 | VM 104 |
-| Jarvis iDRAC | 192.168.10.21 | R730 384GB |
-| Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3 |
-| Vaultwarden | 192.168.10.182 | CT 102 on pve3 |
-| Grafana | 192.168.10.183 | CT 103 on pve3 |
-| Headscale | 192.168.10.186 | CT 105 on pve3, WireGuard control plane |
-| Pi-hole (primary) | 192.168.1.47 | pve1 LXC |
-| Pi-hole (backup) | 192.168.1.170 | Raspberry Pi 4 |
-| Ares (laptop) | DHCP / 192.168.10.100 wired | Tailscale: 100.124.118.63 |
+| OPNsense (LAN gateway) | 192.168.10.1 | VM 100 on pve2, v25.7 |
+| pve1 (Mac Mini) | 192.168.10.193 | **Standalone** (not in km-cluster); Pi-hole host. TS: 100.116.237.31 |
+| pve2 (EliteDesk G4) | 192.168.10.204 | 32GB; OPNsense VM 100, step-ca |
+| pve3 (EliteDesk G4) | 192.168.10.201 | 48GB; primary services node |
+| pve4 (EliteDesk G3) | 192.168.10.202 | 32GB |
+| pve5 (EliteDesk G3) | 192.168.10.203 | 32GB |
+| QuarkyLab (R730) | 192.168.10.179 | ML node, RTX 6000; Wazuh VM 104 (.184) |
+| Jarvis (R730) | 192.168.10.31 | LLM node (no GPU yet) |
+| Randy (SuperMicro) | 192.168.10.187 | PBS, Jellyfin, ZFS storage |
+| QuarkyLab iDRAC / Jarvis iDRAC / Randy IPMI | .20 / .21 / .22 | |
+| Juniper EX3400 | 192.168.10.50 | JunOS 23.4R2-S7.4, VLAN trunk |
+| Nginx Proxy Manager | 192.168.10.181 | LXC 101 on pve3 |
+| Vaultwarden | 192.168.10.182 | LXC 102 on pve3 |
+| Grafana/Prometheus/Loki | 192.168.10.183 | LXC 103 on pve3 |
+| Headscale | 192.168.10.186 | LXC 105 on pve3 |
+| Homepage | 192.168.10.148 | LXC 106 on pve3 |
+| Pi-hole | 192.168.10.177 | LXC on pve1 |
+| Ares (laptop) | 192.168.10.100 wired | TS: 100.124.118.63 |
 
 ---
 
@@ -90,9 +91,9 @@ mindmap
 - [[Networking/Network Overview]] — Topology, VLANs, routing
 
 ### Compute
-- [[Compute/Dell R730 - ML Node]] — Jarvis (iDRAC: 192.168.10.21)
-- [[Compute/Dell R730 - General Node]] — quarkylab (iDRAC: 192.168.10.20)
-- [[Compute/Small Node Cluster]] — pve1–pve5
+- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC: 192.168.10.20, RTX 6000)
+- [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC: 192.168.10.21, LLM)
+- [[Compute/Small Node Cluster]] — pve1 (standalone) + pve2–pve5
 
 ### Storage & Virtualization
 - [[Infrastructure/Storage]] — NetApp DS4246, drive inventory
@@ -132,14 +133,16 @@ mindmap
 - [x] Headscale v0.29.1 deployed (pve3 CT 105) — Ares registered, self-hosted VPN control plane live
 - [x] Add Ares SSH key to pve1 (added via pve2 cluster hop, 2026-06-20)
 - [x] NetFRAME logo deployed to all five Proxmox nodes (pve1–pve5, 2026-06-20)
-- [ ] Fix EX3400 uplink ge-0/0/32: access port → proper trunk (VLANs not passing)
+- [x] OPNsense cutover — VM 100 (pve2) is the live LAN router (Dream Router now WAN-only)
+- [x] VLAN segmentation live (2026-06-25, EX3400 ge-0/0/46 trunk → UniFi Port 24)
+- [x] Both Dell R730s installed and in km-cluster (QuarkyLab ML / Jarvis LLM)
+- [x] Stand up QuarkyLab + Jarvis + Randy as Proxmox nodes (7-node km-cluster, PVE 9.2.3)
+- [x] Deploy Wazuh SIEM on QuarkyLab (VM 104, .184)
+- [x] All nodes in Grafana/Prometheus monitoring (node exporter, 8 targets)
+- [x] PBS live on Randy (.187:8007); Jellyfin live on Randy (.187:8096)
+- [x] Homepage dashboard live (homepage.kylemason.org); UPS monitoring (NUT→PeaNUT→Grafana→Discord)
+- [ ] Jarvis RTX 8000 install (pending Dell N08NH power cables)
 - [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
-- [ ] OPNsense VM cutover (VM 100 on pve2 → replace Dream Router)
-- [ ] VLAN segmentation implemented post-cutover
-- [ ] Install both Dell R730s (quarkylab BIOS update in progress — CPU stepping mismatch)
-- [ ] Stand up quarkylab + Jarvis as Proxmox nodes
-- [x] Deploy Wazuh SIEM on quarkylab
-- [ ] Add all nodes to Grafana monitoring (node exporter)
 - [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error
 - [ ] Headscale Phase 3: migrate Kyle + Fernanda devices off commercial Tailscale
 - [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs

@@ -67,12 +67,12 @@ ping -c 1 -W 2 192.168.10.21 && echo "Jarvis iDRAC reachable"
 
 ---
 
-## 📡 iDRAC Access (R730s — pending)
+## 📡 iDRAC Access (R730s — in km-cluster)
 
 | Node | IP | Status |
 |---|---|---|
-| quarkylab | 192.168.10.20 | iDRAC accessible — BIOS update in progress |
-| Jarvis | 192.168.10.21 | iDRAC SSH confirmed — firmware update needed |
+| QuarkyLab | 192.168.10.20 | Live ML node (RTX 6000); iDRAC root/calvin |
+| Jarvis | 192.168.10.21 | Live LLM node (no GPU yet); iDRAC root/calvin |
 
 ```bash
 # SSH to iDRAC

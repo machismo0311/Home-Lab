@@ -6,23 +6,28 @@
 
 ## Service Status Dashboard
 
-| Service | Type | Status | Host | IP | URL |
+| Service | Type | Status | Host | IP | URL / Notes |
 |---|---|---|---|---|---|
-| Nginx Proxy Manager | Docker CT | 🟢 Active | pve3 CT 101 | 192.168.10.181 | http://192.168.10.181:81 (admin) |
-| Vaultwarden | Docker CT | 🟢 Active | pve3 CT 102 | 192.168.10.182 | https://vault.kylemason.org |
-| Grafana | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183 | https://grafana.kylemason.org |
-| Prometheus | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183:9090 | — |
-| Loki | Docker CT | 🟢 Active | pve3 CT 103 | 192.168.10.183:3100 | — |
-| Headscale | LXC | 🟢 Active | pve3 CT 105 | 192.168.10.186 | http://192.168.10.186:8080/health |
+| OPNsense | VM 100 | 🟢 Live router | pve2 | 192.168.10.1 | https://192.168.10.1 (v25.7) |
+| Nginx Proxy Manager | LXC+Docker | 🟢 Active | pve3 CT 101 | 192.168.10.181 | http://192.168.10.181:81 (admin, Ares-only F-05) |
+| Vaultwarden | LXC+Docker | 🟢 Active | pve3 CT 102 | 192.168.10.182 | https://vault.kylemason.org |
+| Grafana | LXC+Docker | 🟢 Active | pve3 CT 103 | 192.168.10.183 | https://grafana.kylemason.org (v13.0.2) |
+| Prometheus | LXC+Docker | 🟢 Active | pve3 CT 103 | 192.168.10.183:9090 | localhost-only (F-03); 8 node targets + peanut-ups |
+| Loki | LXC+Docker | 🟢 Active | pve3 CT 103 | 192.168.10.183:3100 | — |
+| InfluxDB | LXC+Docker | 🟢 Active | pve3 CT 103 | 192.168.10.183:8086 | Scrutiny backend |
+| Scrutiny | LXC+Docker | 🟢 Active | pve3 CT 103 (+ collectors on Randy & QuarkyLab) | 192.168.10.183:8080 | ~50 drives |
+| Homepage | LXC+Docker | 🟢 Active | pve3 CT 106 | 192.168.10.148 | https://homepage.kylemason.org |
+| PeaNUT (UPS) | LXC+Docker | 🟢 Active | pve3 CT 106 | 192.168.10.148:8081 | NUT→Homepage UPS widgets |
+| Headscale | LXC | 🟢 Active | pve3 CT 105 | 192.168.10.186 | http://192.168.10.186:8080 (v0.29.1) |
+| Pi-hole | LXC | 🟢 Active | pve1 (Mac Mini) | 192.168.10.177 | http://192.168.10.177/admin (v6) |
+| NUT (UPS) | Native | 🟢 Active | pve3 host | 192.168.10.201:3493 | Tripp Lite (USB) + Middle Atlantic (SNMP) |
+| step-ca | Native | 🟢 Active | pve2 | 192.168.10.204:443 | *.netframe.local TLS |
 | CrowdSec | Native | 🟢 Active | pve3 host | — | https://app.crowdsec.net |
-| Pi-hole (primary) | LXC | 🟢 Active | pve1 | 192.168.1.47 | http://192.168.1.47/admin |
-| Pi-hole (backup) | Native | 🟢 Active | Raspberry Pi 4 | 192.168.1.170 | — |
-| OPNsense | VM 100 | ⏸️ Installed, not routing | pve2 | — | pending cutover |
-| Wazuh SIEM | VM 104 | 🟢 Active | quarkylab (192.168.10.179) | 192.168.10.184 | wazuh.kylemason.org |
-| Jellyfin | VM | 🔴 Planned | TBD | — | — |
-| Home Assistant | Docker / RPi | 🔴 Planned | TBD | — | — |
-| UniFi Controller | Docker CT | 🔴 Planned | TBD | — | — |
-| PBS | VM | 🔴 Planned | pve-supermicro | — | — |
+| Wazuh SIEM | VM 104 | 🟢 Active | QuarkyLab | 192.168.10.184 | https://192.168.10.184 |
+| PBS | Native | 🟢 Active | Randy | 192.168.10.187:8007 | v4.2.2, ~19.5TB ZFS |
+| Jellyfin | Native | 🟢 Active | Randy | 192.168.10.187:8096 | v10.11.11 |
+| Ollama / llm_router | Native | ⏸️ Inactive | Jarvis | — | awaiting RTX 8000 |
+| Home Assistant | — | 🔴 Planned | TBD | — | — |
 | FreePBX | VM | ⏸️ Deferred | TBD | — | — |
 
 ---
@@ -57,6 +62,8 @@ services:
 |--------|-----------|------|-----|
 | vault.kylemason.org | 192.168.10.182 | 80 | Cloudflare DNS-01 |
 | grafana.kylemason.org | 192.168.10.183 | 3000 | Cloudflare DNS-01 |
+| homepage.kylemason.org | 192.168.10.148 | 3000 | Cloudflare DNS-01 + basic auth (kyle) |
+| wazuh.kylemason.org | 192.168.10.184 | 443 | Cloudflare DNS-01 |
 
 **Cloudflare DNS records** (for each subdomain):
 - Type: A → 192.168.10.181, DNS only (grey cloud)
@@ -161,8 +168,8 @@ Self-hosted Tailscale control plane (WireGuard mesh coordination). Replaces comm
 | Version | v0.29.1 |
 | MagicDNS domain | netframe.local |
 | Tailscale IPv4 range | 100.64.0.0/10 |
-| DNS pushed to clients | 192.168.10.170 (Pi-hole) |
-| Registered nodes | Ares (100.64.0.1) |
+| DNS pushed to clients | 192.168.10.177 (Pi-hole) |
+| Registered nodes | Ares (.1), Randy (.2), pve5 (.3), pve4 (.4), pve3 (.5), Jarvis (.6) |
 
 ```bash
 # Health check
@@ -199,18 +206,13 @@ Console: https://app.crowdsec.net
 
 ---
 
-## Pi-hole (pve1)
+## Pi-hole (pve1 — standalone Mac Mini)
 
 | Role | IP | Admin |
 |------|----|-------|
-| Primary | 192.168.1.47 | http://192.168.1.47/admin |
-| Backup | 192.168.1.170 | Raspberry Pi 4 |
+| Primary | 192.168.10.177 | http://192.168.10.177/admin (v6) |
 
-```bash
-# Point clients to Pi-hole
-sudo nmcli con mod "YourWiFiName" ipv4.dns "192.168.1.47"
-sudo nmcli --ask con up "YourWiFiName"
-```
+> The RPi 4 backup Pi-hole (formerly 192.168.1.170) is **decommissioned**. DHCP is served by OPNsense; clients resolve via 192.168.10.177.
 
 ---
 

@@ -8,12 +8,12 @@
 
 | Hostname | Hardware | CPU | RAM | IP | Role |
 |---|---|---|---|---|---|
-| pve1 | Apple Mac Mini (2011) | Core i5 (Sandy Bridge) | — | 192.168.10.193 | Cluster mgmt, Pi-hole LXC |
-| pve2 | HP EliteDesk 800 G4 SFF | i7-8700 (6c/12t) | 32GB | 192.168.10.204 | Services; hosts OPNsense VM 100 |
-| pve3 | HP EliteDesk 800 G4 SFF | i7-8700 (6c/12t) | 48GB | 192.168.10.201 | Primary services node (NPM, Vaultwarden, Grafana) |
-| pve4 | HP EliteDesk 800 G3 Mini | i5-7500T (4c/4t) | 32GB | 192.168.10.202 | Services |
-| pve5 | HP EliteDesk 800 G3 Mini | i5-7500T (4c/4t) | 32GB | 192.168.10.203 | Services |
-| RPi 4 | Raspberry Pi 4 | ARM Cortex-A72 | 4/8GB | 192.168.1.170 | Pi-hole backup, IMU gesture bridge |
+| pve1 | Apple Mac Mini (2011) | Core i5 (Sandy Bridge) | — | 192.168.10.193 | **Standalone** (not in km-cluster); Pi-hole LXC (.177) |
+| pve2 | HP EliteDesk 800 G4 SFF | i7-8700 (6c/12t) | 32GB | 192.168.10.204 | km-cluster; hosts OPNsense VM 100, step-ca |
+| pve3 | HP EliteDesk 800 G4 SFF | i7-8700 (6c/12t) | 48GB | 192.168.10.201 | km-cluster; primary services (NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT) |
+| pve4 | HP EliteDesk 800 G3 Mini | i5-7500T (4c/4t) | 32GB | 192.168.10.202 | km-cluster node |
+| pve5 | HP EliteDesk 800 G3 Mini | i5-7500T (4c/4t) | 32GB | 192.168.10.203 | km-cluster node |
+| RPi 4 | Raspberry Pi 4 | ARM Cortex-A72 | 4/8GB | (WAN side) | IMU gesture bridge (Pi-hole backup decommissioned) |
 
 ---
 
@@ -68,15 +68,16 @@ See [[Infrastructure/Services & VMs]] for full configs.
 
 | Role | IP | Admin |
 |------|----|-------|
-| Primary Pi-hole (pve1 LXC) | 192.168.1.47 | http://192.168.1.47/admin |
-| Backup Pi-hole (RPi 4) | 192.168.1.170 | — |
+| Pi-hole (pve1 LXC) | 192.168.10.177 | http://192.168.10.177/admin (v6) |
+
+> RPi 4 backup Pi-hole (formerly 192.168.1.170) is **decommissioned**.
 
 ---
 
 ## pve1 — Mac Mini 2011 Note
 
 > [!WARNING]
-> 2011 Mac mini has a 32nm Sandy Bridge CPU. Proxmox runs but this is legacy hardware — treat as low-priority. Don't run critical VMs here. Currently used for Pi-hole LXC and cluster quorum.
+> 2011 Mac mini has a 32nm Sandy Bridge CPU. Proxmox runs but this is legacy hardware — treat as low-priority. Don't run critical VMs here. Runs **standalone** (not in km-cluster); hosts the Pi-hole LXC (192.168.10.177).
 
 ---
 
@@ -84,7 +85,7 @@ See [[Infrastructure/Services & VMs]] for full configs.
 
 | Service | Status |
 |---|---|
-| Pi-hole (backup) | ✅ Running at 192.168.1.170 |
+| Pi-hole (backup) | ❌ Decommissioned (was 192.168.1.170) |
 | IMU gesture bridge (`bleak` script) | ✅ Running (see [[Projects/IMU Gesture Control]]) |
 | `systemd` autostart for IMU service | ✅ Configured |
 | Home Assistant | Planned |
