@@ -106,12 +106,28 @@ flowchart TB
 
 ---
 
-## 🔋 UPS Monitoring (Planned)
+## 🔋 UPS Monitoring (Live — 2026-06-26)
 
+NUT (Network UPS Tools 2.8.1) runs on the **pve3 host** as a network server (`MODE=netserver`),
+exposing both UPS units on TCP 3493. Homepage (LXC 106) shows live `peanut` widgets for each in a
+"Power & UPS" group (Middle Atlantic = UPS A, Tripp Lite = UPS B).
+
+| UPS | NUT name | Driver | Connection |
+|---|---|---|---|
+| Tripp Lite SMART1500 | `tripplite` | `usbhid-ups` | USB → pve3 (`09ae:2012`) |
+| Middle Atlantic UPS-OL2200R | `midatlantic` | `snmp-ups` (`mibs=cyberpower`) | SNMP card `192.168.10.180`, RFC1628 UPS-MIB, enterprise OID 3808 = CyberPower (Mid-Atlantic rebrands CyberPower OL) |
+
+- **upsd** listens on `127.0.0.1:3493` + `192.168.10.201:3493` (anonymous read).
+- **upsmon** monitors both locally (`monuser`, primary role) — logging only, no auto-shutdown wired yet.
+- Config lives in `/etc/nut/{nut,ups,upsd,upsd.users,upsmon}.conf` on pve3. monuser password is **not** in git.
+- Boot-enabled services: `nut-server`, `nut-monitor`, `nut-driver@tripplite`, `nut-driver@midatlantic`.
+- **PeaNUT** (`brandawg93/peanut`, container in LXC 106 `docker-compose.yml`, port `8081→8080`) bridges
+  `upsd` → the REST API that Homepage's `peanut` widget consumes (Basic Auth, user `homepage`; creds **not** in git).
+  Homepage v1.13 has no direct `nut` widget — it integrates NUT only via PeaNUT. PeaNUT also serves its own UPS dashboard.
+- Homepage `peanut` widgets show battery %, load %, and status. See [[Runbook/Homepage-Setup-2026-06-26]].
+
+### Still planned
 | Tool | Target |
 |---|---|
-| Network UPS Tools (NUT) | Both UPS units via USB |
-| Grafana dashboard | UPS load %, runtime remaining |
-| Alerting | Uptime Kuma → notify on battery event |
-
-See [[Infrastructure/Services & VMs]] for NUT deployment plan.
+| Grafana dashboard | UPS load %, runtime remaining (scrape NUT via a prometheus nut-exporter) |
+| Alerting | upsmon `NOTIFYCMD` / Uptime Kuma → notify on battery event |
