@@ -26,7 +26,7 @@ Headscale handles **authentication and key distribution only** — it does not c
 | Version | v0.29.1 |
 | MagicDNS domain | netframe.local |
 | Tailscale IP range | 100.64.0.0/10 |
-| DNS | 192.168.10.170 (Pi-hole) |
+| DNS | 192.168.10.177 (Pi-hole) |
 
 ---
 
