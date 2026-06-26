@@ -53,9 +53,14 @@ are NOT valid meta fields (taken from account/global config).
 
 ## DNS
 
-Pi-hole v6 local record added (`dns.hosts` via `pihole-FTL --config`):
-`homepage.kylemason.org → 192.168.10.181` (NPM). Internal clients using Pi-hole resolve it.
-No public Cloudflare A-record (would point at a private IP; internal-only by design).
+Two records resolve `homepage.kylemason.org → 192.168.10.181` (NPM):
+- **Cloudflare public A-record** (DNS-only / not proxied) — resolves for ALL devices regardless
+  of their DNS. Needed because Ares + most devices use public resolvers (8.8.8.8/1.1.1.1), not
+  Pi-hole. Points at a private IP (benign; internal-only access by design).
+- **Pi-hole v6 local record** (`dns.hosts` via `pihole-FTL --config`) — for Pi-hole clients.
+
+Note: browsers cache the pre-existing NXDOMAIN (negative cache) — clear browser/OS DNS cache
+after adding the record.
 
 ---
 
