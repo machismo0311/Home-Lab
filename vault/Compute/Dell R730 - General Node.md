@@ -1,14 +1,17 @@
-# 🖥️ Dell R730 — quarkylab (General Node)
-**Tags:** #compute #dell #r730
+# 🖥️ Dell R730 — Jarvis (General / LLM Node)
+**Tags:** #compute #dell #r730 #llm
 **Related:** [[Compute/Dell R730 - ML Node]] · [[Infrastructure/Proxmox Cluster]] · [[Power Distribution]]
 
 ---
 
-## Status: 🟢 Online — Proxmox cluster node (node ID 5)
+## Status: 🟢 Online — km-cluster node (no GPU yet)
 
-- **Host IP:** 192.168.10.179
-- **iDRAC:** 192.168.10.20
-- Wazuh SIEM VM (ID 104) running — 192.168.10.184
+- **Host IP:** 192.168.10.31
+- **iDRAC:** 192.168.10.21 (root/calvin)
+- Member of km-cluster (PVE 9.2.3); Headscale 100.64.0.6
+- **RTX 8000 swap pending** — Dell N08NH power cables on order; no GPU installed yet
+
+> [!NOTE] iDRAC IP was originally static 10.10.198.38; changed via front panel to 192.168.10.21. iDRAC MAC 18:66:da:97:0f:8e.
 
 ---
 
@@ -17,79 +20,52 @@
 | Component | Spec |
 |---|---|
 | Model | Dell PowerEdge R730 |
-| Hostname | quarkylab |
-| **Host IP** | **192.168.10.179** |
-| Service Tag | **1S8WR22** |
+| Hostname | Jarvis |
+| Service Tag | DWG7HH2 |
 | Form Factor | 2U |
-| Rack Position | U15–U16 |
-| **CPU** | 2× Intel Xeon E5-2699 v4 (target) |
-| CPU Cores | 44c / 88t total (when correct CPUs installed) |
-| **RAM** | 512 GB ECC DDR4 (target) |
-| Storage | TBD (see [[Infrastructure/Storage]]) |
+| Rack Position | U18–U20 |
+| **CPU** | 2× Intel Xeon E5-2687W v4 (12c each · 48t total) |
+| **RAM** | 384 GB LRDIMM ECC DDR4 |
+| **GPU** | none (RTX 8000 swap pending — N08NH cables on order) |
+| Storage | pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade |
 | NICs | 4× 1G onboard |
-| Remote Mgmt | iDRAC 8 |
-| **iDRAC IP (current)** | **192.168.10.20** |
+| Remote Mgmt | iDRAC 8 (192.168.10.21) |
 | Depth | ~28" — **rear panel removed** from NetFRAME CS9000 |
 
 ---
 
-## Purpose (once online)
+## Purpose
 
-General-purpose compute in the Proxmox cluster:
-- Wazuh SIEM (requires ≥4GB RAM — deploy as VM, not LXC)
-- Jellyfin media server
-- Vaultwarden overflow / redundancy
-- General VM hosting
-- Heavy workloads that don't need GPU
+LLM inference node (currently **offline / no GPU**):
+- **llm_router.py** — FastAPI, OpenAI-compatible; routes between local Ollama (Qwen2.5 72B on RTX 8000) and Claude API fallback. **Inactive** until the RTX 8000 is installed.
+- Ollama (`llm.netframe.local`) — inactive, no GPU yet.
+- General VM hosting / heavy non-GPU workloads.
 
----
-
-## iDRAC / Firmware Update Procedure
-
-Same procedure as [[Compute/Dell R730 - ML Node]]:
-
-```bash
-# Step 1: Update iDRAC/LC to 2.86 via TFTP (no Enterprise license required)
-racadm -r 192.168.10.20 -u root -p <pass> fwupdate -g -u -a <tftp-server-ip> -d firmimg.d7
-
-# Step 2: After iDRAC reboots, flash BIOS via web UI
-# https://192.168.10.20 → Maintenance → System Update
-
-# Step 3: Verify POST
-# If silent hang with no error → check CPU S-spec steppings match
-```
-
-> [!WARNING] CPU Stepping Issue
-> Mismatched CPU S-spec steppings cause a **silent QPI hang** — no error displayed, system just hangs at POST. Verify both CPU S-spec codes match before seating. This is the current suspected root cause of POST failures.
-
-See `Home-Lab/docs/r730-bios-recovery-runbook.md` for full recovery procedure.
+> [!WARNING] Power
+> Runs on **UPS A** (Middle Atlantic UPS-OL2200R, the bottom/ML bus, shared with QuarkyLab + Randy + DS4246). See [[Power Distribution]].
 
 ---
 
 ## iDRAC Access
 
 ```bash
-# Web UI
-https://192.168.10.20
-
-# CLI
-racadm -r 192.168.10.20 -u root -p <pass> getsysinfo
-racadm -r 192.168.10.20 -u root -p <pass> serveraction powerup
-racadm -r 192.168.10.20 -u root -p <pass> getsel   # event log
+https://192.168.10.21                                   # Web UI (root/calvin)
+racadm -r 192.168.10.21 -u root -p calvin getsysinfo
+racadm -r 192.168.10.21 -u root -p calvin serveraction powercycle
 ```
+
+> Historical BIOS/iDRAC recovery (CPU stepping / firmware) for the R730s: see `Home-Lab/docs/r730-bios-recovery-runbook.md`.
 
 ---
 
-## Proxmox Role (planned)
+## Pending — RTX 8000 install
 
-- Join existing pve1–pve5 cluster
-- No GPU passthrough required
-- Will host Wazuh SIEM as VM (minimum 4GB RAM for indexer)
-- Storage: local + NFS from DS4246 once connected
+- Awaiting Dell **N08NH** GPU power cables.
+- Headscale Phase 2: QuarkyLab + Fernanda's Mac must migrate together — do not migrate one without the other.
 
 ---
 
 ## Related
-- [[Compute/Dell R730 - ML Node]] — Jarvis (iDRAC: 192.168.10.21)
-- [[Power Distribution]] — UPS B bus
-- [[Infrastructure/Proxmox Cluster]] — Cluster join procedure
+- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC 192.168.10.20, RTX 6000)
+- [[Power Distribution]] — UPS A (Middle Atlantic)
+- [[Infrastructure/Proxmox Cluster]] — cluster node table

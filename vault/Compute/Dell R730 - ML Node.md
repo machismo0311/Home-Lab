@@ -1,14 +1,20 @@
-# 🖥️ Dell R730 — Jarvis (ML Node)
+# 🖥️ Dell R730 — QuarkyLab (ML Node)
 **Tags:** #compute #dell #r730 #cuda #ml
 **Related:** [[Compute/Dell R730 - General Node]] · [[Infrastructure/Proxmox Cluster]] · [[Power Distribution]] · [[00 - Homelab MOC]]
 
 ---
 
-## Status: ⏸️ Pending — iDRAC accessible, BIOS/firmware update needed
+## Status: 🟢 Online — km-cluster node (RTX 6000 ML)
 
-- iDRAC SSH confirmed reachable at **192.168.10.21**
-- iDRAC/LC needs firmware update before BIOS can be flashed (see procedure below)
-- Not yet installed as a Proxmox cluster node
+- **Host IP:** 192.168.10.179
+- **iDRAC:** 192.168.10.20 (root/calvin)
+- Member of km-cluster (PVE 9.2.3)
+- Hosts **Wazuh SIEM VM 104** (192.168.10.184)
+- **Scrutiny collector** installed (reports to hub at 192.168.10.183:8080)
+- SSH: `ssh quarkylab` (via `fernanda@quarkylab` key, id_ed25519 on Ares)
+
+> [!WARNING] Kernel pin
+> Kernel **must** stay on `6.14.11-9-pve` — `GRUB_DEFAULT` is pinned; 6.17+ breaks NVIDIA 550. Never run kernel upgrades or change the GRUB default on QuarkyLab. NVIDIA 550.163.01 verified working post-upgrade.
 
 ---
 
@@ -17,32 +23,25 @@
 | Component | Spec |
 |---|---|
 | Model | Dell PowerEdge R730 |
-| Hostname (planned) | Jarvis |
+| Hostname | QuarkyLab |
+| Service Tag | **1S8WR22** |
 | Form Factor | 2U |
-| Rack Position | U18–U20 |
-| **CPU** | 2× Intel Xeon E5-2690 v4 |
-| CPU Cores | 28c / 56t total |
-| CPU Base Clock | 2.6 GHz |
-| **RAM** | 384 GB ECC DDR4 |
-| **GPU** | NVIDIA Quadro RTX 6000 24GB GDDR6 ECC |
-| Storage | TBD (see [[Infrastructure/Storage]]) |
+| Rack Position | U15–U16 |
+| **CPU** | 2× Intel Xeon E5-2699 v4 (44c / 88t total) |
+| CPU Base Clock | 2.2 GHz |
+| **RAM** | 512 GB LRDIMM ECC DDR4 |
+| **GPU** | NVIDIA Quadro RTX 6000 24GB GDDR6 ECC (driver 550.163.01) |
 | NICs | 4× 1G onboard |
-| Remote Mgmt | iDRAC 8 |
-| **iDRAC IP (current)** | **192.168.10.21** |
-| iDRAC MAC | 18:66:da:97:0f:8e |
+| Remote Mgmt | iDRAC 8 (192.168.10.20) |
 | Depth | ~28" — **rear panel removed** from NetFRAME CS9000 |
-
-> [!NOTE] iDRAC IP was originally static 10.10.198.38. Changed via front panel to 192.168.10.21 to match homelab subnet.
 
 ---
 
 ## Purpose
 
-Primary workloads (once online):
-- CUDA compute jobs (PyTorch, TensorFlow, JAX)
-- Large model training / fine-tuning
-- Data pipeline processing
-- Remote Jupyter / JupyterHub sessions
+- Fernanda's ML workloads / **DUNE agent** (RAG pipeline over the DUNE experiment codebase)
+- CUDA compute (PyTorch, TensorFlow, JAX), training / fine-tuning
+- Vector store (ChromaDB or Qdrant — TBD)
 
 ---
 
@@ -54,74 +53,21 @@ Primary workloads (once online):
 | CUDA Cores | 4608 |
 | Tensor Cores | 576 (2nd gen) |
 | TDP | ~250W |
-| ECC | Yes — critical for HPC |
-| Driver Target | Latest stable NVIDIA + CUDA 12.x |
-| Form Factor | Dual-slot, full-height |
+| Driver | NVIDIA 550.163.01 (CUDA 12.x) |
 
 > [!WARNING] Power Draw
-> RTX 6000 under full load = ~250W. Combined with dual Xeons, this node may draw 400–500W+. Runs on UPS B (Middle Atlantic UPS-2200R). See [[Power Distribution]].
+> RTX 6000 under full load = ~250W; with dual Xeons this node can draw 500W+. Runs on **UPS A** (Middle Atlantic UPS-OL2200R, the ML bus). See [[Power Distribution]].
 
 ---
 
-## iDRAC / Firmware Update Procedure
-
-iDRAC 8 must be updated to version **2.86** before BIOS can be flashed. Use legacy TFTP method (no Enterprise license required):
+## CUDA Environment
 
 ```bash
-# Step 1: Update iDRAC/LC to 2.86 via TFTP fwupdate (no Enterprise license needed)
-# Download firmimg.d7 from Dell support
-racadm -r 192.168.10.21 -u root -p <pass> fwupdate -g -u -a <tftp-server-ip> -d firmimg.d7
-
-# Step 2: Wait for iDRAC reboot (~5–10 min), then verify
-racadm -r 192.168.10.21 -u root -p <pass> getidracinfo
-
-# Step 3: Flash BIOS via iDRAC 2.86 web UI
-# https://192.168.10.21 → Maintenance → System Update → upload .exe BIOS file
-# (No Enterprise license required for web UI upload)
-```
-
-> [!WARNING] CPU Stepping
-> Mismatched CPU S-spec steppings cause a **silent QPI hang with no error logged** — system appears to POST but hangs. Verify both CPUs have matching S-spec codes before installing. This is the current suspected issue if BIOS update doesn't resolve POST.
-
----
-
-## CUDA Environment Setup (post-install)
-
-```bash
-# Verify GPU detected
-nvidia-smi
-
-# Python environment (conda recommended)
+nvidia-smi                       # verify GPU + driver 550.163.01
 conda create -n ml python=3.11
 conda activate ml
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
-
-# Test CUDA
 python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
-```
-
----
-
-## Proxmox Config (planned)
-
-- OS: Proxmox VE (will join existing cluster)
-- GPU passthrough via VFIO/IOMMU
-
-```bash
-# /etc/default/grub
-GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"
-
-# /etc/modules
-vfio
-vfio_iommu_type1
-vfio_pci
-vfio_virqfd
-
-lspci -nn | grep NVIDIA
-# /etc/modprobe.d/vfio.conf
-options vfio-pci ids=<vendor:device>
-
-update-initramfs -u && reboot
 ```
 
 ---
@@ -129,12 +75,9 @@ update-initramfs -u && reboot
 ## iDRAC Access
 
 ```bash
-# Web UI (once firmware updated)
-https://192.168.10.21
-
-# CLI
-racadm -r 192.168.10.21 -u root -p <pass> getsysinfo
-racadm -r 192.168.10.21 -u root -p <pass> serveraction powercycle
+https://192.168.10.20                                   # Web UI (root/calvin)
+racadm -r 192.168.10.20 -u root -p calvin getsysinfo
+racadm -r 192.168.10.20 -u root -p calvin getsel        # event log
 ```
 
 ---
@@ -143,12 +86,11 @@ racadm -r 192.168.10.21 -u root -p <pass> serveraction powercycle
 
 - R730 fans ramp hard under GPU load
 - Custom fan curve via iDRAC: `racadm set System.ThermalSettings.FanSpeedHighOffsetVal`
-- Ambient inlet temp target: < 25°C
-- Rear panel of CS9000 removed — ensure wall clearance for airflow
+- Ambient inlet target < 25°C; rear panel of CS9000 removed — ensure wall clearance
 
 ---
 
 ## Related
-- [[Compute/Dell R730 - General Node]] — quarkylab (iDRAC: 192.168.10.20)
-- [[Power Distribution]] — UPS B bus
+- [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC 192.168.10.21, LLM)
+- [[Power Distribution]] — UPS A (Middle Atlantic, ML bus)
 - [[Infrastructure/Proxmox Cluster]] — GPU passthrough config
