@@ -5,6 +5,8 @@
 **DNS/CDN:** Cloudflare
 **Hypervisor:** Proxmox VE 9.1.9
 
+> ⚠️ **Historical planning document.** Captured early in the build, before the network migrated from `192.168.1.0/24` to the current `192.168.10.0/24` addressing scheme. Some IPs and node roles below are stale — see `README.md` and `CLAUDE.md` for current state.
+
 ---
 
 ## Cluster Overview
@@ -63,8 +65,8 @@
 | Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3, admin port 81 |
 | Vaultwarden | 192.168.10.182 | CT 102 on pve3 |
 | Grafana | 192.168.10.183 | CT 103 on pve3 |
-| Pi-hole (primary) | 192.168.1.47 | Proxmox LXC on pve1, admin: http://192.168.1.47/admin |
-| Pi-hole (backup) | 192.168.1.170 | Raspberry Pi 4 |
+| Pi-hole (primary) | 192.168.10.177 | Proxmox LXC on pve1, admin: http://192.168.10.177/admin |
+| Pi-hole (backup, RPi 4) | — | ❌ Decommissioned — was 192.168.1.170, see `vault/Compute/Small Node Cluster.md` |
 
 ---
 
@@ -411,16 +413,16 @@ systemctl restart crowdsec
 
 ## Pi-hole DNS
 
-Originally running on pve1 (Mac Mini). Two instances for redundancy.
+Running on pve1 (Mac Mini), standalone (not in km-cluster). The original RPi 4 backup instance has since been decommissioned; a second Pi-hole (192.168.10.178, pve3) is planned but not yet built — see `README.md` Planned/In Progress.
 
 | Role | IP | Admin URL |
 |------|----|-----------|
-| Primary | 192.168.1.47 | http://192.168.1.47/admin |
-| Backup | 192.168.1.170 | Raspberry Pi 4 |
+| Primary | 192.168.10.177 | http://192.168.10.177/admin |
+| Backup (planned, pve3) | 192.168.10.178 | Not yet deployed |
 
 Point clients to Pi-hole for ad blocking and local DNS:
 ```bash
-sudo nmcli con mod "YourWiFiName" ipv4.dns "192.168.1.47"
+sudo nmcli con mod "YourWiFiName" ipv4.dns "192.168.10.177"
 sudo nmcli --ask con up "YourWiFiName"
 ```
 

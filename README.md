@@ -68,7 +68,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 |---|---|---|---|
 | Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS ~19.5TB — daily backups 02:00/03:00 |
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.7 |
-| Pi-hole | pve3 (LXC) | `192.168.10.177` | DNS filter |
+| Pi-hole | pve1 (LXC, standalone Mac Mini) | `192.168.10.177` | DNS filter |
 | Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
 | Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
 | step-ca | pve3 | — | Internal CA, `*.netframe.local` TLS |
@@ -81,7 +81,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 Jarvis will run **Ollama** serving **Qwen2.5 72B Q4_K_M** on the RTX 8000 (48GB VRAM) once the GPU swap is complete.
 
-A **FastAPI `llm_router.py`** implements hybrid routing:
+A **FastAPI `llm_router.py`** ([`llm-router/`](llm-router/)) implements hybrid routing:
 - Default: local Ollama inference
 - Escalation: Claude API when logprob confidence drops below threshold
 
@@ -115,7 +115,9 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] Prometheus node-exporter deployed on all 8 nodes (randy/pve2/pve3/pve4/pve5/quarkylab/jarvis/pve1) ✅
 - [x] Scrutiny — drive health UI live at http://192.168.10.183:8080 (41 drives, 6h collection) ✅
 - [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
-- [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
+- [x] `llm_router.py` committed — FastAPI hybrid router code-complete; inactive pending Jarvis GPU install
+- [x] SLURM GRES/QoS config committed (`slurm/`) — student GPU job limits + research-partition preemption; pending deploy on QuarkyLab
+- [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator) — see `slurm/README.md` for DCGM integration/sequencing strategy vs. SLURM
 - [ ] Cyberpunk monitoring dashboard — live API integration
 - [ ] IMU gesture control (nRF52 trackers → Home Assistant)
 - [x] Headscale Phase 1 — pve3/4/5/Jarvis migrated to self-hosted (2026-06-22)
@@ -141,6 +143,16 @@ Home-Lab/
 │   ├── .ssh/config                   # SSH host shortcuts
 │   ├── CLAUDE.netframe.md
 │   └── CLAUDE.dotfiles.md
+├── llm-router/
+│   ├── llm_router.py                 # FastAPI hybrid router (Ollama -> Claude fallback)
+│   ├── llm-router.service            # systemd unit
+│   ├── requirements.txt
+│   └── README.md
+├── slurm/
+│   ├── slurm.conf                    # GRES + research/students partitions
+│   ├── gres.conf
+│   ├── cgroup.conf                   # GPU device isolation enforcement
+│   └── README.md                     # QoS/job-limit setup + DCGM/RKE2 strategy
 └── vault/                            # Obsidian knowledge base
 ```
 

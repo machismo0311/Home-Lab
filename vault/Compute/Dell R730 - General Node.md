@@ -7,7 +7,7 @@
 ## Status: 🟢 Online — km-cluster node (no GPU yet)
 
 - **Host IP:** 192.168.10.31
-- **iDRAC:** 192.168.10.21 (root/calvin)
+- **iDRAC:** 192.168.10.21 (root / <Vaultwarden>)
 - Member of km-cluster (PVE 9.2.3); Headscale 100.64.0.6
 - **RTX 8000 swap pending** — Dell N08NH power cables on order; no GPU installed yet
 
@@ -49,9 +49,11 @@ LLM inference node (currently **offline / no GPU**):
 ## iDRAC Access
 
 ```bash
-https://192.168.10.21                                   # Web UI (root/calvin)
-racadm -r 192.168.10.21 -u root -p calvin getsysinfo
-racadm -r 192.168.10.21 -u root -p calvin serveraction powercycle
+https://192.168.10.21                                   # Web UI (root / <Vaultwarden>)
+racadm -r 192.168.10.21 -u root -p $IDRAC_PASS getsysinfo
+racadm -r 192.168.10.21 -u root -p $IDRAC_PASS serveraction powercycle
+# $IDRAC_PASS: export from Vaultwarden entry "Jarvis iDRAC" before running, e.g.
+#   export IDRAC_PASS="$(bw get password jarvis-idrac)"
 ```
 
 > Historical BIOS/iDRAC recovery (CPU stepping / firmware) for the R730s: see `Home-Lab/docs/r730-bios-recovery-runbook.md`.

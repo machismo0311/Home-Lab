@@ -1,0 +1,16 @@
+[Unit]
+Description=NetFRAME LLM Router (Ollama -> Claude fallback)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=llmrouter
+WorkingDirectory=/opt/llm-router
+EnvironmentFile=/opt/llm-router/.env
+ExecStart=/opt/llm-router/venv/bin/uvicorn llm_router:app --host 0.0.0.0 --port 8090
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -7,7 +7,7 @@
 ## Status: 🟢 Online — km-cluster node (RTX 6000 ML)
 
 - **Host IP:** 192.168.10.179
-- **iDRAC:** 192.168.10.20 (root/calvin)
+- **iDRAC:** 192.168.10.20 (root / <Vaultwarden>)
 - Member of km-cluster (PVE 9.2.3)
 - Hosts **Wazuh SIEM VM 104** (192.168.10.184)
 - **Scrutiny collector** installed (reports to hub at 192.168.10.183:8080)
@@ -75,9 +75,11 @@ python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_
 ## iDRAC Access
 
 ```bash
-https://192.168.10.20                                   # Web UI (root/calvin)
-racadm -r 192.168.10.20 -u root -p calvin getsysinfo
-racadm -r 192.168.10.20 -u root -p calvin getsel        # event log
+https://192.168.10.20                                   # Web UI (root / <Vaultwarden>)
+racadm -r 192.168.10.20 -u root -p $IDRAC_PASS getsysinfo
+racadm -r 192.168.10.20 -u root -p $IDRAC_PASS getsel        # event log
+# $IDRAC_PASS: export from Vaultwarden entry "QuarkyLab iDRAC" before running, e.g.
+#   export IDRAC_PASS="$(bw get password quarkylab-idrac)"
 ```
 
 ---

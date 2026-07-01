@@ -61,8 +61,8 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Pi-hole | 192.168.10.177 (pve1 LXC 103) | DNS — on Mac Mini standalone node, NOT pve3 |
 | APC AP7901 PDU | EX3400 ge-0/0/38 | Managed PDU |
 | Ares | 192.168.10.199 | Admin workstation |
-| QuarkyLab iDRAC | 192.168.10.20 | root/calvin |
-| Jarvis iDRAC | 192.168.10.21 | root/calvin |
+| QuarkyLab iDRAC | 192.168.10.20 | root / <Vaultwarden> |
+| Jarvis iDRAC | 192.168.10.21 | root / <Vaultwarden> |
 | Randy IPMI | 192.168.10.22 | ADMIN |
 
 ### VLANs (EX3400)

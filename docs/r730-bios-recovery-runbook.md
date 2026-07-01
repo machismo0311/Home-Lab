@@ -158,7 +158,7 @@ ssh root@<IDRAC_IP>
 racadm getversion    # confirms BIOS 1.0.4 / iDRAC 2.02 / LC 2.02
 ```
 
-Default password: `calvin`
+Default password (factory-only, rotate immediately after recovery): `calvin`
 
 ### 6.2 Download the Linux `.BIN` — not the Windows `.exe`
 
