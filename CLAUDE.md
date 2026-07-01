@@ -43,8 +43,8 @@ QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed2551
 | 10G link | nic3 → EX3400 xe-0/2/0 |
 | Headscale IP | 100.64.0.2 |
 | Boot | RAID-1 mirror, 2x Seagate ST200FM0053 185.8GB SAS via AVAGO 3108 MegaRAID |
-| Data drives | 18x Toshiba AL15SEB18EQ 1.636TB 10K SAS (3x RAIDZ2 of 6) |
-| Spare drives | 2x Seagate ST2000NX0423 1.818TB SATA (unallocated) |
+| Data drives | 18x Toshiba AL15SEB18EQ 1.636TB 10K SAS + 4x Seagate ST2000NX0423 1.819TB SATA |
+| ZFS layout | `datastore` = 4x RAIDZ2 — 3x 6-wide Toshiba + 1x 4-wide Seagate (36.7T raw / ~23T usable). All drives in-pool; no unallocated spares |
 | GPU | RX 580 8GB (ROCm, display/transcoding only) |
 | Proxmox UI | https://192.168.10.187:8006 |
 | PBS UI | https://192.168.10.187:8007 (v4.2.2) |
@@ -85,7 +85,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 ## Key Services
 | Service | Location | URL/Port | Notes |
 |---|---|---|---|
-| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS ~19.5TB — LXCs 02:00 daily, VMs 03:00 daily, 7d+4w retention |
+| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS 36.7T (~23T usable, 19.5G used) — LXCs 02:00 daily, VMs 03:00 daily, 7d+4w retention |
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
 | Pi-hole | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
@@ -102,7 +102,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 **Wazuh VM 104 is on QuarkyLab** (migrated from pve2). IP: 192.168.10.184 (DHCP). Dashboard: `https://192.168.10.184`.
 
 ## Storage
-- **Randy ZFS:** `datastore` — 3x RAIDZ2 of 6x Toshiba 1.636TB 10K SAS, 29.4TB raw / 19.5TB usable
+- **Randy ZFS:** `datastore` — 4x RAIDZ2 (3x 6-wide Toshiba 1.636TB 10K SAS + 1x 4-wide Seagate ST2000NX0423 1.819TB SATA), 36.7T raw / ~23T usable, 19.5G used
 - **Randy boot:** RAID-1, 2x Seagate ST200FM0053 via AVAGO 3108 MegaRAID
 - **Jarvis root:** pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade; **/opt/models 98G LV** added 2026-07-01 for LLM weights (OLLAMA_MODELS)
 - **DS4246 JBOD:** 13x Toshiba 1.8TB + 19x Dell/Seagate 2TB SAS, via LSI 9207-8e (IT mode) — passthrough pending
@@ -139,6 +139,7 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - Randy boot drives RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
 - Randy data drives use separate LSI 9207-8e HBA in IT mode — two different cards
 - Randy JBOD mode may reset after reboot — re-run `storcli64 /c0 set jbod=on && storcli64 /c0/eall/sall set jbod`
+- Randy AVAGO 3108 relocated to a known-good PCIe slot 2026-07-01 after its original slot failed (controller undetected at POST → "no boot device"). Original slot is DEAD — do not reuse. Triage: no MegaRAID banner at POST = physical/slot fault, NOT a BIOS/OpROM setting; blinking-green D13 LED = card healthy. See Runbook/Randy-PCIe-Slot-Recovery-2026-07-01.md
 - Randy corosync singleton after reboot: from pve2 `pvecm delnode Randy`, then on Randy `pkill pmxcfs; systemctl start pve-cluster`
 - Jarvis root was 6GB (disk-full during upgrade) — now 56GB with sda added to pve VG
 - pve3 LXCs (101/102/103/105) all have onboot=1 set — verify before rebooting pve3

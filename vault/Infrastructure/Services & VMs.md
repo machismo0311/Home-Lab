@@ -24,7 +24,7 @@
 | step-ca | Native | 🟢 Active | pve2 | 192.168.10.204:443 | *.netframe.local TLS |
 | CrowdSec | Native | 🟢 Active | pve3 host | — | https://app.crowdsec.net |
 | Wazuh SIEM | VM 104 | 🟢 Active | QuarkyLab | 192.168.10.184 | https://192.168.10.184 |
-| PBS | Native | 🟢 Active | Randy | 192.168.10.187:8007 | v4.2.2, ~19.5TB ZFS |
+| PBS | Native | 🟢 Active | Randy | 192.168.10.187:8007 | v4.2.2, 36.7T ZFS (~23T usable) |
 | Jellyfin | Native | 🟢 Active | Randy | 192.168.10.187:8096 | v10.11.11 |
 | Ollama / llm_router | Native | ⏸️ Inactive | Jarvis | llm.netframe.local | v0.31.1 installed (CPU-only, /opt/models); awaiting 2× RTX 6000 |
 | Home Assistant | — | 🔴 Planned | TBD | — | — |
