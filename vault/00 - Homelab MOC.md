@@ -30,6 +30,7 @@ mindmap
       [[Runbook/Daily Operations]]
       [[Runbook/Network Procedures]]
       [[Runbook/Recovery Procedures]]
+      [[Runbook/Randy-PCIe-Slot-Recovery-2026-07-01]]
 ```
 
 ---
@@ -117,6 +118,7 @@ mindmap
 - [[Runbook/Daily Operations]]
 - [[Runbook/Network Procedures]]
 - [[Runbook/Recovery Procedures]]
+- [[Runbook/Randy-PCIe-Slot-Recovery-2026-07-01]] — Randy PCIe slot failure & recovery (incident report, 2026-07-01)
 
 ---
 
