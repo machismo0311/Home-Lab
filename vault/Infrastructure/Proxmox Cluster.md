@@ -13,8 +13,8 @@ flowchart TB
         PVE3[pve3\nEliteDesk G4 SFF\ni7-8700 · 48GB\n.201 · services]
         PVE4[pve4\nEliteDesk G3 Mini\ni5-7500T · 32GB\n.202]
         PVE5[pve5\nEliteDesk G3 Mini\ni5-7500T · 32GB\n.203]
-        QUARK[QuarkyLab\nDell R730 · 2×E5-2699 v4\n512GB · RTX 6000\n.179 · ML]
-        JARVIS[Jarvis\nDell R730 · 2×E5-2687W v4\n384GB · no GPU\n.31 · LLM]
+        QUARK[QuarkyLab\nDell R730 · 2×E5-2699 v4\n512GB · RTX 6000→8000\n.179 · ML]
+        JARVIS[Jarvis\nDell R730 · 2×E5-2687W v4\n384GB · 2× RTX 6000 planned\n.31 · LLM]
         RANDY[Randy\nSuperMicro CSE-219U\n128GB · ZFS\n.187 · PBS/Jellyfin]
     end
 
@@ -35,8 +35,8 @@ flowchart TB
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 192.168.10.201 | Primary services (NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT) |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.202 | Cluster node |
 | pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.203 | Cluster node |
-| QuarkyLab | Dell R730 (svc tag 1S8WR22) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 6000 (Fernanda/DUNE); Wazuh VM 104. iDRAC .20 |
-| Jarvis | Dell R730 | 2× E5-2687W v4 | 384GB | 192.168.10.31 | LLM node (no GPU yet). iDRAC .21 |
+| QuarkyLab | Dell R730 (svc tag 1S8WR22) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 6000 → RTX 8000 48GB planned (Fernanda/DUNE); Wazuh VM 104. iDRAC .20 |
+| Jarvis | Dell R730 | 2× E5-2687W v4 | 384GB | 192.168.10.31 | LLM node — no GPU yet; 2× RTX 6000 planned (SW stack staged 2026-07-01). iDRAC .21 |
 | Randy | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 | 128GB | 192.168.10.187 | PBS, Jellyfin, ZFS storage. IPMI .22 |
 
 > **pve1** (Apple Mac Mini, 192.168.10.193) is a **standalone** Proxmox node — **not** in km-cluster. It hosts the Pi-hole LXC (192.168.10.177).

@@ -71,8 +71,8 @@ ping -c 1 -W 2 192.168.10.21 && echo "Jarvis iDRAC reachable"
 
 | Node | IP | Status |
 |---|---|---|
-| QuarkyLab | 192.168.10.20 | Live ML node (RTX 6000); iDRAC root/calvin |
-| Jarvis | 192.168.10.21 | Live LLM node (no GPU yet); iDRAC root/calvin |
+| QuarkyLab | 192.168.10.20 | Live ML node (RTX 6000 → RTX 8000 planned); iDRAC root/calvin |
+| Jarvis | 192.168.10.21 | Live LLM node (no GPU yet; 2× RTX 6000 staged, SW ready); iDRAC root/calvin |
 
 ```bash
 # SSH to iDRAC

@@ -12,15 +12,15 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 | Hostname | Role | IP | CPU | RAM | GPU | PVE | Kernel |
 |---|---|---|---|---|---|---|---|
 | **Randy** | Storage / PBS | 192.168.10.187 | 2× E5-2690 v4 | 128 GB | RX 580 8GB | 9.1.1 | 7.0.12-1 |
-| **QuarkyLab** | ML / Fernanda | 192.168.10.179 | 2× E5-2699 v4 | 512 GB | RTX 6000 24GB | 9.2.3 | 6.14.11-9-pve† |
-| **Jarvis** | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | — ‡ | 9.2.3 | 7.0.12-1 |
+| **QuarkyLab** | ML / Fernanda | 192.168.10.179 | 2× E5-2699 v4 | 512 GB | RTX 6000 24GB → RTX 8000 48GB† | 9.2.3 | 6.14.11-9-pve† |
+| **Jarvis** | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | — (2× RTX 6000 planned)‡ | 9.2.3 | 6.14.11-9-pve‡ |
 | **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 48 GB | — | 9.2.3 | 7.0.12-1 |
 | **pve3** | Cluster node | 192.168.10.201 | i7-8700 | 32 GB | — | 9.2.3 | 7.0.12-1 |
 | **pve4** | Cluster node | 192.168.10.202 | i5-7500T | 32 GB | — | 9.2.3 | 7.0.12-1 |
 | **pve5** | Cluster node | 192.168.10.203 | i5-7500T | 32 GB | — | 9.2.3 | 7.0.12-1 |
 
-†Kernel pinned — NVIDIA 550.163.01 driver requires 6.14.11-9-pve.  
-‡RTX 8000 swap pending parts arrival (Dell N08NH aux power cables).
+†QuarkyLab: RTX 6000 24GB now → RTX 8000 48GB planned swap (card in hand). Kernel pinned — NVIDIA 550.163.01 requires 6.14.11-9-pve.  
+‡Jarvis: no GPU installed yet; 2× RTX 6000 48GB planned (both cards in hand). GPU software stack pre-staged 2026-07-01 (kernel 6.14.11-9-pve pinned + NVIDIA 550.163.01 DKMS + Ollama on /opt/models) — plug-and-play once cards seated. Gated on Dell N08NH aux power cables (2 sets) + R730 GPU riser kit.
 
 ---
 
@@ -73,13 +73,13 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 | Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
 | step-ca | pve3 | — | Internal CA, `*.netframe.local` TLS |
 | Vaultwarden | pve3 (LXC 102) | — | Installed, pending activation |
-| Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | Pending RTX 8000 installation |
+| Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | Installed (v0.31.1); pending 2× RTX 6000 install |
 
 ---
 
 ## LLM Infrastructure
 
-Jarvis will run **Ollama** serving **Qwen2.5 72B Q4_K_M** on the RTX 8000 (48GB VRAM) once the GPU swap is complete.
+Jarvis will run **Ollama** serving **Qwen2.5 72B Q4_K_M** across **2× RTX 6000** (48GB VRAM total) once the cards are installed. The software stack (kernel 6.14.11-9-pve, NVIDIA 550.163.01, Ollama on a 98G `/opt/models` LV) is already staged.
 
 A **FastAPI `llm_router.py`** implements hybrid routing:
 - Default: local Ollama inference
@@ -105,7 +105,9 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] Randy commissioned — PBS live, ZFS datastore ~19.5TB
 - [x] Full cluster upgrade — all nodes PVE 9.2.3 / kernel 7.0.12-1 (2026-06-22)
 - [x] NVIDIA 550 driver on QuarkyLab — kernel pinned to 6.14.11-9-pve
-- [ ] RTX 8000 swap into Jarvis (Dell N08NH aux power cables on order)
+- [x] Jarvis GPU software stack staged (2026-07-01) — kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS built, Ollama on /opt/models
+- [ ] QuarkyLab RTX 6000 → RTX 8000 48GB swap (card in hand)
+- [ ] Jarvis 2× RTX 6000 install (cards in hand; gated on Dell N08NH aux power cables + R730 GPU riser)
 - [x] Backup schedules configured — daily to randy-pbs, 7d+4w retention
 - [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25\n- [x] Wazuh agent 4.9.2 on all 8 nodes → SIEM coverage ✅ 2026-06-25\n- [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25
 - [x] Wazuh agent 4.9.2 on all 8 nodes → full SIEM coverage ✅ 2026-06-25
