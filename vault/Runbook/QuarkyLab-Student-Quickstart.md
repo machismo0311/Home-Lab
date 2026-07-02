@@ -8,17 +8,25 @@
 
 Welcome to the QuarkyLab GPU cluster. You share **one NVIDIA RTX 8000 (48 GB)** with other students via the SLURM scheduler. This guide is everything you need to run GPU jobs.
 
-## 1. Log in
+## 1. Get access & log in
+**First time only** — make an SSH key **on your own computer** and send the admin the **public** part:
 ```bash
-ssh studentNN@192.168.10.179     # use the SSH key you were issued; password login is off
+ssh-keygen -t ed25519 -C "yourname@quarkylab"   # Enter for defaults, set a passphrase
+cat ~/.ssh/id_ed25519.pub                        # send THIS line to the admin (never the private key)
 ```
-You land on the login node. **Don't run heavy GPU code here directly** — submit it to SLURM (below).
+*(Windows PowerShell: `ssh-keygen -t ed25519` then `type $env:USERPROFILE\.ssh\id_ed25519.pub`.)*
+
+Once the admin adds your key:
+```bash
+ssh studentNN@192.168.10.179     # key-only; password login is off
+```
+You land on the login node. **Don't run heavy GPU code here directly** — submit it with `sbatch` (below). Interactive `srun`/`salloc` is **disabled** for students.
 
 ## 2. Your storage
 | Path | What | Notes |
 |---|---|---|
 | `~` (your home) | your code + results | 100 GB quota, **backed up nightly** |
-| `/scratch` | fast temp space (inside jobs) | **disposable, NOT backed up** — use for checkpoints/temp |
+| `/scratch` | fast temp space (inside jobs) | **disposable, NOT backed up**, auto-purged after ~14 days |
 | `/data/shared` | shared datasets | **read-only** |
 
 ## 3. Run a GPU job
@@ -61,6 +69,7 @@ cat myjob-<jobid>.out  # see output
 | Running jobs | 1 at a time (up to 3 more queued) |
 | Max job time | 2 hours |
 | Internet inside jobs | none |
+| Interactive `srun`/`salloc` | disabled — use `sbatch` |
 | Whole GPU | not available to students (researchers only) |
 
 ## 7. Need more GPU memory?
