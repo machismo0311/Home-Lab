@@ -94,6 +94,31 @@ racadm -r 192.168.10.20 -u root -p calvin getsel        # event log
 
 ---
 
+## Chassis Intrusion / F1 POST Halt
+
+> [!NOTE] Cover-removal F1 halt — FIXED 2026-07-02
+> Opening the lid trips the chassis-intrusion switch; on the next POST the R730 shows `Alert! Cover was previously removed — Press F1 to continue` and **halts boot** waiting for a keypress. That prompt renders on the onboard **Matrox G200 VGA (0a:00.0)**, *not* the GPU — a monitor plugged into the RTX card shows a black "no signal" screen. This stalled the node during the 2026-07-01 RTX 8000 swap.
+>
+> **Fix (2026-07-02):** BIOS `MiscSettings.ErrPrompt` ("F1/F2 Prompt on Error") set to **Disabled** — POST no longer stops for non-fatal alerts. Verified after reboot: `ErrPrompt: Disabled`, kernel 6.14.11-9-pve, RTX 8000 present, Wazuh VM 104 auto-started. Intrusion is still recorded to the iDRAC SEL; it just no longer halts boot.
+
+> [!TIP] Changing BIOS attributes on this iDRAC 8 — no racadm, run Redfish *from the node*
+> `racadm` is not installed anywhere, and Ares' modern curl can't negotiate the iDRAC's old TLS (handshake fails → http 000). Drive Redfish **from the QuarkyLab host itself** (it reaches its own iDRAC at .20 fine), then reboot to apply:
+> ```bash
+> IDRAC=192.168.10.20
+> B="https://$IDRAC/redfish/v1/Systems/System.Embedded.1/Bios"
+> # 1) stage the attribute change (goes to Bios/Settings as pending)
+> ssh quarkylab "curl -sk -u root:calvin -X PATCH $B/Settings \
+>   -H 'Content-Type: application/json' -d '{\"Attributes\":{\"ErrPrompt\":\"Disabled\"}}'"
+> # 2) create the BIOS config job — applies at next reboot
+> ssh quarkylab "curl -sk -u root:calvin -X POST \
+>   https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Jobs \
+>   -H 'Content-Type: application/json' \
+>   -d '{\"TargetSettingsURI\":\"$B/Settings\"}'"
+> # 3) after reboot verify:  curl -sk -u root:calvin $B | grep -i errprompt  →  "ErrPrompt":"Disabled"
+> ```
+
+---
+
 ## Related
 - [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC 192.168.10.21, LLM, 2× RTX 6000 planned)
 - [[Power Distribution]] — UPS A (Middle Atlantic, ML bus)
