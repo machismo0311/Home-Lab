@@ -2,7 +2,7 @@
 
 ## Who I Am
 - Kyle Mason, USMC veteran, aviation professional transitioning to network engineering
-- Pursuing CCNA via VetTec 2.0, MIS degree at Cleveland State University
+- MIS degree at Cleveland State University
 - GitHub: machismo0311 | Site: kylemason.org
 - Primary workstation: Ares (Debian 12, user: machismo, 192.168.10.199)
 - Editor preference: nano
