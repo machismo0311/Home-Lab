@@ -1,6 +1,6 @@
 # 🖥️ Dell R730 — QuarkyLab (ML Node)
 **Tags:** #compute #dell #r730 #cuda #ml
-**Related:** [[Compute/Dell R730 - General Node]] · [[Infrastructure/Proxmox Cluster]] · [[Power Distribution]] · [[Infrastructure/QuarkyLab Storage]] · [[00 - Homelab MOC]]
+**Related:** [[Compute/Dell R730 - General Node]] · [[Infrastructure/Proxmox Cluster]] · [[Power Distribution]] · [[Infrastructure/QuarkyLab Storage]] · [[Runbook/QuarkyLab-Phase04-GPU-Sharing-2026-07-02]] · [[00 - Homelab MOC]]
 
 ---
 
