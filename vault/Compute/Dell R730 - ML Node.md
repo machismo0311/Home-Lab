@@ -17,6 +17,15 @@
 > [!WARNING] Kernel pin
 > Kernel **must** stay on `6.14.11-9-pve` — `GRUB_DEFAULT` is pinned; 6.17+ breaks NVIDIA 550. Never run kernel upgrades or change the GRUB default on QuarkyLab. NVIDIA 550.163.01 verified working post-upgrade.
 
+> [!WARNING] Wazuh VM 104 has no qemu-guest-agent
+> A QuarkyLab host reboot **hard-stops** VM 104 (unclean), so `wazuh-indexer` (OpenSearch) comes back unhealthy and the dashboard returns **503**. After any QuarkyLab reboot, power-cycle the VM from the host and wait ~4 min:
+> ```bash
+> qm stop 104 && qm start 104
+> ```
+> **Healthy state** (check from the host): dashboard root `https://192.168.10.184/` → **302 → /app/login** (login page = 200); manager API `:55000` → 401. (Indexer `:9200` reads `000`/refused from the LAN — that's normal, it binds internally.)
+>
+> **Permanent fix:** install the guest agent *inside* the VM — `apt install -y qemu-guest-agent` (Debian/Ubuntu) or `dnf install -y qemu-guest-agent` (RHEL/Amazon Linux), then `systemctl enable --now qemu-guest-agent`; on the host `qm set 104 --agent enabled=1` + one cold `qm stop 104 && qm start 104` to attach the virtio-serial channel. Then host reboots shut it down gracefully. `onboot=1` is set.
+
 ---
 
 ## Hardware Specs
