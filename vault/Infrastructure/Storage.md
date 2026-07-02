@@ -1,6 +1,6 @@
 # 💾 Storage
 **Tags:** #infrastructure #storage #netapp #jbod  
-**Related:** [[Rack Layout]] · [[Infrastructure/Proxmox Cluster]] · [[Infrastructure/Services & VMs]]
+**Related:** [[Rack Layout]] · [[Infrastructure/Proxmox Cluster]] · [[Infrastructure/Services & VMs]] · [[Infrastructure/QuarkyLab Storage]]
 
 ---
 
