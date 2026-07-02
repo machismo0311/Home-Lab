@@ -61,8 +61,8 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Pi-hole | 192.168.10.177 (pve1 LXC 103) | DNS — on Mac Mini standalone node, NOT pve3 |
 | APC AP7901 PDU | EX3400 ge-0/0/38 | Managed PDU |
 | Ares | 192.168.10.199 | Admin workstation |
-| QuarkyLab iDRAC | 192.168.10.20 | root/calvin |
-| Jarvis iDRAC | 192.168.10.21 | root/calvin |
+| QuarkyLab iDRAC | 192.168.10.20 | root |
+| Jarvis iDRAC | 192.168.10.21 | root |
 | Randy IPMI | 192.168.10.22 | ADMIN |
 
 ### VLANs (EX3400)
@@ -127,7 +127,7 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - Label convention: [DEVICE]-[PORT], TIA-606 cable colors
 
 ## Important Safety Notes
-- ALWAYS check prior conversation before touching pve2 network config (June 15 outage)
+- ALWAYS check prior notes before touching pve2 network config (June 15 outage)
 - QuarkyLab kernel MUST stay on 6.14.11-9-pve — GRUB_DEFAULT is pinned; 6.17+ breaks NVIDIA 550; never run kernel upgrades or change GRUB default on QuarkyLab
 - Jarvis is ALSO now pinned to 6.14.11-9-pve (GRUB_DEFAULT; NOT proxmox-boot-tool) for its NVIDIA 550.163.01 GPU stack — do not change GRUB default or upgrade the kernel on Jarvis either
 - QuarkyLab SSH: `ssh quarkylab` (IP 192.168.10.179) via fernanda@quarkylab key (id_ed25519 on Ares)
