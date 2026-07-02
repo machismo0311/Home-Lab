@@ -79,6 +79,10 @@ systemctl restart slurmctld slurmd
 ---
 
 ## Follow-ups (optional)
-- **Phase 04b — hard VRAM caps:** `gres/shard` does not cap VRAM, so a co-scheduled student can OOM the GPU (mitigated today by 1-job-per-user + convention). Escalate to MPS + `CUDA_MPS_PINNED_DEVICE_MEM_LIMIT` if it becomes a problem.
+- **Phase 04b — hard VRAM caps (investigated 2026-07-02 → DEFERRED, soft-share accepted):** `gres/shard` is soft — a co-scheduled student can OOM the GPU (mitigated today by 8 shards + `MaxJobsPerUser=1`). A true per-job cap needs MPS + `CUDA_MPS_PINNED_DEVICE_MEM_LIMIT`, but the MPS binaries (`nvidia-cuda-mps-control`/`-server`) are **absent on both host and container**. Options to get them, none free:
+  - **(a) host CUDA-toolkit install** — ❌ rejected: fights the `apt-mark hold` on the 48 nvidia/cuda pkgs protecting the 550 driver pin.
+  - **(b) rebuild `base.sif` + per-job in-container MPS** (unique pipe dir in `/scratch`, `CUDA_MPS_PINNED_DEVICE_MEM_LIMIT=0=6G`) — viable, ~40 min, but relies on concurrent per-user MPS servers (Turing supports it; needs careful testing).
+  - **(c) drop the two MPS binaries on host from a CUDA runfile** (no apt → pin-safe) + one host MPS server in Default mode + per-job 6G env — cleanest runtime, but unsupported manual binary placement.
+  Revisit only if real contention appears; **(b)** or **(c)** are the paths.
 - **udev device-node hardening:** `/dev/nvidia*` are world-`rw`, but `ConstrainDevices=yes` already blocks any no-GRES access and students have no non-SLURM shell, so this is near-zero marginal benefit — deferred. If done, must add all GPU-using accounts to a `gpu-users` group or it breaks their jobs (DAC + cgroup both apply).
 - **srun --pty gap** (from Phase 03): interactive student `srun` is not containerized — GPU is still cgroup-gated, but fs/net isolation isn't applied. Phase 06 to probe/close.
