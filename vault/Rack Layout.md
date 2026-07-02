@@ -41,7 +41,7 @@
 │ U29–  │ ─── Open / Cable Reserve ───    │
 │  U21  │                                 │
 ├───────┼─────────────────────────────────┤
-│ U20–  │ Dell R730 #1 — ML Node          │ ◄ 28c/56t │ 384GB │ RTX 6000→8000
+│ U20–  │ Dell R730 #1 — ML Node          │ ◄ 28c/56t │ 384GB │ RTX 8000 48GB
 │  U18  │   (2U — rear panel removed)     │   Fernanda's CUDA workloads
 ├───────┼─────────────────────────────────┤
 │  U17  │ ─── Spacer ───                  │
@@ -88,7 +88,7 @@ flowchart TB
     end
 
     subgraph MID_LOW["🔴 Zone 3 — Heavy Compute (U13–U20)"]
-        R730ML[R730 ML Node\nRTX 6000→8000 · HIGH HEAT]
+        R730ML[R730 ML Node\nRTX 8000 48GB · HIGH HEAT]
         R730GEN[R730 General]
         SM[SuperMicro CSE-219U]
     end
