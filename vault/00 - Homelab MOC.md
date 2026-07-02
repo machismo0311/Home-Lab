@@ -48,7 +48,7 @@ mindmap
 | U30 | Mac mini (pve1) + RPi 4 (1U shelf) | Pi-hole / cluster mgmt |
 | U29–U21 | *Open / cable mgmt* | — |
 | U20–U18 | Dell R730 — Jarvis | LLM node (no GPU yet; 2× RTX 6000 staged) |
-| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 6000 → RTX 8000 planned (Fernanda / DUNE) |
+| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 8000 48GB, installed 2026-07-01 (Fernanda / DUNE) |
 | U14–U13 | SuperMicro CSE-219U — Randy | PBS, Jellyfin, ZFS storage |
 | U12–U7 | NetApp DS4246 (4U) | JBOD storage shelf |
 | U6 | Furman RP-8 | Power conditioning |
@@ -69,7 +69,7 @@ mindmap
 | pve3 (EliteDesk G4) | 192.168.10.201 | 48GB; primary services node |
 | pve4 (EliteDesk G3) | 192.168.10.202 | 32GB |
 | pve5 (EliteDesk G3) | 192.168.10.203 | 32GB |
-| QuarkyLab (R730) | 192.168.10.179 | ML node, RTX 6000 (→RTX 8000 planned); Wazuh VM 104 (.184) |
+| QuarkyLab (R730) | 192.168.10.179 | ML node, RTX 8000 48GB; Wazuh VM 104 (.184) |
 | Jarvis (R730) | 192.168.10.31 | LLM node (no GPU yet; 2× RTX 6000 staged, SW ready) |
 | Randy (SuperMicro) | 192.168.10.187 | PBS, Jellyfin, ZFS storage |
 | QuarkyLab iDRAC / Jarvis iDRAC / Randy IPMI | .20 / .21 / .22 | |
@@ -92,7 +92,7 @@ mindmap
 - [[Networking/Network Overview]] — Topology, VLANs, routing
 
 ### Compute
-- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC: 192.168.10.20, RTX 6000 → RTX 8000 planned)
+- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC: 192.168.10.20, RTX 8000 48GB installed 2026-07-01)
 - [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC: 192.168.10.21, LLM, 2× RTX 6000 planned)
 - [[Compute/Small Node Cluster]] — pve1 (standalone) + pve2–pve5
 
@@ -144,7 +144,7 @@ mindmap
 - [x] PBS live on Randy (.187:8007); Jellyfin live on Randy (.187:8096)
 - [x] Homepage dashboard live (homepage.kylemason.org); UPS monitoring (NUT→PeaNUT→Grafana→Discord)
 - [x] Jarvis GPU software stack staged (2026-07-01) — kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS, Ollama → /opt/models
-- [ ] QuarkyLab RTX 6000 → RTX 8000 48GB swap (card in hand)
+- [x] QuarkyLab RTX 6000 → RTX 8000 48GB swap — installed 2026-07-01
 - [ ] Jarvis 2× RTX 6000 install (cards in hand; pending Dell N08NH power cables + R730 GPU riser)
 - [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
 - [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error

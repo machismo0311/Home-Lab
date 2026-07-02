@@ -68,6 +68,6 @@ racadm -r 192.168.10.21 -u root -p calvin serveraction powercycle
 ---
 
 ## Related
-- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC 192.168.10.20, RTX 6000 → RTX 8000 planned)
+- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC 192.168.10.20, RTX 8000 48GB (installed 2026-07-01))
 - [[Power Distribution]] — UPS A (Middle Atlantic)
 - [[Infrastructure/Proxmox Cluster]] — cluster node table

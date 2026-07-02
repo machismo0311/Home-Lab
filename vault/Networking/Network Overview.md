@@ -30,7 +30,7 @@ flowchart TB
         PVE3[pve3 · .201\nNPM·Vault·Grafana·Homepage·Headscale]
         PVE4[pve4 · .202]
         PVE5[pve5 · .203]
-        QUARK[QuarkyLab · .179\nRTX 6000→8000 · Wazuh VM 104 ·184]
+        QUARK[QuarkyLab · .179\nRTX 8000 48GB · Wazuh VM 104 ·184]
         JARVIS[Jarvis · .31\nLLM node · 2× RTX 6000 planned]
         RANDY[Randy · .187\nPBS · Jellyfin · storage]
     end
@@ -72,7 +72,7 @@ flowchart TB
 | pve3 | 192.168.10.201 | 48GB; NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT |
 | pve4 | 192.168.10.202 | 32GB |
 | pve5 | 192.168.10.203 | 32GB |
-| QuarkyLab (R730) | 192.168.10.179 | RTX 6000 → RTX 8000 planned; Wazuh VM 104 (.184); Scrutiny collector |
+| QuarkyLab (R730) | 192.168.10.179 | RTX 8000 48GB (installed 2026-07-01); Wazuh VM 104 (.184); Scrutiny collector |
 | Jarvis (R730) | 192.168.10.31 | LLM node (no GPU yet; 2× RTX 6000 staged, SW ready) |
 | Randy (SuperMicro) | 192.168.10.187 | PBS, Jellyfin, storage; Scrutiny hub+collector |
 | QuarkyLab iDRAC | 192.168.10.20 | svc tag 1S8WR22 |

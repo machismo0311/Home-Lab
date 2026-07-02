@@ -24,11 +24,11 @@
 ### R730 Compute Nodes
 | Node | Service Tag | IP | CPUs | RAM | GPU | PVE | Role |
 |---|---|---|---|---|---|---|---|
-| QuarkyLab | 1S8WR22 | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 6000 24GB → RTX 8000 48GB† | 9.2.3 | Fernanda ML / DUNE agent |
+| QuarkyLab | 1S8WR22 | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 8000 48GB† | 9.2.3 | Fernanda ML / DUNE agent |
 | Jarvis | DWG7HH2 | 192.168.10.31 | 2x E5-2687W v4 | 384GB LRDIMM | none (2× RTX 6000 planned)† | 9.2.3 | LLM inference |
 
-†GPU plan FINALIZED 2026-06-30: **QuarkyLab → RTX 8000 48GB** (swap out its current RTX 6000); **Jarvis → 2× RTX 6000 48GB** (QuarkyLab's old card + a new one). Both cards in hand, not yet installed — gated on Dell N08NH-type GPU aux power cables (2 sets) + R730 GPU riser kit. Jarvis GPU software stack BUILT & VERIFIED 2026-07-01: kernel 6.14.11-9-pve installed + GRUB-pinned + running, NVIDIA 550.163.01 DKMS module built, Ollama v0.31.1 active with OLLAMA_MODELS=/opt/models (98G LV) — plug-and-play once cards seated.
-QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed25519 on Ares). Kernel pinned to 6.14.11-9-pve via GRUB_DEFAULT. NVIDIA 550.163.01 verified working post-upgrade. RTX 8000 is a driver-free swap (same 550.163.01 / 6.14.11 stack).
+†GPU plan (2026-06-30): **QuarkyLab → RTX 8000 48GB — INSTALLED & VERIFIED 2026-07-01** (nvidia-smi reports 46080 MiB on driver 550.163.01, kernel 6.14.11-9-pve; driver-free Turing TU102 swap). Its freed RTX 6000 is now staged for **Jarvis → 2× RTX 6000 48GB** (that card + a new one), not yet installed — gated on Dell N08NH-type GPU aux power cables (2 sets) + R730 GPU riser kit. Jarvis GPU software stack BUILT & VERIFIED 2026-07-01: kernel 6.14.11-9-pve installed + GRUB-pinned + running, NVIDIA 550.163.01 DKMS module built, Ollama v0.31.1 active with OLLAMA_MODELS=/opt/models (98G LV) — plug-and-play once cards seated.
+QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed25519 on Ares). Kernel pinned to 6.14.11-9-pve via GRUB_DEFAULT. NVIDIA 550.163.01 verified working. RTX 8000 installed 2026-07-01 — driver-free swap (same 550.163.01 / 6.14.11 stack), nvidia-smi reports 48GB.
 
 ### Randy (SuperMicro — Storage / PBS)
 | Field | Value |
@@ -113,7 +113,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 FastAPI, OpenAI-compatible. Routes between local Ollama (Qwen2.5 72B, Jarvis 2× RTX 6000 48GB) and Claude API fallback. **Currently inactive** — awaiting Jarvis GPU install (SW stack ready).
 
 ### DUNE Agent — Fernanda (QuarkyLab)
-RAG pipeline over DUNE experiment codebase. RTX 6000 24GB (→ RTX 8000 48GB after planned swap). Vector store: ChromaDB or Qdrant (TBD).
+RAG pipeline over DUNE experiment codebase. RTX 8000 48GB (installed 2026-07-01). Vector store: ChromaDB or Qdrant (TBD).
 
 ### NetFRAME Dashboard
 Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
