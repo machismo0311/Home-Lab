@@ -22,14 +22,14 @@
 
 | Phase | Scope | Status | Date done | Verified by (evidence) |
 |---|---|---|---|---|
-| **1** | BMCs → VLAN 20 + credential rotation | 🟡 Migration done — firewall (1.5) pending | 2026-07-03 | **All 3 BMCs on VLAN 20** (QuarkyLab iDRAC `.20.20`, Jarvis iDRAC `.20.21`, Randy IPMI `.20.22`); creds rotated → Vaultwarden; native VLAN 1 dropped from ge-0/0/30·32·44 (1.4); Ares `.20` leg persisted; docs synced. Verified reachable on `.20.x`, gone from `.10.x`, MACs on `trusted` only. _Pending: **1.5** OPNsense firewall — deny non-Ares → VLAN 20, no BMC egress._ |
+| **1** | BMCs → VLAN 20 + credential rotation | ✅ **Done & verified** | 2026-07-03 | **All 3 BMCs on VLAN 20** (iDRAC `.20.20`/`.20.21`, IPMI `.20.22`); creds rotated → Vaultwarden; native VLAN 1 dropped (1.4); Ares `.20` leg persisted; docs synced. **1.5 firewall verified**: Ares→BMC pass (HTTPS 302/302/200), pve3 (VLAN 1) + Randy (VLAN 30) → BMC **blocked**; BMC egress default-denied. ⚠️ Ares wired `enp0s31f6` flapped 3× (hardware — see log). |
 | **2** | Service LXCs (NPM·Vaultwarden·Grafana·Homepage) → VLAN 30 | ⬜ Not started | — | _each service reachable through NPM front door on `.30.x`; `getent hosts` OK; Grafana still scrapes `:9100`_ |
 | **3** | VLAN 1 mgmt-plane firewall clamp (OPNsense) | ⬜ Not started | — | _mgmt plane unreachable from a VLAN 30 host; reachable from Ares/VLAN 20; DNS resolves from all tiers_ |
 
 **Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done & verified · ↩️ Rolled back
 
 **Sub-step ledger** (optional finer granularity — tick as completed):
-- Phase 1: ☑ 1.0 pre-flight ☑ 1.1 switch trunk ☑ 1.2 BMC VLAN 20 IP ☑ 1.3 cred rotation ☑ 1.4 drop VLAN 1 ☐ 1.5 firewall ☑ docs updated ☑ Ares `.20` leg persisted
+- Phase 1: ☑ 1.0 pre-flight ☑ 1.1 switch trunk ☑ 1.2 BMC VLAN 20 IP ☑ 1.3 cred rotation ☑ 1.4 drop VLAN 1 ☑ 1.5 firewall ☑ docs updated ☑ Ares `.20` leg persisted — **PHASE 1 COMPLETE**
 - Phase 2: ☐ NPM ☐ Vaultwarden ☐ Grafana ☐ Homepage ☐ couplings swept (NPM/DNS/Homepage/Grafana)
 - Phase 3: ☐ Ares VLAN 20 leg ☐ firewall matrix applied ☐ negative-test from untrusted host ☐ VLAN 30 report Phase-3 residual closed
 
@@ -47,7 +47,8 @@
 - **1.4 Drop native VLAN 1 ✅ (2026-07-03):** ge-0/0/30·32·44 → `vlan members trusted` only, `native-vlan-id` removed (stale `default` MACs had already aged out — BMCs send tagged-20 exclusively). `commit confirmed 5`, verified all 3 BMCs still up on `.20.x` + gone from `.10.x`, then `commit`. Ares ge-0/0/41 left dual (native 1 + tagged 20).
 - **Ares `.20` leg persisted ✅:** `enp0s31f6.20` = `192.168.20.199/24` (no gateway) added to `/etc/network/interfaces` (backup `interfaces.bak-vlan20-*`); `ifquery` validates; live iface not reloaded.
 - **Docs synced ✅:** CLAUDE.md + [[Networking/Network Overview]] BMC IPs → `.20.x`; Ares WiFi-on-VLAN1 correction recorded.
-- **Remaining: 1.5 firewall (operator, OPNsense GUI)** — allow Ares (`.20.199`) → VLAN 20 BMC mgmt (443/623/5900); **deny all other → VLAN 20**; **deny VLAN 20 → any (no BMC egress)**. Note: OPNsense `.20.1` exists and currently drops ICMP-to-self from VLAN 20 (default), but inter-VLAN routing VLAN 1↔20 may still be open — the explicit deny is what locks non-Ares hosts out of the BMCs.
+- **1.5 OPNsense firewall ✅ verified (2026-07-03):** operator added **Block** rules on **LAN** and **Servers (VLAN 30)** interfaces (`<iface> net → 192.168.20.0/24`, above the allow-any), plus a **Pass** `192.168.10.199 (Ares) → 192.168.20.0/24` for WiFi-path resilience. BMC egress was already default-denied by the VLAN 20 interface (no pass rules). Verified: Ares→BMC **pass** (ping + HTTPS 302/302/200 over L2 `enp0s31f6.20`), pve3 (VLAN 1) **blocked**, Randy (VLAN 30) **blocked**. Key insight: Ares↔BMC is same-subnet **L2 and bypasses OPNsense**, so no allow was strictly required for the wired path — the Pass rule only matters when Ares falls back to WiFi.
+- **⚠️ OUTSTANDING HARDWARE ISSUE:** Ares wired leg `enp0s31f6` (switch `ge-0/0/41`) **flapped 3× during this session** — carrier drops to 0; admin `ip link set up` does not restore it when the cable is physically out. It is **both** the documented mgmt lifeline **and** the VLAN 20 jump-host L2 path. **Action: replace the patch cable / try another switch port.** When it's down, Ares silently reroutes VLAN 20 traffic via WiFi→OPNsense (correctly blocked by the firewall), so BMC access is lost until the Pass-Ares rule or the cable is in play. — **PHASE 1 COMPLETE (all sub-steps ✅).**
 
 ---
 
