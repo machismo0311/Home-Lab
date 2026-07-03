@@ -22,14 +22,14 @@
 
 | Phase | Scope | Status | Date done | Verified by (evidence) |
 |---|---|---|---|---|
-| **1** | BMCs → VLAN 20 + credential rotation | 🟡 In progress | 2026-07-03 (pre-flight only) | Pre-flight ✅ 2026-07-03 — BMCs `.20/.21/.22` UP; Tailscale lifelines up (quarky `100.119.89.38` / randy `100.64.0.2` / jarvis `100.64.0.6`); Ares wired `enp0s31f6 .100` restored. _Pending: switch trunk, BMC re-IP, cred rotation._ |
+| **1** | BMCs → VLAN 20 + credential rotation | 🟡 In progress | 2026-07-03 (pre-flight + switch trunk) | Pre-flight ✅; **switch trunk ✅ committed** — VLAN 20 (`trusted`) now on ge-0/0/30·32·41·44; BMCs still reachable on VLAN 1 (native untouched). _Pending: Ares `.20` leg, BMC re-IP, cred rotation._ |
 | **2** | Service LXCs (NPM·Vaultwarden·Grafana·Homepage) → VLAN 30 | ⬜ Not started | — | _each service reachable through NPM front door on `.30.x`; `getent hosts` OK; Grafana still scrapes `:9100`_ |
 | **3** | VLAN 1 mgmt-plane firewall clamp (OPNsense) | ⬜ Not started | — | _mgmt plane unreachable from a VLAN 30 host; reachable from Ares/VLAN 20; DNS resolves from all tiers_ |
 
 **Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done & verified · ↩️ Rolled back
 
 **Sub-step ledger** (optional finer granularity — tick as completed):
-- Phase 1: ☑ 1.0 pre-flight ☐ 1.1 switch trunk ☐ 1.2 BMC VLAN 20 IP ☐ 1.3 cred rotation ☐ 1.4 drop VLAN 1 ☐ 1.5 firewall ☐ docs updated
+- Phase 1: ☑ 1.0 pre-flight ☑ 1.1 switch trunk ☐ 1.2 BMC VLAN 20 IP ☐ 1.3 cred rotation ☐ 1.4 drop VLAN 1 ☐ 1.5 firewall ☐ docs updated
 - Phase 2: ☐ NPM ☐ Vaultwarden ☐ Grafana ☐ Homepage ☐ couplings swept (NPM/DNS/Homepage/Grafana)
 - Phase 3: ☐ Ares VLAN 20 leg ☐ firewall matrix applied ☐ negative-test from untrusted host ☐ VLAN 30 report Phase-3 residual closed
 
@@ -37,7 +37,9 @@
 - **Pre-flight ✅** — BMCs `.20/.21/.22` reachable; Tailscale lifelines up; Ares wired `enp0s31f6 .100` restored (was `linkdown` — see topology note).
 - **⚠️ Topology correction:** `CLAUDE.md` states Ares WiFi is WAN-side (`192.168.1.x`); observed 2026-07-03 it is on **VLAN 1** (`wlp2s0 192.168.10.199`) and the wired leg had been down. Wired leg now up (BMC/switch traffic prefers `enp0s31f6`), WiFi is backup. **TODO:** correct `CLAUDE.md` + [[Networking/Network Overview]].
 - **BMC MACs (for switch-port mapping):** QuarkyLab iDRAC `.20` = `b0:83:fe:e4:9a:60` · Jarvis iDRAC `.21` = `18:66:da:97:0f:8e` · Randy IPMI `.22` = `0c:c4:7a:67:cc:01`. (EX3400 MAC-table lookup pending switch login — key auth denied.)
-- **Blocked on operator:** (a) EX3400 login — need Vaultwarden pw or operator-driven switch; (b) Ares↔VLAN 20 verification path. Recommended defaults: trunk VLAN 20 to Ares + operator drives the switch blocks.
+- **Switch ports (from EX3400 MAC table):** QuarkyLab iDRAC `.20` → **ge-0/0/30** · Jarvis iDRAC `.21` → **ge-0/0/44** · Randy IPMI `.22` → **ge-0/0/32** · Ares → **ge-0/0/41**. Each BMC port had exactly 1 learned MAC (direct access). ⚠️ old buildout doc's "ge-0/0/32 = UniFi uplink" is **stale** — live UniFi trunk is ge-0/0/46.
+- **1.1 Switch trunk ✅ committed (2026-07-03):** ge-0/0/30·32·41·44 → `interface-mode trunk`, `native-vlan-id 1`, `vlan members [default trusted]`. Applied via `commit confirmed 10`, verified BMCs still ping on `.10.x` (native VLAN 1 intact) + switch/Ares links up, then plain `commit`. `show vlans trusted` = 30/32/41/44/46.
+- **Next (needs operator):** 1.2 Ares VLAN 20 leg `enp0s31f6.20 → 192.168.20.199/24` (enp0s31f6 is ifupdown-managed, NM-unmanaged; Ares sudo needs a password) → then re-IP each BMC to `192.168.20.20/.21/.22` (tagged VLAN 20) one at a time → rotate `root/calvin` + `ADMIN` into Vaultwarden.
 
 ---
 
