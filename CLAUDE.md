@@ -29,12 +29,14 @@
 
 †GPU plan (2026-06-30): **QuarkyLab → RTX 8000 48GB — INSTALLED & VERIFIED 2026-07-01** (nvidia-smi reports 46080 MiB on driver 550.163.01, kernel 6.14.11-9-pve; driver-free Turing TU102 swap). Its freed RTX 6000 is now staged for **Jarvis → 2× RTX 6000 48GB** (that card + a new one), not yet installed — gated on Dell N08NH-type GPU aux power cables (2 sets) + R730 GPU riser kit. Jarvis GPU software stack BUILT & VERIFIED 2026-07-01: kernel 6.14.11-9-pve installed + GRUB-pinned + running, NVIDIA 550.163.01 DKMS module built, Ollama v0.31.1 active with OLLAMA_MODELS=/opt/models (98G LV) — plug-and-play once cards seated.
 QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed25519 on Ares). Kernel pinned to 6.14.11-9-pve via GRUB_DEFAULT. NVIDIA 550.163.01 verified working. RTX 8000 installed 2026-07-01 — driver-free swap (same 550.163.01 / 6.14.11 stack), nvidia-smi reports 48GB.
+**VLAN 30 (2026-07-02):** QuarkyLab `192.168.30.179` and Jarvis `192.168.30.31` are dual-homed on the servers VLAN (mgmt/corosync stay on VLAN 1 `.10.x`).
 
 ### Randy (SuperMicro — Storage / PBS)
 | Field | Value |
 |---|---|
 | Chassis | SuperMicro CSE-219U 2U 24-bay / X10DRU-i+ |
-| IP | 192.168.10.187 |
+| IP (mgmt VLAN 1) | 192.168.10.187 |
+| Service IP (VLAN 30) | 192.168.30.187 — NFS export + PBS + egress (dual-homed 2026-07-02) |
 | IPMI | 192.168.10.22 (ADMIN) |
 | CPUs | 2x E5-2690 v4 (56 cores / 48 logical) |
 | RAM | 128GB ECC DDR4 |
@@ -76,6 +78,8 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Guest | 60 | 192.168.60.0/24 |
 | Lab | 70 | 192.168.70.0/24 |
 
+> **Servers VLAN 30 populated 2026-07-02:** QuarkyLab `192.168.30.179`, Randy `192.168.30.187`, Jarvis `192.168.30.31` — **dual-homed** (corosync/mgmt/monitoring stay on VLAN 1; NFS/PBS/egress on VLAN 30). Node ports are now trunks (native 1 + tagged servers): QuarkyLab `ge-0/0/24`, Randy `xe-0/2/0`, Jarvis `ge-0/0/22`. See Runbook/VLAN30-Migration-Report-2026-07-02.md + Node-VLAN-Migration-Template.md.
+
 ### Power
 | UPS | Feeds | Capacity |
 |---|---|---|
@@ -93,7 +97,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | nginx-proxy (NPM) | LXC 101, pve3 (.181) | Admin http://192.168.10.181:81 | onboot=1; :81 restricted to Ares (.199) via DOCKER-USER fw (F-05) ✅ |
 | Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
 | Prometheus/Grafana/Loki | LXC 103, pve3 (.183) | Grafana http://192.168.10.183:3000 | Stack active ✅; 8 nodes scraped; Prom/Loki localhost-only (F-03) |
-| Scrutiny (drive health) | LXC 103, pve3 + collectors on Randy & QuarkyLab | http://192.168.10.183:8080 | ~50 drives monitored; InfluxDB backend; binary collector via systemd timer every 6h on Randy (43) and QuarkyLab (7); collector.yaml `host.id` + endpoint `192.168.10.183:8080` |
+| Scrutiny (drive health) | LXC 103, pve3 + collectors on Randy, QuarkyLab & Jarvis | http://192.168.10.183:8080 | ~50 drives monitored; InfluxDB backend; binary collector via systemd timer every 6h on Randy (43), QuarkyLab (7) and Jarvis (1, added 2026-07-02); collector.yaml `host.id` + endpoint `192.168.10.183:8080` |
 | Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
 | step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
 | Jellyfin | Randy (host) | http://192.168.10.187:8096 | v10.11.11; media at /datastore/media/{movies,tv,music}; GPU transcoding pending RX 580 power cable |
@@ -135,6 +139,7 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - Wazuh VM 104 (QuarkyLab, .184) has NO qemu-guest-agent → a QuarkyLab host reboot hard-stops it (unclean) and `wazuh-indexer` comes back unhealthy (dashboard 503). Fix after any QuarkyLab reboot: `qm stop 104 && qm start 104`, wait ~4 min; healthy = dashboard root returns 302→/app/login (NOT 200), manager `:55000`=401, indexer `:9200`=000/refused from LAN is normal. Permanent fix: install qemu-guest-agent in the VM + `qm set 104 --agent enabled=1` + one cold start. onboot=1 is set.
 - Tailscale overwrites /etc/resolv.conf on ALL nodes — run `tailscale set --accept-dns=false` and set nameserver to 192.168.10.177 before any apt operations
 - Headscale Phase 2 pending: QuarkyLab + Fernanda's Mac (ferpsihas@, fus22-009897) must migrate together — do not migrate one without the other
+- QuarkyLab/Randy/Jarvis migrated to Servers VLAN 30 (2026-07-02, **dual-homed**): corosync + management + monitoring stay on VLAN 1 (`.10.179/.187/.31`); NFS `/data`, PBS backup, and internet egress ride VLAN 30 (`.30.179/.187/.31`, default gw `.30.1`). Corosync deliberately NOT moved (keep the ring on stable L2). EX3400 node ports are trunks (native 1 + tagged servers): QuarkyLab ge-0/0/24, Randy xe-0/2/0, Jarvis ge-0/0/22. Rollback anchors on each node (`interfaces.bak-vlan30-*` etc.). See Runbook/VLAN30-Migration-Report-2026-07-02.md + Node-VLAN-Migration-Template.md. NOTE: `/data` mount, PBS storage.cfg, and `pbs-workspace-backup.sh` PBS_REPOSITORY now point at `192.168.30.187`.
 - VLAN activation COMPLETE (2026-06-25): EX3400 ge-0/0/46 trunk live to UniFi Port 24, verified end-to-end. KEY: native-vlan-id goes at INTERFACE level on this EX3400 (ELS), NOT under unit 0 family ethernet-switching. pve2 vmbr2/nic2 auto-start DISABLED (unused bridge with live UniFi cable caused trunk loop) — do not re-enable without removing its cable. See VLAN-Activation-2026-06-25.md
 - Ares WiFi is on WAN side (192.168.1.x) — OPNsense outage = full loss of management network access from WiFi. Keep wired cable (enp0s31f6, 192.168.10.100) plugged in during any pve2/OPNsense maintenance
 - ifreload -a does NOT apply bridge-vlan-aware on pve2 — requires full reboot of pve2

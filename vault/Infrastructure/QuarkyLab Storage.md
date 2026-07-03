@@ -6,7 +6,10 @@
 
 ## Overview
 
-Storage for **QuarkyLab** (`.179`, ML node / Fernanda's DUNE agent + the multi-tenant student SLURM environment) is split into three tiers by purpose: fast local working sets, bulk persistent data on Randy over NFS, and backups to Randy's PBS. Set up during the 2026-07-02 maintenance window.
+Storage for **QuarkyLab** (mgmt `.10.179`, ML node / Fernanda's DUNE agent + the multi-tenant student SLURM environment) is split into three tiers by purpose: fast local working sets, bulk persistent data on Randy over NFS, and backups to Randy's PBS. Set up during the 2026-07-02 maintenance window.
+
+> [!NOTE] Storage traffic runs on VLAN 30 (since 2026-07-02)
+> QuarkyLab and Randy are dual-homed on the `servers` VLAN 30. **NFS `/data` and PBS backup now use the VLAN 30 addresses** — QuarkyLab `192.168.30.179`, Randy `192.168.30.187` — while cluster/management/monitoring stay on VLAN 1 (`.10.x`). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
 
 ```mermaid
 flowchart TB
@@ -21,7 +24,7 @@ flowchart TB
     QUARK -->|NFS nfs4.2 /data| RANDY
     subgraph RANDY[Randy .187]
         DS[datastore ZFS pool ~23TB]
-        DS --> QNFS[datastore/quarkylab\n2TB · NFS export to .179]
+        DS --> QNFS[datastore/quarkylab\n2TB · NFS export to .30.179]
         DS --> PBS[PBS datastore\nbackup chunks + dedup]
     end
     STU -.nightly PBS backup.-> PBS
@@ -61,8 +64,8 @@ Randy exports the ZFS dataset `datastore/quarkylab` (2 TB quota, lz4) to QuarkyL
 
 | Field | Value |
 |---|---|
-| Export (on Randy) | `/datastore/quarkylab 192.168.10.179(rw,sync,no_subtree_check,no_root_squash)` |
-| Mount (on QuarkyLab) | `192.168.10.187:/datastore/quarkylab → /data` (nfs4.2, `_netdev` in fstab) |
+| Export (on Randy) | `/datastore/quarkylab 192.168.30.179(rw,sync,no_subtree_check,no_root_squash)` (VLAN 30) |
+| Mount (on QuarkyLab) | `192.168.30.187:/datastore/quarkylab → /data` (nfs4.2, `_netdev` in fstab, VLAN 30) |
 | Holds | `/data/containers/base.sif` (student ML image), `/data/shared` (read-only bind into jobs) |
 
 > [!WARNING] Only `datastore/quarkylab` is exported
@@ -80,7 +83,7 @@ Script `/usr/local/sbin/pbs-workspace-backup.sh` (700) backs up the three real d
 
 ```bash
 # reuses cred /etc/pve/priv/storage/randy-pbs.pw + fingerprint from storage.cfg
-export PBS_REPOSITORY="root@pam@192.168.10.187:datastore"
+export PBS_REPOSITORY="root@pam@192.168.30.187:datastore"   # VLAN 30
 proxmox-backup-client backup \
     students.pxar:/workspace/students \
     researchers.pxar:/workspace/researchers \
@@ -104,7 +107,7 @@ Since homes moved off `/home`, the **host-level** `host/quarkylab` backup's `hom
 ### Restore
 
 ```bash
-export PBS_REPOSITORY="root@pam@192.168.10.187:datastore"
+export PBS_REPOSITORY="root@pam@192.168.30.187:datastore"
 proxmox-backup-client snapshot list host/quarkylab-workspace
 # restore one dataset from a snapshot to a target dir
 proxmox-backup-client restore host/quarkylab-workspace/<snapshot> students.pxar /restore/students
