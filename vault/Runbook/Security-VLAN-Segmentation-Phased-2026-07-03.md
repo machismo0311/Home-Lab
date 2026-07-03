@@ -22,7 +22,7 @@
 
 | Phase | Scope | Status | Date done | Verified by (evidence) |
 |---|---|---|---|---|
-| **1** | BMCs → VLAN 20 + credential rotation | 🟡 In progress | 2026-07-03 (pre-flight + trunk + Ares leg) | Pre-flight ✅; **switch trunk ✅** (VLAN 20 on ge-0/0/30·32·41·44, BMCs still on VLAN 1); **Ares `.20` leg ✅** (`enp0s31f6.20`=`.20.199`, L2 verified via ARP to OPNsense `.20.1`). _Pending: BMC re-IP (pilot QuarkyLab), cred rotation._ |
+| **1** | BMCs → VLAN 20 + credential rotation | 🟡 In progress | 2026-07-03 (trunk + Ares leg + QuarkyLab iDRAC) | Trunk ✅; Ares `.20` leg ✅; **QuarkyLab iDRAC ✅ → `.20.20`** (re-IP'd + root pw rotated, verified from Ares: reachable direct, gone from `.10.20`, HTTPS 302, MAC on `trusted`). _Pending: Jarvis iDRAC `.21→.20.21`, Randy IPMI `.22→.20.22`, then 1.4 drop native VLAN 1._ |
 | **2** | Service LXCs (NPM·Vaultwarden·Grafana·Homepage) → VLAN 30 | ⬜ Not started | — | _each service reachable through NPM front door on `.30.x`; `getent hosts` OK; Grafana still scrapes `:9100`_ |
 | **3** | VLAN 1 mgmt-plane firewall clamp (OPNsense) | ⬜ Not started | — | _mgmt plane unreachable from a VLAN 30 host; reachable from Ares/VLAN 20; DNS resolves from all tiers_ |
 
@@ -41,7 +41,8 @@
 - **1.1 Switch trunk ✅ committed (2026-07-03):** ge-0/0/30·32·41·44 → `interface-mode trunk`, `native-vlan-id 1`, `vlan members [default trusted]`. Applied via `commit confirmed 10`, verified BMCs still ping on `.10.x` (native VLAN 1 intact) + switch/Ares links up, then plain `commit`. `show vlans trusted` = 30/32/41/44/46.
 - **1.2 Ares VLAN 20 leg ✅ (2026-07-03, live/non-persistent):** created `enp0s31f6.20` = `192.168.20.199/24` (VLAN 20 tagged). Switch learns Ares MAC on `trusted` (ge-0/0/41). Direct VLAN 20 **L2 confirmed** — ARP resolves `.20.1` → OPNsense `bc:24:11:12:30:00` over `enp0s31f6.20`. ICMP to `.20.1` is dropped by OPNsense's VLAN 20 interface firewall (no allow rule yet — Phase 3); irrelevant to same-subnet Ares↔BMC. ⚠️ one transient wired-carrier drop mid-session (cable reseated → stable). **Not yet persisted** to `/etc/network/interfaces` (deliberate — persist after BMCs verified).
 - **Fallback for BMC re-IP:** if a BMC becomes unreachable on VLAN 20, recover via **Tailscale → node → Redfish** (iDRACs) / `ipmitool` (Randy). Do BMCs **one at a time**, QuarkyLab iDRAC as pilot.
-- **Next (needs operator go-ahead):** 1.3 re-IP each BMC to `192.168.20.20/.21/.22` tagged VLAN 20 (web UI or scripted) → 1.4 rotate `root/calvin` + `ADMIN` into Vaultwarden.
+- **1.3 QuarkyLab iDRAC ✅ (pilot, 2026-07-03):** re-IP'd `.10.20 → 192.168.20.20` (VLAN 20 tagged, gw `.20.1`) via iDRAC web UI; root password rotated same visit → Vaultwarden. Verified from Ares: `.20.20` direct via `enp0s31f6.20` (3/3), `.10.20` gone, HTTPS 302, switch learns iDRAC MAC on `trusted` (ge-0/0/30). Stale `default`-VLAN MAC entry aging out (no VLAN 1 IP).
+- **Remaining BMCs:** Jarvis iDRAC `.21 → 192.168.20.21` (identical iDRAC 8 web-UI steps); Randy IPMI `.22 → 192.168.20.22` (SuperMicro web UI, or `ipmitool lan set` from the Randy host). Then **1.4** convert ge-0/0/30·32·44 to access VLAN 20 (drop native `default`) to remove the VLAN 1 footprint; keep ge-0/0/41 (Ares) dual (native 1 + tagged 20).
 
 ---
 
