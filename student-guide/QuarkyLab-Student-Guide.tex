@@ -1,0 +1,559 @@
+%==============================================================================
+%  QuarkyLab GPU Cluster — Student User Guide
+%  NetFRAME Home Lab
+%
+%  Build:  tectonic QuarkyLab-Student-Guide.tex        (recommended, self-contained)
+%     or:  latexmk -pdf QuarkyLab-Student-Guide.tex    (TeX Live)
+%
+%  ---------------------------------------------------------------------------
+%  EDIT ME:  All site-specific values live in the CONFIGURATION block below.
+%  Change a value, recompile, and it updates everywhere in the document.
+%==============================================================================
+\documentclass[11pt]{article}
+
+%------------------------------------------------------------------------------
+%  CONFIGURATION  —  edit these, then recompile
+%------------------------------------------------------------------------------
+\newcommand{\LabName}{QuarkyLab}                       % cluster display name
+\newcommand{\LabHost}{quarkylab}                       % SSH target over the VPN
+                                                       %   (Headscale MagicDNS name,
+                                                       %    or the 100.64.0.x address)
+\newcommand{\HeadscaleURL}{https://headscale.kylemason.org} % Headscale login server  <-- CONFIRM
+\newcommand{\AdminEmail}{masonkr@gmail.com}            % where students send their public key
+\newcommand{\GPUName}{NVIDIA RTX 8000 (48\,GB)}        % the shared GPU
+\newcommand{\ShardMem}{6\,GB}                          % GPU memory per shard (hard cap)
+\newcommand{\MaxTime}{2 hours}                         % max wall time per job
+\newcommand{\HomeQuota}{100\,GB}                       % per-user home quota
+\newcommand{\ScratchPurge}{14 days}                    % scratch auto-purge age
+\newcommand{\MaxRunning}{1}                            % concurrent running jobs
+\newcommand{\MaxQueued}{3}                             % additional queued jobs
+\newcommand{\GuideVersion}{1.0}
+\newcommand{\GuideOwner}{NetFRAME Home Lab}
+%------------------------------------------------------------------------------
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage[margin=1in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{titletoc}
+\usepackage[hidelinks]{hyperref}
+
+%--- palette ------------------------------------------------------------------
+\definecolor{quarkA}{HTML}{0B3D66}   % deep navy
+\definecolor{quarkB}{HTML}{1E88A8}   % teal
+\definecolor{quarkAccent}{HTML}{E8A33D} % amber
+\definecolor{codebg}{HTML}{F6F8FA}
+\definecolor{codeframe}{HTML}{D6DEE7}
+\definecolor{codekw}{HTML}{0B3D66}
+\definecolor{codecom}{HTML}{6A9A5B}
+\definecolor{codestr}{HTML}{A6522C}
+\definecolor{noteblue}{HTML}{2C6FB5}
+\definecolor{warnred}{HTML}{B23B36}
+\definecolor{tipgreen}{HTML}{2E7D46}
+\definecolor{rulegray}{HTML}{C9D3DD}
+
+\hypersetup{
+  colorlinks=true, linkcolor=quarkA, urlcolor=quarkB, citecolor=quarkB,
+  pdftitle={\LabName{} GPU Cluster --- Student User Guide},
+  pdfauthor={\GuideOwner}, bookmarksnumbered=true
+}
+
+%--- headers / footers --------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[L]{\small\textsc{\LabName{} Student Guide}}
+\fancyhead[R]{\small\leftmark}
+\fancyfoot[L]{\small \GuideOwner}
+\fancyfoot[C]{\small v\GuideVersion}
+\fancyfoot[R]{\small\thepage}
+
+%--- section styling ----------------------------------------------------------
+\titleformat{\section}{\Large\bfseries\color{quarkA}}{\thesection}{0.6em}{}[{\color{rulegray}\titlerule[0.8pt]}]
+\titleformat{\subsection}{\large\bfseries\color{quarkB}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{quarkA}}{}{0em}{}
+\titlespacing*{\section}{0pt}{2.2ex plus 1ex minus .2ex}{1.2ex plus .2ex}
+
+%--- code listings ------------------------------------------------------------
+\lstdefinestyle{shell}{
+  language=bash,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, framesep=6pt, rulecolor=\color{codeframe},
+  xleftmargin=10pt, xrightmargin=6pt,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecom}\itshape,
+  stringstyle=\color{codestr},
+  showstringspaces=false, breaklines=true, breakatwhitespace=false,
+  columns=fullflexible, keepspaces=true, upquote=true,
+  escapeinside={(*@}{@*)},
+  morekeywords={ssh,ssh-keygen,scp,rsync,sbatch,squeue,sacct,scancel,scontrol,cat,type,conda,source,python,tailscale,ping,mkdir,ls,cd,nano}
+}
+\lstdefinestyle{py}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, framesep=6pt, rulecolor=\color{codeframe},
+  xleftmargin=10pt, xrightmargin=6pt,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecom}\itshape,
+  stringstyle=\color{codestr},
+  showstringspaces=false, breaklines=true, columns=fullflexible, upquote=true
+}
+\lstset{style=shell}
+\newcommand{\code}[1]{\texttt{#1}}
+
+%--- admonitions --------------------------------------------------------------
+\newtcolorbox{notebox}{enhanced,breakable,colback=noteblue!6,colframe=noteblue,
+  coltitle=white,fonttitle=\bfseries,title=Note,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt}
+\newtcolorbox{tipbox}{enhanced,breakable,colback=tipgreen!7,colframe=tipgreen,
+  coltitle=white,fonttitle=\bfseries,title=Tip,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt}
+\newtcolorbox{warnbox}{enhanced,breakable,colback=warnred!6,colframe=warnred,
+  coltitle=white,fonttitle=\bfseries,title=Important,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt}
+
+% OS badge for per-platform instructions
+\newcommand{\osbadge}[1]{\vspace{0.4ex}\noindent{\color{quarkA}\rule{2pt}{10pt}}\ \textbf{\color{quarkA}#1}\par\nopagebreak\vspace{0.3ex}}
+
+\setlist[enumerate]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+\setlist[itemize]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+\renewcommand{\arraystretch}{1.25}
+
+%==============================================================================
+\begin{document}
+
+%--- title page ---------------------------------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{2.2cm}
+{\color{quarkA}\rule{\linewidth}{2pt}}\\[0.5cm]
+{\Huge\bfseries\color{quarkA} \LabName{} GPU Cluster}\\[0.35cm]
+{\LARGE\color{quarkB} Student User Guide}\\[0.4cm]
+{\large A complete, step-by-step guide to connecting to the cluster\\ and running your first GPU jobs}\\[0.4cm]
+{\color{quarkA}\rule{\linewidth}{2pt}}\\[1.4cm]
+
+\begin{tcolorbox}[colback=quarkB!6,colframe=quarkB,width=0.82\linewidth,arc=3pt,boxrule=0.8pt]
+\centering\itshape No prior experience with clusters, Linux, or job schedulers is assumed. If you can open a terminal and follow steps in order, you can use \LabName.
+\end{tcolorbox}
+
+\vfill
+{\large\GuideOwner}\\[0.2cm]
+{\normalsize Version \GuideVersion{} \quad\textbullet\quad \today}
+\vspace*{1.5cm}
+\end{titlepage}
+
+%--- contents -----------------------------------------------------------------
+\tableofcontents
+\thispagestyle{fancy}
+\clearpage
+
+%==============================================================================
+\section{Introduction}
+%==============================================================================
+\LabName{} is a shared computer built for machine-learning and scientific computing. At its heart is a powerful graphics processing unit (a \GPUName{} \emph{GPU}) that many students use at the same time. Because everyone shares one GPU, you do not run your programs on it directly. Instead, you \emph{submit} your work to a program called a \textbf{scheduler}, which lines up everyone's jobs and runs them fairly, one slice at a time.
+
+This guide takes you from a blank computer to running your first GPU program, in order, with nothing skipped. Here is the whole journey at a glance:
+
+\begin{enumerate}
+  \item \textbf{Create an identity key} on your own computer (a one-time setup).
+  \item \textbf{Join the private network} that \LabName{} lives on (a secure VPN).
+  \item \textbf{Connect} to \LabName{} with a single command.
+  \item \textbf{Learn where your files live} on the cluster.
+  \item \textbf{Submit your first GPU job} and read its results.
+  \item \textbf{Manage your jobs} and work within the shared limits.
+\end{enumerate}
+
+\begin{notebox}
+Throughout this guide, text you must replace with your own value is shown in angle brackets, e.g.\ \code{<your-username>}. Your administrator assigns you a username of the form \code{studentNN} (for example \code{student07}). Wherever you see \code{studentNN}, use the one you were given.
+\end{notebox}
+
+\subsection{What you will need}
+\begin{itemize}
+  \item A laptop or desktop running \textbf{Windows}, \textbf{macOS}, or \textbf{Linux}.
+  \item A working internet connection.
+  \item A username on \LabName{} (your administrator provides this).
+  \item About 20 minutes for the one-time setup.
+\end{itemize}
+
+\subsection{A word on the terminal}
+Almost everything in this guide happens in a \textbf{terminal} (also called a \emph{command line} or \emph{shell}) --- a window where you type commands instead of clicking buttons. Opening one differs slightly per platform:
+\begin{itemize}
+  \item \textbf{Windows:} press the Start key, type \code{PowerShell}, and press Enter.
+  \item \textbf{macOS:} press \code{Cmd}+\code{Space}, type \code{Terminal}, and press Enter.
+  \item \textbf{Linux:} press \code{Ctrl}+\code{Alt}+\code{T}, or search for \code{Terminal} in your applications.
+\end{itemize}
+When this guide shows a command in a shaded box, type it exactly (or copy--paste it) and press Enter.
+
+%==============================================================================
+\section{Step 1 --- Create your SSH key}
+%==============================================================================
+To prove who you are when connecting, \LabName{} uses an \textbf{SSH key} instead of a password. A key comes in two halves:
+\begin{itemize}
+  \item a \textbf{private key} (a secret file that stays on your computer --- never share it), and
+  \item a \textbf{public key} (a short line of text you \emph{do} share, so the cluster recognises you).
+\end{itemize}
+You will generate both now, then send only the \emph{public} half to your administrator.
+
+\osbadge{Windows, macOS, and Linux (same command)}
+Open your terminal and run:
+\begin{lstlisting}
+ssh-keygen -t ed25519 -C "<your-name>@quarkylab"
+\end{lstlisting}
+You will be asked three things:
+\begin{enumerate}
+  \item \textit{``Enter file in which to save the key''} --- press \textbf{Enter} to accept the default location.
+  \item \textit{``Enter passphrase''} --- type a passphrase (a password protecting the key). \textbf{Recommended.} You will type it when you connect.
+  \item \textit{``Enter same passphrase again''} --- type it once more.
+\end{enumerate}
+This creates two files in a hidden \code{.ssh} folder in your home directory: \code{id\_ed25519} (private --- keep secret) and \code{id\_ed25519.pub} (public --- to share).
+
+\subsection{Display and send your public key}
+Show the public key so you can copy it:
+
+\osbadge{macOS / Linux}
+\begin{lstlisting}
+cat ~/.ssh/id_ed25519.pub
+\end{lstlisting}
+
+\osbadge{Windows (PowerShell)}
+\begin{lstlisting}
+type $env:USERPROFILE\.ssh\id_ed25519.pub
+\end{lstlisting}
+
+The output is a single line beginning with \code{ssh-ed25519}. Copy that entire line and email it to your administrator at \textbf{\AdminEmail}, telling them your name and (if known) your assigned \code{studentNN} username.
+
+\begin{warnbox}
+Send only the \code{.pub} (public) line. \textbf{Never send or share the private key} (\code{id\_ed25519}, no \code{.pub}). Anyone with your private key can log in as you.
+\end{warnbox}
+
+\begin{notebox}
+Your administrator adds your key to the cluster. Until they confirm it is added, the connection in Step~3 will be refused --- this is normal. Wait for their confirmation before continuing past Step~2.
+\end{notebox}
+
+%==============================================================================
+\section{Step 2 --- Join the private network (VPN)}
+%==============================================================================
+\LabName{} is not exposed to the open internet. To reach it from anywhere, you join a private, encrypted network using a free app called \textbf{Tailscale}, connected to our own coordination server (\textbf{Headscale}). This is a one-time install plus a login.
+
+\subsection{Install the Tailscale app}
+\osbadge{Windows}
+Download and run the installer from \url{https://tailscale.com/download/windows}. Accept the defaults. A Tailscale icon appears in your system tray.
+
+\osbadge{macOS}
+Install from the Mac App Store (search \emph{Tailscale}) or \url{https://tailscale.com/download/mac}. A Tailscale icon appears in your menu bar.
+
+\osbadge{Linux}
+Run the official installer, then start the service:
+\begin{lstlisting}
+curl -fsSL https://tailscale.com/install.sh | sh
+\end{lstlisting}
+
+\subsection{Connect to our network}
+Instead of Tailscale's default sign-in, point the app at our coordination server. Your administrator will give you either a \textbf{sign-up link} or a one-time \textbf{authentication key}.
+
+\osbadge{Linux (and macOS/Windows with the CLI installed)}
+\begin{lstlisting}
+sudo tailscale up --login-server (*@\texttt{\HeadscaleURL}@*)
+\end{lstlisting}
+This prints a URL. Open it in your browser and follow the prompts to register your device. If your administrator gave you an authentication key instead, use:
+\begin{lstlisting}
+sudo tailscale up --login-server (*@\texttt{\HeadscaleURL}@*) --authkey <key-from-admin>
+\end{lstlisting}
+
+\osbadge{Windows / macOS (graphical app)}
+Right-click the Tailscale icon and choose \emph{Preferences} (or \emph{Use custom coordination server} / \emph{Change server}). Enter:
+\begin{lstlisting}
+(*@\texttt{\HeadscaleURL}@*)
+\end{lstlisting}
+Then click \emph{Log in} and complete the prompts your administrator described.
+
+\subsection{Confirm you are connected}
+\begin{lstlisting}
+tailscale status
+\end{lstlisting}
+You should see \LabName{} (or \code{\LabHost}) listed. As a final check, make sure you can reach it:
+\begin{lstlisting}
+ping (*@\texttt{\LabHost}@*)
+\end{lstlisting}
+Replies mean the network is up. (Press \code{Ctrl}+\code{C} to stop \code{ping}.)
+
+\begin{tipbox}
+Leave Tailscale running whenever you want to use \LabName. If a connection later ``times out,'' the first thing to check is that Tailscale is connected (\code{tailscale status}).
+\end{tipbox}
+
+%==============================================================================
+\section{Step 3 --- Connect to \texorpdfstring{\LabName}{the cluster}}
+%==============================================================================
+With your key added (Step~1) and the VPN up (Step~2), connect with one command. Use \emph{your} assigned username in place of \code{studentNN}:
+\begin{lstlisting}
+ssh studentNN@(*@\texttt{\LabHost}@*)
+\end{lstlisting}
+
+\begin{itemize}
+  \item The \textbf{first time only}, you will see \textit{``The authenticity of host \ldots\ can't be established \ldots\ (yes/no)?''} Type \code{yes} and press Enter. This remembers the server so you are not asked again.
+  \item If you set a passphrase in Step~1, enter it now. (It is your \emph{key} passphrase, not a cluster password.)
+\end{itemize}
+
+When you succeed, you land on the \textbf{login node} and see a short welcome banner. You are now ``on'' \LabName.
+
+\begin{warnbox}
+The login node is a shared front desk, not a workbench. \textbf{Do not run heavy training or GPU code directly here.} All real work is submitted as a \emph{job} (Step~5). Interactive sessions (\code{srun}/\code{salloc}) are disabled for students.
+\end{warnbox}
+
+\subsection{If something goes wrong}
+\begin{tabularx}{\linewidth}{@{}p{0.42\linewidth}X@{}}
+\toprule
+\textbf{Symptom} & \textbf{Most likely fix} \\
+\midrule
+\code{Permission denied (publickey)} & Your key is not added yet, or you used the wrong username. Confirm with your administrator; check you typed \code{studentNN} correctly. \\
+\code{Connection timed out} & The VPN is not connected. Run \code{tailscale status}; reconnect (Step~2). \\
+\code{Could not resolve hostname} & Same as above --- the VPN provides the name \code{\LabHost}. \\
+Asked for a \emph{password} & Password login is off. You must connect with your SSH key; re-check Step~1. \\
+\bottomrule
+\end{tabularx}
+
+%==============================================================================
+\section{Step 4 --- Where your files live}
+%==============================================================================
+\LabName{} gives you three distinct storage areas. Knowing what each is for will save you a lot of trouble.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Location} & \textbf{Purpose} & \textbf{Key facts} \\
+\midrule
+\code{\textasciitilde} (your home) & Your code and results & \HomeQuota{} quota. \textbf{Backed up nightly.} Keep anything you want to keep here. \\
+\code{/scratch} & Fast temporary space (inside jobs) & \textbf{Not backed up}, auto-deleted after \ScratchPurge. Use for checkpoints and intermediate files. \\
+\code{/data/shared} & Shared datasets \& docs & \textbf{Read-only.} You cannot modify it. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{tipbox}
+Put large temporary files and training checkpoints in \code{/scratch} --- it is fast and does not count against your home quota. Put final results and code in your home so they are backed up.
+\end{tipbox}
+
+\subsection{Copying files to and from the cluster}
+Run these from \emph{your own} computer's terminal (not from inside the cluster). Replace \code{studentNN} with your username.
+
+\subsubsection*{Upload a file to your home directory}
+\begin{lstlisting}
+scp mydata.csv studentNN@(*@\texttt{\LabHost}@*):~/
+\end{lstlisting}
+
+\subsubsection*{Download a results file back to your computer}
+\begin{lstlisting}
+scp studentNN@(*@\texttt{\LabHost}@*):~/myjob-1234.out .
+\end{lstlisting}
+
+\subsubsection*{Copy an entire folder (upload)}
+\begin{lstlisting}
+rsync -av myproject/ studentNN@(*@\texttt{\LabHost}@*):~/myproject/
+\end{lstlisting}
+
+\begin{notebox}
+Prefer a graphical editor? \textbf{Visual Studio Code} with the \emph{Remote --- SSH} extension lets you edit files on \LabName{} as if they were local, using the same \code{studentNN@\LabHost} address. It is optional but popular.
+\end{notebox}
+
+%==============================================================================
+\section{Step 5 --- Run your first GPU job}
+%==============================================================================
+You do not run GPU code by hand. You write a short \textbf{job script}, hand it to the scheduler with \code{sbatch}, and the scheduler runs it for you --- inside a ready-made container that already has PyTorch, TensorFlow, and a GPU slice attached. Output is written to a file you can read afterwards.
+
+\subsection{Write a tiny program}
+On the login node, create \code{train.py} (use the \code{nano} editor: type \code{nano train.py}, paste, then \code{Ctrl}+\code{O}, Enter, \code{Ctrl}+\code{X}):
+\begin{lstlisting}[style=py]
+import torch
+print("GPU:", torch.cuda.get_device_name(0))
+print("CUDA available:", torch.cuda.is_available())
+# ... your real training code goes here ...
+\end{lstlisting}
+
+\subsection{Write the job script}
+Create \code{train.sh} next to it. The lines starting with \code{\#SBATCH} are instructions to the scheduler.
+\begin{lstlisting}
+#!/bin/bash
+#SBATCH -J myjob            # a name for your job
+#SBATCH -t 01:00:00         # time limit HH:MM:SS (max 2 hours)
+#SBATCH -o myjob-%j.out     # output file (%j becomes the job ID)
+
+source /opt/conda/etc/profile.d/conda.sh
+conda activate ml
+python train.py
+\end{lstlisting}
+
+\subsection{Submit it}
+\begin{lstlisting}
+sbatch train.sh
+\end{lstlisting}
+The scheduler replies with a job ID, e.g.\ \code{Submitted batch job 1234}. Your job is now queued; it starts as soon as a GPU slice is free.
+
+\subsection{Watch it and read the result}
+\begin{lstlisting}
+squeue --me                 # is my job running or waiting?
+cat myjob-1234.out          # read the output once it finishes
+\end{lstlisting}
+
+\begin{notebox}
+Everything happens automatically inside a private, isolated container: the \code{ml} environment (Python 3.11, PyTorch, TensorFlow, and more), a GPU slice with \ShardMem{} of memory, CPU cores, and RAM. You only write the two files above.
+\end{notebox}
+
+%==============================================================================
+\section{Managing your jobs}
+%==============================================================================
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Command} & \textbf{What it does} \\
+\midrule
+\code{squeue -{}-me} & List your running and queued jobs \\
+\code{sacct} & Show your recent job history (and whether they succeeded) \\
+\code{scancel <jobid>} & Cancel a job you submitted \\
+\code{scontrol show job <jobid>} & Show detailed status for one job \\
+\code{cat myjob-<jobid>.out} & View a finished job's output \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+%==============================================================================
+\section{Limits and rules}
+%==============================================================================
+\LabName{} is shared, so a few limits keep it fair for everyone.
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}X l@{}}
+\toprule
+\textbf{Limit} & \textbf{Value} \\
+\midrule
+GPU memory per job (hard cap) & \ShardMem \\
+Running jobs at once & \MaxRunning{} (plus \MaxQueued{} more queued) \\
+Maximum job time & \MaxTime \\
+Internet access inside a job & none \\
+Interactive \code{srun}/\code{salloc} & disabled --- use \code{sbatch} \\
+Whole-GPU access & researchers only \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Need more GPU memory?}
+GPU memory is handed out in \emph{shards} of \ShardMem{} each. Ask for more by adding one line to your job script (two shards $=$ 12\,GB):
+\begin{lstlisting}
+#SBATCH --gres=shard:2      # request 12 GB of GPU memory
+\end{lstlisting}
+You cannot request the entire card --- that is reserved for researchers.
+
+%==============================================================================
+\section{Common problems and fixes}
+%==============================================================================
+\begin{itemize}
+  \item \textbf{``No internet in my job'' / \code{pip install} fails.} Jobs have no network by design. The \code{ml} environment already includes the common libraries. Need another package? Ask your administrator to add it to the image.
+  \item \textbf{\code{CUDA out of memory}.} You have \ShardMem. Reduce your batch size or model size, or request more shards (above).
+  \item \textbf{My job disappeared / was requeued.} If a researcher needs the whole GPU, student jobs are paused and restarted automatically. \textbf{Save checkpoints} to \code{/scratch} so you can resume.
+  \item \textbf{My job hit the time limit.} Jobs stop at \MaxTime. Checkpoint long runs and resubmit to continue.
+  \item \textbf{\code{Permission denied} when connecting.} Your key is not added yet, or the username is wrong (see Step~3).
+\end{itemize}
+
+%==============================================================================
+\section{Tools available inside the lab}
+%==============================================================================
+When your job runs, it lands in a container preloaded with a scientific Python stack (the \code{ml} environment) plus standard cluster tools. The essentials:
+
+\subsection*{Machine-learning \& scientific Python (\texttt{ml} environment)}
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{Python 3.11}
+  \item \textbf{PyTorch 2.5} (CUDA-enabled) --- deep learning
+  \item \textbf{TensorFlow 2.21} --- deep learning
+  \item \textbf{NumPy, SciPy, pandas} --- arrays, math, data frames
+  \item \textbf{scikit-learn} --- classical machine learning
+  \item \textbf{Hugging Face \code{transformers} \& \code{datasets}} --- pretrained models and data
+\end{itemize}
+
+\subsection*{Cluster \& command-line tools}
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{SLURM} commands: \code{sbatch}, \code{squeue}, \code{sacct}, \code{scancel}, \code{scontrol}
+  \item \textbf{conda} --- to activate the \code{ml} environment
+  \item File tools: \code{scp}, \code{rsync}, \code{nano}, plus the usual \code{ls}, \code{cd}, \code{cat}, \code{mkdir}
+  \item \textbf{NVIDIA CUDA} runtime --- so PyTorch/TensorFlow can use the GPU
+\end{itemize}
+
+\begin{notebox}
+Need a package that is not listed? It cannot be installed at job time (no internet in jobs). Email \AdminEmail{} and ask for it to be added to the container image.
+\end{notebox}
+
+%==============================================================================
+\section{Understanding SLURM (and why it matters for your career)}
+%==============================================================================
+The scheduler you have been using is called \textbf{SLURM} (Simple Linux Utility for Resource Management). It is worth understanding what it is, because it is a genuinely transferable, career-relevant skill.
+
+\subsection*{What SLURM is}
+SLURM is a \textbf{job scheduler} and \textbf{resource manager}. When many people share a small number of expensive machines (like our single \GPUName), something has to decide \emph{who runs what, when, and with how much of the hardware}. SLURM is that ``something.'' You describe your job once --- what to run, how long, how much memory --- and SLURM finds a fair, efficient time to run it, then reports back. This is why you submit with \code{sbatch} rather than running directly: it lets twenty students share one GPU without stepping on each other.
+
+\subsection*{Why it exists here}
+Our GPU is a shared, finite resource. Without a scheduler, whoever started first would monopolise it and everyone else would be blocked. SLURM enforces fair sharing (each student gets turns), hard limits (so one job cannot consume the whole machine), and priorities (researchers' work can take precedence when needed). The result is that a single GPU serves a whole class reliably.
+
+\subsection*{Where you will meet SLURM again}
+SLURM is the \emph{de facto} standard for batch computing in research and industry. Learning it here means you are already fluent in a tool used across:
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{University research computing} --- nearly every campus HPC cluster (and national programs such as ACCESS) runs SLURM. Graduate research in almost any computational field will expect it.
+  \item \textbf{National laboratories \& supercomputers} --- systems like NERSC's Perlmutter and the DOE leadership machines schedule work with SLURM. If you ever run large simulations or model training at scale, this is how.
+  \item \textbf{Industry ML \& AI} --- companies training large models operate GPU clusters managed by SLURM (or close relatives) to share thousands of GPUs among teams.
+  \item \textbf{Scientific \& engineering computing} --- bioinformatics pipelines, computational chemistry, climate and weather modelling, computational fluid dynamics, and finance risk analysis all commonly run on SLURM-managed clusters.
+  \item \textbf{Cloud HPC} --- managed offerings (e.g.\ AWS ParallelCluster, Azure CycleCloud) provision SLURM clusters on demand, so the same \code{sbatch} workflow follows you into the cloud.
+\end{itemize}
+Even where a different scheduler is used (PBS/Torque, LSF, or Grid Engine), the concepts are the same --- submit a job script, request resources, check the queue, read the output. The habits you build on \LabName{} transfer directly.
+
+%==============================================================================
+\section{Getting help}
+%==============================================================================
+Stuck, or need a package added to the environment? Contact the cluster administrator at \textbf{\AdminEmail}. When you write, include your \code{studentNN} username, the command you ran, and any error message you saw --- it makes help much faster.
+
+\vspace{1em}
+\begin{center}
+{\color{quarkA}\rule{0.5\linewidth}{1pt}}\\[0.4cm]
+{\itshape Welcome to \LabName{}. Happy computing.}
+\end{center}
+
+%==============================================================================
+\appendix
+\section{Quick command reference}
+%==============================================================================
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Command} & \textbf{Purpose} \\
+\midrule
+\code{ssh-keygen -t ed25519} & Create your SSH key (one time) \\
+\code{tailscale up -{}-login-server \HeadscaleURL} & Join the private network \\
+\code{ssh studentNN@\LabHost} & Log in to the cluster \\
+\code{scp <file> studentNN@\LabHost:\textasciitilde/} & Upload a file \\
+\code{sbatch train.sh} & Submit a job \\
+\code{squeue -{}-me} & See your jobs \\
+\code{sacct} & See job history \\
+\code{scancel <jobid>} & Cancel a job \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Glossary}
+\begin{description}[leftmargin=!,labelwidth=3.2cm,itemsep=3pt]
+  \item[SSH] Secure Shell --- the secure way you connect to and control a remote computer from a terminal.
+  \item[SSH key] A pair of files (private + public) that proves your identity in place of a password.
+  \item[VPN] Virtual Private Network --- a secure, private tunnel that lets your computer reach \LabName{} from anywhere.
+  \item[Node] A single computer in the cluster. You first land on the \emph{login node}.
+  \item[Scheduler] The program (SLURM) that queues and runs everyone's jobs fairly.
+  \item[Job] A unit of work you submit with \code{sbatch}, described by a small job script.
+  \item[Partition] A named queue of jobs (you use the \code{student} partition).
+  \item[GPU / shard] The graphics processor used for training; a \emph{shard} is a \ShardMem{} slice of it.
+  \item[Container] A sealed, preloaded software environment your job runs inside, with all libraries ready.
+\end{description}
+
+\end{document}
