@@ -68,11 +68,11 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 |---|---|---|---|
 | Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS ~19.5TB — daily backups 02:00/03:00 |
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.7 |
-| Pi-hole | pve3 (LXC) | `192.168.10.177` | DNS filter |
+| Pi-hole | pve1 (LXC, Mac Mini) | `192.168.10.177` | DNS filter — standalone node, NOT pve3 |
 | Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
 | Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
-| step-ca | pve3 | — | Internal CA, `*.netframe.local` TLS |
-| Vaultwarden | pve3 (LXC 102) | — | Installed, pending activation |
+| step-ca | pve2 | `https://192.168.10.204:443` | Internal CA, `*.netframe.local` TLS |
+| Vaultwarden | pve3 (LXC 102) | `http://192.168.10.182` | Active ✅ (healthy, onboot=1) |
 | Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | Installed (v0.31.1); pending 2× RTX 6000 install |
 
 ---
@@ -109,7 +109,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [ ] QuarkyLab RTX 6000 → RTX 8000 48GB swap (card in hand)
 - [ ] Jarvis 2× RTX 6000 install (cards in hand; gated on Dell N08NH aux power cables + R730 GPU riser)
 - [x] Backup schedules configured — daily to randy-pbs, 7d+4w retention
-- [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25\n- [x] Wazuh agent 4.9.2 on all 8 nodes → SIEM coverage ✅ 2026-06-25\n- [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25
+- [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25
 - [x] Wazuh agent 4.9.2 on all 8 nodes → full SIEM coverage ✅ 2026-06-25
 - [ ] DS4246 → Randy via LSI 9207-8e passthrough
 - [x] VLAN activation ✅ 2026-06-25 — EX3400 ge-0/0/46 trunk live, verified end-to-end (DHCP lease on VLAN 20). Fix: native-vlan-id at interface level (ELS)

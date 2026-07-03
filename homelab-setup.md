@@ -1,3 +1,5 @@
+> ⚠️ **SUPERSEDED / HISTORICAL (June 2026 build snapshot).** This is an early setup record from the initial rack build (pre-OPNsense-cutover, pre-VLAN, PVE 9.1.9, TrueNAS-era). It does **not** reflect current state — several items here (routing via UniFi Dream Router, OPNsense "not yet in path", untrunked VLANs, iDRACs on `.10.20/.21`, TrueNAS) are no longer true. **For current facts see `CLAUDE.md` and `README.md`.** Kept for historical reference only.
+
 # Homelab Infrastructure Setup Documentation
 **Date:** June 17-18, 2026
 **Location:** Vermilion, OH — NetFRAME CS9000 42U rack

@@ -15,8 +15,8 @@
 ### Proxmox Nodes
 | Node | Hardware | IP | RAM | PVE | Kernel | Role |
 |---|---|---|---|---|---|---|
-| pve2 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.204 | 48GB | 9.2.3 | 7.0.12-1 | OPNsense host |
-| pve3 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.201 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
+| pve2 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.204 | 32GB | 9.2.3 | 7.0.12-1 | OPNsense host |
+| pve3 | HP EliteDesk 800 G4 (i7-8700) | 192.168.10.201 | 48GB | 9.2.3 | 7.0.12-1 | Cluster node |
 | pve4 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.202 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
 | pve5 | HP EliteDesk 800 G3 Mini (i5-7500T) | 192.168.10.203 | 32GB | 9.2.3 | 7.0.12-1 | Cluster node |
 | sandbox | HP EliteDesk G4 (spare) | 192.168.70.x | — | — | — | Standalone lab — NOT in cluster |
@@ -29,13 +29,15 @@
 
 †GPU plan (2026-06-30): **QuarkyLab → RTX 8000 48GB — INSTALLED & VERIFIED 2026-07-01** (nvidia-smi reports 46080 MiB on driver 550.163.01, kernel 6.14.11-9-pve; driver-free Turing TU102 swap). Its freed RTX 6000 is now staged for **Jarvis → 2× RTX 6000 48GB** (that card + a new one), not yet installed — gated on Dell N08NH-type GPU aux power cables (2 sets) + R730 GPU riser kit. Jarvis GPU software stack BUILT & VERIFIED 2026-07-01: kernel 6.14.11-9-pve installed + GRUB-pinned + running, NVIDIA 550.163.01 DKMS module built, Ollama v0.31.1 active with OLLAMA_MODELS=/opt/models (98G LV) — plug-and-play once cards seated.
 QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed25519 on Ares). Kernel pinned to 6.14.11-9-pve via GRUB_DEFAULT. NVIDIA 550.163.01 verified working. RTX 8000 installed 2026-07-01 — driver-free swap (same 550.163.01 / 6.14.11 stack), nvidia-smi reports 48GB.
+**VLAN 30 (2026-07-02):** QuarkyLab `192.168.30.179` and Jarvis `192.168.30.31` are dual-homed on the servers VLAN (mgmt/corosync stay on VLAN 1 `.10.x`).
 
 ### Randy (SuperMicro — Storage / PBS)
 | Field | Value |
 |---|---|
 | Chassis | SuperMicro CSE-219U 2U 24-bay / X10DRU-i+ |
-| IP | 192.168.10.187 |
-| IPMI | 192.168.10.22 (ADMIN) |
+| IP (mgmt VLAN 1) | 192.168.10.187 |
+| Service IP (VLAN 30) | 192.168.30.187 — NFS export + PBS + egress (dual-homed 2026-07-02) |
+| IPMI | 192.168.20.22 (ADMIN, **VLAN 20** since 2026-07-03) |
 | CPUs | 2x E5-2690 v4 (56 cores / 48 logical) |
 | RAM | 128GB ECC DDR4 |
 | Kernel | 7.0.12-1-pve |
@@ -43,8 +45,8 @@ QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed2551
 | 10G link | nic3 → EX3400 xe-0/2/0 |
 | Headscale IP | 100.64.0.2 |
 | Boot | RAID-1 mirror, 2x Seagate ST200FM0053 185.8GB SAS via AVAGO 3108 MegaRAID |
-| Data drives | 18x Toshiba AL15SEB18EQ 1.636TB 10K SAS (3x RAIDZ2 of 6) |
-| Spare drives | 2x Seagate ST2000NX0423 1.818TB SATA (unallocated) |
+| Data drives | 18x Toshiba AL15SEB18EQ 1.636TB 10K SAS + 4x Seagate ST2000NX0423 1.819TB SATA |
+| ZFS layout | `datastore` = 4x RAIDZ2 — 3x 6-wide Toshiba + 1x 4-wide Seagate (36.7T raw / ~23T usable). All drives in-pool; no unallocated spares |
 | GPU | RX 580 8GB (ROCm, display/transcoding only) |
 | Proxmox UI | https://192.168.10.187:8006 |
 | PBS UI | https://192.168.10.187:8007 (v4.2.2) |
@@ -61,9 +63,9 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Pi-hole | 192.168.10.177 (pve1 LXC 103) | DNS — on Mac Mini standalone node, NOT pve3 |
 | APC AP7901 PDU | EX3400 ge-0/0/38 | Managed PDU |
 | Ares | 192.168.10.199 | Admin workstation |
-| QuarkyLab iDRAC | 192.168.10.20 | root/calvin |
-| Jarvis iDRAC | 192.168.10.21 | root/calvin |
-| Randy IPMI | 192.168.10.22 | ADMIN |
+| QuarkyLab iDRAC | 192.168.20.20 | **VLAN 20** (2026-07-03); pw rotated → Vaultwarden |
+| Jarvis iDRAC | 192.168.20.21 | **VLAN 20** (2026-07-03); pw rotated → Vaultwarden |
+| Randy IPMI | 192.168.20.22 | **VLAN 20** (2026-07-03); pw rotated → Vaultwarden |
 
 ### VLANs (EX3400)
 | VLAN | ID | Subnet |
@@ -76,6 +78,8 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Guest | 60 | 192.168.60.0/24 |
 | Lab | 70 | 192.168.70.0/24 |
 
+> **Servers VLAN 30 populated 2026-07-02:** QuarkyLab `192.168.30.179`, Randy `192.168.30.187`, Jarvis `192.168.30.31` — **dual-homed** (corosync/mgmt/monitoring stay on VLAN 1; NFS/PBS/egress on VLAN 30). Node ports are now trunks (native 1 + tagged servers): QuarkyLab `ge-0/0/24`, Randy `xe-0/2/0`, Jarvis `ge-0/0/22`. See Runbook/VLAN30-Migration-Report-2026-07-02.md + Node-VLAN-Migration-Template.md.
+
 ### Power
 | UPS | Feeds | Capacity |
 |---|---|---|
@@ -85,15 +89,15 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 ## Key Services
 | Service | Location | URL/Port | Notes |
 |---|---|---|---|
-| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS ~19.5TB — LXCs 02:00 daily, VMs 03:00 daily, 7d+4w retention |
+| Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS 36.7T (~23T usable, 19.5G used) — LXCs 02:00 daily, VMs 03:00 daily, 7d+4w retention |
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
 | Pi-hole | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
-| Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Live widgets (Proxmox/Pi-hole/Jellyfin/Scrutiny); NPM proxy host id 4 + Lets Encrypt (CF DNS-01) + basic auth (kyle); :3000 firewalled to NPM; tokens in /opt/homepage/config (not git). See Homepage-Setup-2026-06-26.md |
+| Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Live widgets (Proxmox/Pi-hole/Jellyfin/Scrutiny/UPS); Power & UPS group via PeaNUT container (:8081→8080, NUT bridge); NPM proxy host id 4 + Lets Encrypt (CF DNS-01) + basic auth (kyle); :3000 firewalled to NPM; tokens/creds in /opt/homepage/config + compose (not git). See Homepage-Setup-2026-06-26.md & Power Distribution.md |
 | nginx-proxy (NPM) | LXC 101, pve3 (.181) | Admin http://192.168.10.181:81 | onboot=1; :81 restricted to Ares (.199) via DOCKER-USER fw (F-05) ✅ |
 | Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
 | Prometheus/Grafana/Loki | LXC 103, pve3 (.183) | Grafana http://192.168.10.183:3000 | Stack active ✅; 8 nodes scraped; Prom/Loki localhost-only (F-03) |
-| Scrutiny (drive health) | LXC 103, pve3 + collector on Randy | http://192.168.10.183:8080 | 41 drives monitored; InfluxDB backend; collector runs every 6h on Randy |
+| Scrutiny (drive health) | LXC 103, pve3 + collectors on Randy, QuarkyLab & Jarvis | http://192.168.10.183:8080 | ~50 drives monitored; InfluxDB backend; binary collector via systemd timer every 6h on Randy (43), QuarkyLab (7) and Jarvis (1, added 2026-07-02); collector.yaml `host.id` + endpoint `192.168.10.183:8080` |
 | Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
 | step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
 | Jellyfin | Randy (host) | http://192.168.10.187:8096 | v10.11.11; media at /datastore/media/{movies,tv,music}; GPU transcoding pending RX 580 power cable |
@@ -102,7 +106,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 **Wazuh VM 104 is on QuarkyLab** (migrated from pve2). IP: 192.168.10.184 (DHCP). Dashboard: `https://192.168.10.184`.
 
 ## Storage
-- **Randy ZFS:** `datastore` — 3x RAIDZ2 of 6x Toshiba 1.636TB 10K SAS, 29.4TB raw / 19.5TB usable
+- **Randy ZFS:** `datastore` — 4x RAIDZ2 (3x 6-wide Toshiba 1.636TB 10K SAS + 1x 4-wide Seagate ST2000NX0423 1.819TB SATA), 36.7T raw / ~23T usable, 19.5G used
 - **Randy boot:** RAID-1, 2x Seagate ST200FM0053 via AVAGO 3108 MegaRAID
 - **Jarvis root:** pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade; **/opt/models 98G LV** added 2026-07-01 for LLM weights (OLLAMA_MODELS)
 - **DS4246 JBOD:** 13x Toshiba 1.8TB + 19x Dell/Seagate 2TB SAS, via LSI 9207-8e (IT mode) — passthrough pending
@@ -135,12 +139,15 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - Wazuh VM 104 (QuarkyLab, .184) has NO qemu-guest-agent → a QuarkyLab host reboot hard-stops it (unclean) and `wazuh-indexer` comes back unhealthy (dashboard 503). Fix after any QuarkyLab reboot: `qm stop 104 && qm start 104`, wait ~4 min; healthy = dashboard root returns 302→/app/login (NOT 200), manager `:55000`=401, indexer `:9200`=000/refused from LAN is normal. Permanent fix: install qemu-guest-agent in the VM + `qm set 104 --agent enabled=1` + one cold start. onboot=1 is set.
 - Tailscale overwrites /etc/resolv.conf on ALL nodes — run `tailscale set --accept-dns=false` and set nameserver to 192.168.10.177 before any apt operations
 - Headscale Phase 2 pending: QuarkyLab + Fernanda's Mac (ferpsihas@, fus22-009897) must migrate together — do not migrate one without the other
+- QuarkyLab/Randy/Jarvis migrated to Servers VLAN 30 (2026-07-02, **dual-homed**): corosync + management + monitoring stay on VLAN 1 (`.10.179/.187/.31`); NFS `/data`, PBS backup, and internet egress ride VLAN 30 (`.30.179/.187/.31`, default gw `.30.1`). Corosync deliberately NOT moved (keep the ring on stable L2). EX3400 node ports are trunks (native 1 + tagged servers): QuarkyLab ge-0/0/24, Randy xe-0/2/0, Jarvis ge-0/0/22. Rollback anchors on each node (`interfaces.bak-vlan30-*` etc.). See Runbook/VLAN30-Migration-Report-2026-07-02.md + Node-VLAN-Migration-Template.md. NOTE: `/data` mount, PBS storage.cfg, and `pbs-workspace-backup.sh` PBS_REPOSITORY now point at `192.168.30.187`.
 - VLAN activation COMPLETE (2026-06-25): EX3400 ge-0/0/46 trunk live to UniFi Port 24, verified end-to-end. KEY: native-vlan-id goes at INTERFACE level on this EX3400 (ELS), NOT under unit 0 family ethernet-switching. pve2 vmbr2/nic2 auto-start DISABLED (unused bridge with live UniFi cable caused trunk loop) — do not re-enable without removing its cable. See VLAN-Activation-2026-06-25.md
-- Ares WiFi is on WAN side (192.168.1.x) — OPNsense outage = full loss of management network access from WiFi. Keep wired cable (enp0s31f6, 192.168.10.100) plugged in during any pve2/OPNsense maintenance
+- Ares mgmt path: the **wired** leg `enp0s31f6` (192.168.10.100) is primary — keep it connected during any pve2/OPNsense maintenance. **Correction (2026-07-03):** Ares WiFi `wlp2s0` was found on **VLAN 1 LAN (192.168.10.199)**, not the WAN side as previously noted — so WiFi *can* currently reach mgmt, but the wired leg flapped/was link-down at session start; treat wired as authoritative and verify `ip route get 192.168.20.x` egresses `enp0s31f6.20` before trusting VLAN 20 tests (a down wired leg silently reroutes VLAN 20 via WiFi→OPNsense). Ares also carries a VLAN 20 leg `enp0s31f6.20` (192.168.20.199) as the OOB/BMC jump host.
+- **OOB/BMC on VLAN 20 (2026-07-03, Phase 1 security segmentation):** all three BMCs moved off flat VLAN 1 — QuarkyLab iDRAC `192.168.20.20`, Jarvis iDRAC `192.168.20.21`, Randy IPMI `192.168.20.22` (802.1q VLAN 20 tagged; default creds root/calvin + ADMIN **rotated → Vaultwarden**). EX3400 ports ge-0/0/30·32·44 are tagged-VLAN-20-only; reach BMCs from Ares' `enp0s31f6.20`. Randy IPMI = channel 1; **enabling VLAN zeroes the IP** — re-apply `ipmitool lan set 1 ipaddr` after `lan set 1 vlan id`. Still pending: OPNsense firewall to deny non-Ares→VLAN 20 + no BMC egress (Phase 1.5). See Runbook/Security-VLAN-Segmentation-Phased-2026-07-03.md
 - ifreload -a does NOT apply bridge-vlan-aware on pve2 — requires full reboot of pve2
 - Randy boot drives RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
 - Randy data drives use separate LSI 9207-8e HBA in IT mode — two different cards
 - Randy JBOD mode may reset after reboot — re-run `storcli64 /c0 set jbod=on && storcli64 /c0/eall/sall set jbod`
+- Randy AVAGO 3108 relocated to a known-good PCIe slot 2026-07-01 after its original slot failed (controller undetected at POST → "no boot device"). Original slot is DEAD — do not reuse. Triage: no MegaRAID banner at POST = physical/slot fault, NOT a BIOS/OpROM setting; blinking-green D13 LED = card healthy. See Runbook/Randy-PCIe-Slot-Recovery-2026-07-01.md
 - Randy corosync singleton after reboot: from pve2 `pvecm delnode Randy`, then on Randy `pkill pmxcfs; systemctl start pve-cluster`
 - Jarvis root was 6GB (disk-full during upgrade) — now 56GB with sda added to pve VG
 - pve3 LXCs (101/102/103/105) all have onboot=1 set — verify before rebooting pve3
