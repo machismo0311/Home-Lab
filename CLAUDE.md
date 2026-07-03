@@ -37,7 +37,7 @@ QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed2551
 | Chassis | SuperMicro CSE-219U 2U 24-bay / X10DRU-i+ |
 | IP (mgmt VLAN 1) | 192.168.10.187 |
 | Service IP (VLAN 30) | 192.168.30.187 — NFS export + PBS + egress (dual-homed 2026-07-02) |
-| IPMI | 192.168.10.22 (ADMIN) |
+| IPMI | 192.168.20.22 (ADMIN, **VLAN 20** since 2026-07-03) |
 | CPUs | 2x E5-2690 v4 (56 cores / 48 logical) |
 | RAM | 128GB ECC DDR4 |
 | Kernel | 7.0.12-1-pve |
@@ -63,9 +63,9 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Pi-hole | 192.168.10.177 (pve1 LXC 103) | DNS — on Mac Mini standalone node, NOT pve3 |
 | APC AP7901 PDU | EX3400 ge-0/0/38 | Managed PDU |
 | Ares | 192.168.10.199 | Admin workstation |
-| QuarkyLab iDRAC | 192.168.10.20 | root/calvin |
-| Jarvis iDRAC | 192.168.10.21 | root/calvin |
-| Randy IPMI | 192.168.10.22 | ADMIN |
+| QuarkyLab iDRAC | 192.168.20.20 | **VLAN 20** (2026-07-03); pw rotated → Vaultwarden |
+| Jarvis iDRAC | 192.168.20.21 | **VLAN 20** (2026-07-03); pw rotated → Vaultwarden |
+| Randy IPMI | 192.168.20.22 | **VLAN 20** (2026-07-03); pw rotated → Vaultwarden |
 
 ### VLANs (EX3400)
 | VLAN | ID | Subnet |
@@ -141,7 +141,8 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - Headscale Phase 2 pending: QuarkyLab + Fernanda's Mac (ferpsihas@, fus22-009897) must migrate together — do not migrate one without the other
 - QuarkyLab/Randy/Jarvis migrated to Servers VLAN 30 (2026-07-02, **dual-homed**): corosync + management + monitoring stay on VLAN 1 (`.10.179/.187/.31`); NFS `/data`, PBS backup, and internet egress ride VLAN 30 (`.30.179/.187/.31`, default gw `.30.1`). Corosync deliberately NOT moved (keep the ring on stable L2). EX3400 node ports are trunks (native 1 + tagged servers): QuarkyLab ge-0/0/24, Randy xe-0/2/0, Jarvis ge-0/0/22. Rollback anchors on each node (`interfaces.bak-vlan30-*` etc.). See Runbook/VLAN30-Migration-Report-2026-07-02.md + Node-VLAN-Migration-Template.md. NOTE: `/data` mount, PBS storage.cfg, and `pbs-workspace-backup.sh` PBS_REPOSITORY now point at `192.168.30.187`.
 - VLAN activation COMPLETE (2026-06-25): EX3400 ge-0/0/46 trunk live to UniFi Port 24, verified end-to-end. KEY: native-vlan-id goes at INTERFACE level on this EX3400 (ELS), NOT under unit 0 family ethernet-switching. pve2 vmbr2/nic2 auto-start DISABLED (unused bridge with live UniFi cable caused trunk loop) — do not re-enable without removing its cable. See VLAN-Activation-2026-06-25.md
-- Ares WiFi is on WAN side (192.168.1.x) — OPNsense outage = full loss of management network access from WiFi. Keep wired cable (enp0s31f6, 192.168.10.100) plugged in during any pve2/OPNsense maintenance
+- Ares mgmt path: the **wired** leg `enp0s31f6` (192.168.10.100) is primary — keep it connected during any pve2/OPNsense maintenance. **Correction (2026-07-03):** Ares WiFi `wlp2s0` was found on **VLAN 1 LAN (192.168.10.199)**, not the WAN side as previously noted — so WiFi *can* currently reach mgmt, but the wired leg flapped/was link-down at session start; treat wired as authoritative and verify `ip route get 192.168.20.x` egresses `enp0s31f6.20` before trusting VLAN 20 tests (a down wired leg silently reroutes VLAN 20 via WiFi→OPNsense). Ares also carries a VLAN 20 leg `enp0s31f6.20` (192.168.20.199) as the OOB/BMC jump host.
+- **OOB/BMC on VLAN 20 (2026-07-03, Phase 1 security segmentation):** all three BMCs moved off flat VLAN 1 — QuarkyLab iDRAC `192.168.20.20`, Jarvis iDRAC `192.168.20.21`, Randy IPMI `192.168.20.22` (802.1q VLAN 20 tagged; default creds root/calvin + ADMIN **rotated → Vaultwarden**). EX3400 ports ge-0/0/30·32·44 are tagged-VLAN-20-only; reach BMCs from Ares' `enp0s31f6.20`. Randy IPMI = channel 1; **enabling VLAN zeroes the IP** — re-apply `ipmitool lan set 1 ipaddr` after `lan set 1 vlan id`. Still pending: OPNsense firewall to deny non-Ares→VLAN 20 + no BMC egress (Phase 1.5). See Runbook/Security-VLAN-Segmentation-Phased-2026-07-03.md
 - ifreload -a does NOT apply bridge-vlan-aware on pve2 — requires full reboot of pve2
 - Randy boot drives RAID-1 via AVAGO 3108 MegaRAID — do not reconfigure
 - Randy data drives use separate LSI 9207-8e HBA in IT mode — two different cards
