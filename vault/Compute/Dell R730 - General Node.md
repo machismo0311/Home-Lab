@@ -6,9 +6,10 @@
 
 ## Status: 🟢 Online — km-cluster node (no GPU yet; 2× RTX 6000 staged)
 
-- **Host IP:** 192.168.10.31
+- **Host IP (mgmt, VLAN 1):** 192.168.10.31 · **Service IP (VLAN 30):** 192.168.30.31 — dual-homed 2026-07-02 (see [[Runbook/VLAN30-Migration-Report-2026-07-02]])
 - **iDRAC:** 192.168.10.21 (root/calvin)
 - Member of km-cluster (PVE 9.2.3); Headscale 100.64.0.6
+- **Scrutiny collector** installed 2026-07-02 (reports `sda` SMART to hub `192.168.10.183:8080`, 6h timer)
 - Kernel pinned to **6.14.11-9-pve** (GRUB_DEFAULT; NOT proxmox-boot-tool) for the NVIDIA GPU stack — do not upgrade/change
 - **2× RTX 6000 48GB planned** (both cards in hand; QuarkyLab's old RTX 6000 + a new one per the 2026-06-30 GPU plan). GPU software stack BUILT 2026-07-01 (kernel 6.14.11-9-pve, NVIDIA 550.163.01 DKMS, Ollama v0.31.1 → /opt/models). Physical install gated on Dell N08NH aux power cables (2 sets) + R730 GPU riser kit.
 

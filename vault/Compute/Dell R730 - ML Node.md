@@ -6,7 +6,7 @@
 
 ## Status: 🟢 Online — km-cluster node (RTX 8000 48GB ML — installed 2026-07-01)
 
-- **Host IP:** 192.168.10.179
+- **Host IP (mgmt, VLAN 1):** 192.168.10.179 · **Service IP (VLAN 30):** 192.168.30.179 — dual-homed 2026-07-02 (corosync/mgmt/monitoring on VLAN 1; NFS `/data` + PBS + egress on VLAN 30). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
 - **iDRAC:** 192.168.10.20 (root/calvin)
 - Member of km-cluster (PVE 9.2.3)
 - Hosts **Wazuh SIEM VM 104** (192.168.10.184)

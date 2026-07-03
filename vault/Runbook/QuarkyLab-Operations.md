@@ -14,6 +14,7 @@ The reliability/observability layer added around the student environment (2026-0
 | *(Randy)* GC daily 03:00 + verify Sun 04:00 | | PBS datastore hygiene |
 
 ## Data protection
+- **Storage & backup on VLAN 30** (2026-07-02) — NFS `/data` and the PBS workspace backup now use Randy `192.168.30.187`; the node is dual-homed (cluster/management on VLAN 1). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
 - **`workspace/scratch` capped** — `quota=2T` + `userquota=200G` per user (can't starve the shared pool).
 - **`workspace/fernanda` `refreservation=2T`** — guarantees her production DUNE data a 2 TB floor even if students fill their datasets (the pool's dataset quotas oversubscribe it).
 - **Backup restore-tested** — fernanda archive restored byte-identical from PBS.
