@@ -32,7 +32,7 @@ All site-specific values are `\newcommand`s at the top of the `.tex` (the
 | `\LabName` | Cluster display name | `QuarkyLab` |
 | `\LabHost` | SSH target over the VPN | `quarkylab` |
 | `\HeadscaleURL` | Headscale login server | `https://headscale.kylemason.org` |
-| `\AdminEmail` | Where students send their public key | `masonkr@gmail.com` |
+| `\AdminEmail` | Where students send their public key | `kyle@kylemason.org` |
 | `\GPUName`, `\ShardMem`, `\MaxTime`, `\HomeQuota`, `\ScratchPurge` | Limits shown in tables | — |
 
 ## ⚠ Confirm before distributing to students
@@ -44,6 +44,7 @@ These were set to best-guess defaults — verify they match the live setup:
    `quarkylab`) or its `100.64.0.x` overlay IP. **Note:** QuarkyLab is currently on
    commercial Tailscale; Headscale enrollment (Phase 2, with Fernanda's Mac) is
    pending, so confirm the name/IP once it's on Headscale.
-3. **`\AdminEmail`** — the address students email their SSH public key to.
+3. **`\AdminEmail`** — the address students email their SSH public key to (set to
+   `kyle@kylemason.org`).
 4. Onboarding still requires the admin to run `add-cluster-key.sh <studentNN> "<pubkey>"`
    on QuarkyLab after receiving each student's key.
