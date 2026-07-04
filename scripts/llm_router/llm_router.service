@@ -1,0 +1,21 @@
+[Unit]
+Description=llm_router — OpenAI-compatible hybrid router (local Ollama + Claude fallback)
+After=network-online.target ollama.service
+Wants=network-online.target
+Requires=ollama.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/llm_router.env
+ExecStart=/opt/llm_router/venv/bin/uvicorn llm_router:app --host ${LLM_ROUTER_HOST} --port ${LLM_ROUTER_PORT}
+WorkingDirectory=/opt/llm_router
+Restart=on-failure
+RestartSec=5
+# harden a little
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/llm_router
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

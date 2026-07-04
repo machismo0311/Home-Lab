@@ -26,7 +26,7 @@
 | Wazuh SIEM | VM 104 | 🟢 Active | QuarkyLab | 192.168.10.184 | https://192.168.10.184 |
 | PBS | Native | 🟢 Active | Randy | 192.168.10.187:8007 | v4.2.2, 36.7T ZFS (~23T usable) |
 | Jellyfin | Native | 🟢 Active | Randy | 192.168.10.187:8096 | v10.11.11 |
-| Ollama / llm_router | Native | ⏸️ Inactive | Jarvis | llm.netframe.local | v0.31.1 installed (CPU-only, /opt/models); awaiting 2× RTX 6000 |
+| Ollama / llm_router | Native | 🟢 Active | Jarvis | `:8000` (llm.netframe.local) | Ollama v0.31.1 GPU-backed (2× RTX 6000, qwen2.5:72b); llm_router.service OpenAI-compatible (local + Claude fallback) ACTIVE 2026-07-04 |
 | Home Assistant | — | 🔴 Planned | TBD | — | — |
 | FreePBX | VM | ⏸️ Deferred | TBD | — | — |
 
