@@ -30,7 +30,7 @@
 | **RAM** | 384 GB LRDIMM ECC DDR4 |
 | **GPU** | 2× NVIDIA Quadro RTX 6000 **24 GB each (48 GB total)** — installed & verified 2026-07-04 (driver 550.163.01, `03:00.0`+`82:00.0`) |
 | Storage | pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade; **/opt/models 98G LV** (2026-07-01) for LLM weights |
-| NICs | 4× Broadcom BCM57800 1/10G onboard (nic0–3; nic2 = live mgmt) + Mellanox ConnectX-3 10GbE (`enp132s0`, added 2026-07-04, uncabled) |
+| NICs | 4× Broadcom BCM57800 1/10G onboard (nic0–3; nic2→vmbr0 = mgmt/corosync VLAN 1) + Mellanox ConnectX-3 10GbE (`enp132s0`→vmbr1 = **VLAN 30 servers** via EX3400 xe-0/2/2, 2026-07-04) |
 | Remote Mgmt | iDRAC 8 (192.168.10.21) |
 | Depth | ~28" — **rear panel removed** from NetFRAME CS9000 |
 
@@ -64,7 +64,7 @@ racadm -r 192.168.10.21 -u root -p calvin serveraction powercycle
 
 - **GPUs:** 2× Quadro RTX 6000, **24 GB each / 48 GB total** (nvidia-smi 24576 MiB ×2), driver 550.163.01, kernel 6.14.11-9-pve. PCI `03:00.0` + `82:00.0`, both `Kernel driver in use: nvidia`.
 - **nouveau conflict (fixed):** on first boot with GPUs present, `nouveau` grabbed both cards (the driver was staged when no GPU was installed, so it was never blacklisted) → `nvidia-smi` failed "No devices probed." Fix: `/etc/modprobe.d/blacklist-nouveau.conf` (`blacklist nouveau` + `options nouveau modeset=0`) + `update-initramfs -u` + reboot → nvidia binds.
-- **ConnectX-3 10GbE** added same trip: `84:00.0` → `enp132s0` (10000Mb/s capable; **currently uncabled** — needs a cable + EX3400 `xe-` port to carry VLAN 30).
+- **ConnectX-3 10GbE** added same trip: `84:00.0` → `enp132s0`. **Cabled + configured 2026-07-04 to carry VLAN 30** (NFS/PBS/egress): EX3400 **`xe-0/2/2`** set to access VLAN 30 (`servers`); Jarvis `vmbr1` (bridge on `enp132s0`) holds `192.168.30.31/24` gw `.30.1`; old tagged `vmbr0.30` on the 1G removed. Mgmt/corosync stay on the onboard 1G (`vmbr0`/nic2, VLAN 1). Verified: 10000Mb/s, default route + PBS `.30.187` over the 10G, cluster 7/7 quorate. (2nd port `enp132s0d1` down/unused.)
 - **Ollama** now GPU-backed (v0.31.1, `/opt/models`); **qwen2.5:72b** pulled (~47 GB, tensor-splits across both cards). `llm_router.py` can be activated.
 - Headscale Phase 2: QuarkyLab + Fernanda's Mac must migrate together — do not migrate one without the other.
 

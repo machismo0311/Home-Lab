@@ -78,7 +78,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Guest | 60 | 192.168.60.0/24 |
 | Lab | 70 | 192.168.70.0/24 |
 
-> **Servers VLAN 30 populated 2026-07-02:** QuarkyLab `192.168.30.179`, Randy `192.168.30.187`, Jarvis `192.168.30.31` — **dual-homed** (corosync/mgmt/monitoring stay on VLAN 1; NFS/PBS/egress on VLAN 30). Node ports are now trunks (native 1 + tagged servers): QuarkyLab `ge-0/0/24`, Randy `xe-0/2/0`, Jarvis `ge-0/0/22`. See Runbook/VLAN30-Migration-Report-2026-07-02.md + Node-VLAN-Migration-Template.md.
+> **Servers VLAN 30 populated 2026-07-02:** QuarkyLab `192.168.30.179`, Randy `192.168.30.187`, Jarvis `192.168.30.31` — **dual-homed** (corosync/mgmt/monitoring stay on VLAN 1; NFS/PBS/egress on VLAN 30). Node ports are now trunks (native 1 + tagged servers): QuarkyLab `ge-0/0/24`, Randy `xe-0/2/0`, Jarvis `ge-0/0/22`. **Update 2026-07-04: Jarvis VLAN 30 moved onto its new 10G ConnectX** — EX3400 **`xe-0/2/2`** set to access VLAN 30, Jarvis `vmbr1` (bridge on `enp132s0`) = `192.168.30.31`; mgmt/corosync stay on the onboard 1G (`ge-0/0/22` native VLAN 1). `ge-0/0/22`'s tagged VLAN 30 is now vestigial (harmless). See Runbook/VLAN30-Migration-Report-2026-07-02.md + Node-VLAN-Migration-Template.md.
 
 ### Power
 | UPS | Feeds | Capacity |
