@@ -39,7 +39,7 @@
 ## Purpose
 
 LLM inference node (**GPU software stack ready; awaiting cards**):
-- **llm_router.py** — FastAPI, OpenAI-compatible; routes between local Ollama (Qwen2.5 72B on 2× RTX 6000) and Claude API fallback. **Inactive** until the GPUs are installed.
+- **llm_router.py** — FastAPI, OpenAI-compatible; routes between local Ollama (Qwen2.5 72B on 2× RTX 6000) and Claude API fallback (`claude-opus-4-8`). **ACTIVE 2026-07-04** — systemd `llm_router.service` on `:8000`, venv `/opt/llm_router`, source in `Home-Lab/scripts/llm_router/`. Local path verified end-to-end. Claude fallback gated on `ANTHROPIC_API_KEY` in `/etc/llm_router.env` (currently unset → local-only; Claude requests 503 until set).
 - Ollama v0.31.1 (`llm.netframe.local`) — installed, CPU-only for now; models on /opt/models (98G LV). Awaiting GPUs.
 - General VM hosting / heavy non-GPU workloads.
 
