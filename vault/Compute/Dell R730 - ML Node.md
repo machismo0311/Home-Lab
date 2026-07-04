@@ -95,11 +95,45 @@ racadm -r 192.168.10.20 -u root -p calvin getsel        # event log
 
 ---
 
-## Thermal Notes
+## Thermal / Fan Control — investigated & measured 2026-07-04
 
-- R730 fans ramp hard under GPU load
-- Custom fan curve via iDRAC: `racadm set System.ThermalSettings.FanSpeedHighOffsetVal`
-- Ambient inlet target < 25°C; rear panel of CS9000 removed — ensure wall clearance
+**Bottom line: the ~3,800 RPM idle fan floor is inherent to this R730 GPU config and is NOT reducible by any auto-ramp-preserving setting. Leave it stock.** The only knob that lowers it — manual static `ipmitool raw 0x30 0x30 0x02 …` — disables auto-ramp and is unsafe on a GPU node; do **not** use it here.
+
+Current committed thermal config (verified via SCP export 2026-07-04):
+
+| Attribute (`ThermalSettings.1#…`) | Value | Note |
+|---|---|---|
+| `ThermalProfile` | `Default Thermal Profile Settings` | Already optimal — not Max Performance |
+| `ThirdPartyPCIFanResponse` | `Disabled` | **Correct for GPUs** — suppresses the loud fixed third-party-card fan ramp |
+| `MinimumFanSpeed` | `15` (%) | |
+| `FanSpeedOffset` | `Low Fan Speed` | |
+| `AirExhaustTemp` | `70` (°C) | |
+
+Tested 2026-07-04 and **ruled out** as levers (all reverted afterward):
+- `ThirdPartyPCIFanResponse` toggled Enabled↔Disabled via `ipmitool raw 0x30 0xce` → **zero** fan change. ⚠ the ipmitool bit reads INVERTED vs the iDRAC label: `ipmitool raw 0x30 0xce 0x01 0x16 0x05 0x00 0x00 0x00` returning `…05 00 01 00 00` == iDRAC `Disabled`.
+- `MinimumFanSpeed` 15→10 → zero change (fans already idle above the floor).
+- `FanSpeedOffset` `Low Fan Speed`→`Off` → zero change.
+- **CPU load test** (88-worker burn, loadavg 67.8): fans held 3,720–3,960 RPM, exhaust rose only **33→34 °C** — airflow is so generous no ramp was needed (limit 70 °C = huge headroom).
+
+Auto-ramp is intact by design: these settings only set the floor/offset; the ramp loop (driven by CPU/exhaust temp — **iDRAC cannot read GPU temp on any R730**, so GPU heat is sensed indirectly via exhaust air) is untouched. Ambient inlet target < 25 °C; rear CS9000 panel removed — ensure wall clearance.
+
+### Reading/changing thermal on this iDRAC 8 (fw 2.86)
+`racadm` is not installed and this firmware exposes **no** Redfish `DellAttributes`/`Attributes` resource — use **SCP export/import**. iDRAC is on **VLAN 20 (192.168.20.20)**; the node can no longer reach its own iDRAC (routes out the VLAN 30 gw), so drive it **from Ares' wired VLAN 20 leg `enp0s31f6.20`** with legacy TLS. Root pw in Vaultwarden. `enp0s31f6` must be physically up (carrier=1) or VLAN 20 silently reroutes via WiFi→OPNsense and is firewalled off.
+
+```bash
+IDRAC=192.168.20.20
+C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u root:<vaultwarden-pw>"      # SECLEVEL=0 required for iDRAC-8 TLS
+# READ: export System profile → note the JID → GET the task; XML body carries ThermalSettings when Completed
+$C -D - -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ExportSystemConfiguration" \
+   -H 'Content-Type: application/json' \
+   -d '{"ExportFormat":"XML","ShareParameters":{"Target":"System"},"ExportUse":"Default","IncludeInExport":"Default"}'
+$C "https://$IDRAC/redfish/v1/TaskService/Tasks/<JID>"
+# WRITE: import one attribute → poll JID; success = MessageId SYS053, invalid value = RAC015 (no change). Applies live, no reboot.
+$C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ImportSystemConfiguration" \
+   -H 'Content-Type: application/json' \
+   -d '{"ImportBuffer":"<SystemConfiguration><Component FQDD=\"System.Embedded.1\"><Attribute Name=\"ThermalSettings.1#MinimumFanSpeed\">15</Attribute></Component></SystemConfiguration>","ShareParameters":{"Target":"System"}}'
+```
+`FanSpeedOffset` valid values on this fw: `Off`, `Low Fan Speed`, `High Fan Speed`, `Max Fan Speed` (the racadm "…Fan Speed Offset" strings are rejected → RAC015). Live in-band check on the host: `ipmitool sdr type fan`, `ipmitool sdr type temperature`, `nvidia-smi`.
 
 ---
 
