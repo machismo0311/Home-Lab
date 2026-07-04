@@ -4,14 +4,14 @@
 
 ---
 
-## Status: 🟢 Online — km-cluster node (no GPU yet; 2× RTX 6000 staged)
+## Status: 🟢 Online — km-cluster node (2× RTX 6000 installed & verified 2026-07-04)
 
 - **Host IP (mgmt, VLAN 1):** 192.168.10.31 · **Service IP (VLAN 30):** 192.168.30.31 — dual-homed 2026-07-02 (see [[Runbook/VLAN30-Migration-Report-2026-07-02]])
-- **iDRAC:** 192.168.10.21 (root/calvin)
+- **iDRAC:** 192.168.20.21 (VLAN 20 since 2026-07-03; root pw in Vaultwarden — reach from Ares `enp0s31f6.20`)
 - Member of km-cluster (PVE 9.2.3); Headscale 100.64.0.6
 - **Scrutiny collector** installed 2026-07-02 (reports `sda` SMART to hub `192.168.10.183:8080`, 6h timer)
 - Kernel pinned to **6.14.11-9-pve** (GRUB_DEFAULT; NOT proxmox-boot-tool) for the NVIDIA GPU stack — do not upgrade/change
-- **2× RTX 6000 48GB planned** (both cards in hand; QuarkyLab's old RTX 6000 + a new one per the 2026-06-30 GPU plan). GPU software stack BUILT 2026-07-01 (kernel 6.14.11-9-pve, NVIDIA 550.163.01 DKMS, Ollama v0.31.1 → /opt/models). Physical install gated on Dell N08NH aux power cables (2 sets) + R730 GPU riser kit.
+- **2× RTX 6000 INSTALLED & VERIFIED 2026-07-04** — Quadro RTX 6000, **24 GB each / 48 GB total** (nvidia-smi 24576 MiB ×2, driver 550.163.01, kernel 6.14.11-9-pve); QuarkyLab's old RTX 6000 + a new one. Required a nouveau blacklist on first boot (see install section). Fans managed by the **`gpu-fan-control` daemon**.
 
 > [!NOTE] iDRAC IP was originally static 10.10.198.38; changed via front panel to 192.168.10.21. iDRAC MAC 18:66:da:97:0f:8e.
 
@@ -28,9 +28,9 @@
 | Rack Position | U18–U20 |
 | **CPU** | 2× Intel Xeon E5-2687W v4 (12c each · 48t total) |
 | **RAM** | 384 GB LRDIMM ECC DDR4 |
-| **GPU** | none installed — 2× RTX 6000 48GB planned (SW stack ready: 6.14.11-9-pve + NVIDIA 550.163.01) |
+| **GPU** | 2× NVIDIA Quadro RTX 6000 **24 GB each (48 GB total)** — installed & verified 2026-07-04 (driver 550.163.01, `03:00.0`+`82:00.0`) |
 | Storage | pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade; **/opt/models 98G LV** (2026-07-01) for LLM weights |
-| NICs | 4× 1G onboard |
+| NICs | 4× Broadcom BCM57800 1/10G onboard (nic0–3; nic2 = live mgmt) + Mellanox ConnectX-3 10GbE (`enp132s0`, added 2026-07-04, uncabled) |
 | Remote Mgmt | iDRAC 8 (192.168.10.21) |
 | Depth | ~28" — **rear panel removed** from NetFRAME CS9000 |
 
@@ -60,23 +60,30 @@ racadm -r 192.168.10.21 -u root -p calvin serveraction powercycle
 
 ---
 
-## Pending — 2× RTX 6000 install
+## 2× RTX 6000 — INSTALLED & VERIFIED 2026-07-04
 
-- Awaiting Dell **N08NH** GPU aux power cables (2 sets) + R730 GPU riser kit.
-- Kernel/driver/Ollama already staged (2026-07-01): `dkms status` shows `nvidia/550.163.01, 6.14.11-9-pve` installed; `nvidia-smi` will report devices once cards are seated.
+- **GPUs:** 2× Quadro RTX 6000, **24 GB each / 48 GB total** (nvidia-smi 24576 MiB ×2), driver 550.163.01, kernel 6.14.11-9-pve. PCI `03:00.0` + `82:00.0`, both `Kernel driver in use: nvidia`.
+- **nouveau conflict (fixed):** on first boot with GPUs present, `nouveau` grabbed both cards (the driver was staged when no GPU was installed, so it was never blacklisted) → `nvidia-smi` failed "No devices probed." Fix: `/etc/modprobe.d/blacklist-nouveau.conf` (`blacklist nouveau` + `options nouveau modeset=0`) + `update-initramfs -u` + reboot → nvidia binds.
+- **ConnectX-3 10GbE** added same trip: `84:00.0` → `enp132s0` (10000Mb/s capable; **currently uncabled** — needs a cable + EX3400 `xe-` port to carry VLAN 30).
+- **Ollama** now GPU-backed (v0.31.1, `/opt/models`); **qwen2.5:72b** pulled (~47 GB, tensor-splits across both cards). `llm_router.py` can be activated.
 - Headscale Phase 2: QuarkyLab + Fernanda's Mac must migrate together — do not migrate one without the other.
 
 ---
 
-## Fan / Thermal — GPU install
+## Fan / Thermal — as-built (GPU-aware daemon)
 
-Same platform as QuarkyLab, so expect the **same ~3,800 RPM idle fan floor** once the 2× RTX 6000 are seated — that is **normal and inherent**, not a fault, and is not safely reducible (full 2026-07-04 investigation + iDRAC-8 SCP export/import procedure in [[Compute/Dell R730 - ML Node]] → Thermal / Fan Control). The floor already auto-ramps under load.
+**The story (measured 2026-07-04):** on install, iDRAC's `ThirdPartyPCIFanResponse` was at its **default (Enabled)**, so the two unrecognized RTX cards triggered a **full-speed ramp (~14,800 RPM) at idle** (jet engine). Disabling it (matching QuarkyLab) drops fans to the ~4,080 RPM baseline — but with it disabled iDRAC has **no GPU-temp visibility**, so the fans do **not** ramp for GPU heat: a single compute-bound card hit **81 °C** at baseline with fans flat, while real 72B dual-GPU load only reached **63 °C** (tensor-parallel inference is bandwidth-bound, not compute-bound — the small-model single-card case is the worst case, not the big model).
 
-Replicate QuarkyLab's proven-good GPU thermal config on Jarvis (iDRAC **192.168.20.21**, VLAN 20, root pw in Vaultwarden) — verify/set via SCP export/import from Ares' `enp0s31f6.20`:
-- `ThermalSettings.1#ThirdPartyPCIFanResponse` = **Disabled** ← the key GPU setting: stops the RTX cards from triggering a loud fixed fan ramp.
-- `ThermalSettings.1#ThermalProfile` = **Default Thermal Profile Settings** (not Max Performance).
+**Solution deployed — `gpu-fan-control` daemon** (source: `Home-Lab/scripts/gpu-fan-control.{sh,service}`; installed at `/usr/local/sbin/gpu-fan-control.sh` + `/etc/systemd/system/gpu-fan-control.service`). Closed-loop service: reads max GPU temp via `nvidia-smi` every 5 s and sets fan % with iDRAC manual control (`ipmitool raw 0x30 0x30`):
+- **Curve:** <50 °C → 15% (~4,080 RPM, quiet idle); 25/35/45/60/80/100% at 50/60/70/75/80/85 °C (2 °C down-hysteresis).
+- **Chassis safety net:** exhaust ≥45 °C forces ≥70% (covers CPU-heavy load the GPU curve can't see).
+- **Failsafe:** any stop/crash/`nvidia-smi` read-failure → hands fans back to iDRAC auto (`0x30 0x30 0x01 0x01`); with third-party disabled that's the measured-safe ~4,080 baseline. Both `ExecStopPost` and an in-script trap revert; `Restart=on-failure`; `enabled` at boot.
+- **Self-contained:** re-asserts `ThirdPartyPCIFanResponse=Disabled` (`ipmitool raw 0x30 0xce …`) at every startup, so it survives reboots without depending on the iDRAC persistent attribute (which couldn't be set via SCP — see note).
+- **Verified 2026-07-04:** fans ramped 15→35% tracking GPU 40→64 °C; killing the daemon mid-load reverted to auto with cards staying safe; clean `systemctl stop` → inactive.
 
-Do **not** use manual static fan control (`ipmitool raw 0x30 0x30`) — it disables auto-ramp and is unsafe with GPUs. iDRAC cannot read GPU temp on any R730; verify GPU thermals directly with `nvidia-smi` under first load.
+> [!NOTE] The earlier blanket "never use `ipmitool raw 0x30 0x30`" rule applies to an **unmanaged** manual setting. A **failsafed** daemon that reverts to a *measured-safe* auto baseline on any failure is a different, acceptable risk profile — that is what makes this safe.
+
+> [!WARNING] iDRAC SCP config queue was stuck (LC068 / a pending `ErrPrompt` BIOS job blocked import/export; Redfish `DELETE` job returned 400 on fw 2.86). That's why the fan-response setting is asserted in-band by the daemon rather than persisted as an iDRAC attribute. `ThirdPartyPCIFanResponse` byte mapping (via `ipmitool raw 0x30 0xce 0x01 …`): read `…05 00 01 00 00` = iDRAC **Disabled** (quiet); `…05 00 00 00 00` = **Enabled** (loud) — the ipmitool bit reads inverted vs the iDRAC label.
 
 ---
 

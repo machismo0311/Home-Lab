@@ -163,6 +163,6 @@ $C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_
 ---
 
 ## Related
-- [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC 192.168.10.21, LLM, 2× RTX 6000 planned)
+- [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC 192.168.20.21, LLM, 2× RTX 6000 24GB installed 2026-07-04, gpu-fan-control daemon)
 - [[Power Distribution]] — UPS A (Middle Atlantic, ML bus)
 - [[Infrastructure/Proxmox Cluster]] — GPU passthrough config

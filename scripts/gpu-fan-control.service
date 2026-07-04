@@ -1,0 +1,18 @@
+[Unit]
+Description=GPU-aware fan control (R730 + NVIDIA) with failsafe-to-auto
+After=multi-user.target
+ConditionPathExists=/usr/bin/nvidia-smi
+# If it crash-loops, stop trying — ExecStopPost leaves fans in safe iDRAC AUTO.
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/gpu-fan-control.sh
+# CRITICAL failsafe: on any stop/crash/kill, hand fans back to iDRAC automatic.
+ExecStopPost=/usr/bin/ipmitool raw 0x30 0x30 0x01 0x01
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

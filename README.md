@@ -20,7 +20,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 | **pve5** | Cluster node | 192.168.10.203 | i5-7500T | 32 GB | — | 9.2.3 | 7.0.12-1 |
 
 †QuarkyLab: RTX 6000 24GB now → RTX 8000 48GB planned swap (card in hand). Kernel pinned — NVIDIA 550.163.01 requires 6.14.11-9-pve.  
-‡Jarvis: no GPU installed yet; 2× RTX 6000 48GB planned (both cards in hand). GPU software stack pre-staged 2026-07-01 (kernel 6.14.11-9-pve pinned + NVIDIA 550.163.01 DKMS + Ollama on /opt/models) — plug-and-play once cards seated. Gated on Dell N08NH aux power cables (2 sets) + R730 GPU riser kit.
+‡Jarvis: **2× RTX 6000 installed & verified 2026-07-04** — 24GB each / 48GB total (driver 550.163.01, kernel 6.14.11-9-pve). Required a nouveau blacklist on first boot; fans managed by the `gpu-fan-control` daemon. Ollama GPU-backed, qwen2.5:72b pulled.
 
 ---
 
@@ -79,7 +79,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 ## LLM Infrastructure
 
-Jarvis will run **Ollama** serving **Qwen2.5 72B Q4_K_M** across **2× RTX 6000** (48GB VRAM total) once the cards are installed. The software stack (kernel 6.14.11-9-pve, NVIDIA 550.163.01, Ollama on a 98G `/opt/models` LV) is already staged.
+Jarvis runs **Ollama** serving **Qwen2.5 72B Q4_K_M** across **2× RTX 6000** (48GB VRAM total, 24GB each) — GPUs installed & verified 2026-07-04, qwen2.5:72b pulled (tensor-splits across both cards). Stack: kernel 6.14.11-9-pve, NVIDIA 550.163.01, Ollama on a 98G `/opt/models` LV.
 
 A **FastAPI `llm_router.py`** implements hybrid routing:
 - Default: local Ollama inference
