@@ -68,6 +68,18 @@ racadm -r 192.168.10.21 -u root -p calvin serveraction powercycle
 
 ---
 
+## Fan / Thermal — GPU install
+
+Same platform as QuarkyLab, so expect the **same ~3,800 RPM idle fan floor** once the 2× RTX 6000 are seated — that is **normal and inherent**, not a fault, and is not safely reducible (full 2026-07-04 investigation + iDRAC-8 SCP export/import procedure in [[Compute/Dell R730 - ML Node]] → Thermal / Fan Control). The floor already auto-ramps under load.
+
+Replicate QuarkyLab's proven-good GPU thermal config on Jarvis (iDRAC **192.168.20.21**, VLAN 20, root pw in Vaultwarden) — verify/set via SCP export/import from Ares' `enp0s31f6.20`:
+- `ThermalSettings.1#ThirdPartyPCIFanResponse` = **Disabled** ← the key GPU setting: stops the RTX cards from triggering a loud fixed fan ramp.
+- `ThermalSettings.1#ThermalProfile` = **Default Thermal Profile Settings** (not Max Performance).
+
+Do **not** use manual static fan control (`ipmitool raw 0x30 0x30`) — it disables auto-ramp and is unsafe with GPUs. iDRAC cannot read GPU temp on any R730; verify GPU thermals directly with `nvidia-smi` under first load.
+
+---
+
 ## Related
 - [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC 192.168.10.20, RTX 8000 48GB (installed 2026-07-01))
 - [[Power Distribution]] — UPS A (Middle Atlantic)
