@@ -80,6 +80,51 @@ Do **not** use manual static fan control (`ipmitool raw 0x30 0x30`) — it disab
 
 ---
 
+## Day-of-install commands (staged 2026-07-04)
+
+### Pre-install baseline (captured while up, for post-install diff)
+- Kernel `6.14.11-9-pve` ✅ · NVIDIA `550.163.01` DKMS installed ✅ · Ollama 0.31.1 active ✅ · `nvidia-smi` fails "no driver comms" (expected — no GPU yet).
+- PCI (before): 4× Broadcom BCM57800 `01:00.0–.3` (onboard NDC = nic0–3; **nic2 UP = live mgmt link, do not disturb**), Matrox G200 VGA `09:00.0`. **No NVIDIA, no Mellanox.**
+- After install expect **+2 NVIDIA TU102 (RTX 6000)** and **+1 Mellanox ConnectX** (new nicX).
+
+### Pre-empt the F1 halt — `ErrPrompt=Disabled` (Jarvis iDRAC)
+Run from Ares' VLAN 20 leg (`enp0s31f6.20`, carrier=1). The BMC stays powered with the host off, so this can run before or after power-down — it applies at the next (post-install) boot. Root pw in Vaultwarden.
+```bash
+IDRAC=192.168.20.21
+B="https://$IDRAC/redfish/v1/Systems/System.Embedded.1/Bios"
+C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u root:<vaultwarden-pw>"   # SECLEVEL=0 required for iDRAC-8 TLS
+$C -X PATCH "$B/Settings" -H 'Content-Type: application/json' -d '{"Attributes":{"ErrPrompt":"Disabled"}}'
+$C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Jobs" -H 'Content-Type: application/json' -d "{\"TargetSettingsURI\":\"$B/Settings\"}"
+# verify after boot:  $C "$B" | tr ',' '\n' | grep -i errprompt   → "ErrPrompt":"Disabled"
+```
+
+### Thermal verify/set (match QuarkyLab) — from Ares VLAN 20 leg
+```bash
+IDRAC=192.168.20.21
+C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u root:<vaultwarden-pw>"
+# READ: export System profile → GET the returned JID → grep the thermal attrs from the XML
+$C -D - -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ExportSystemConfiguration" \
+   -H 'Content-Type: application/json' -d '{"ExportFormat":"XML","ShareParameters":{"Target":"System"},"ExportUse":"Default","IncludeInExport":"Default"}'
+$C "https://$IDRAC/redfish/v1/TaskService/Tasks/<JID>" | grep -oE '<Attribute Name="ThermalSettings.1#[A-Za-z]+">[^<]*</Attribute>'
+# SET only if not already Disabled/Default — success = MessageId SYS053:
+$C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ImportSystemConfiguration" \
+   -H 'Content-Type: application/json' \
+   -d '{"ImportBuffer":"<SystemConfiguration><Component FQDD=\"System.Embedded.1\"><Attribute Name=\"ThermalSettings.1#ThirdPartyPCIFanResponse\">Disabled</Attribute><Attribute Name=\"ThermalSettings.1#ThermalProfile\">Default Thermal Profile Settings</Attribute></Component></SystemConfiguration>","ShareParameters":{"Target":"System"}}'
+```
+
+### Post-install verification (on the Jarvis host)
+```bash
+nvidia-smi                                     # expect 2× RTX 6000, driver 550.163.01
+lspci -nn | grep -iE 'nvidia|mellanox'         # 2 NVIDIA + 1 Mellanox vs baseline above
+ip -br link; ethtool <new-nic> | grep -i Speed # ConnectX → 10000Mb/s full duplex
+# then the AUTO-RAMP proof under real GPU load (the ramp was NOT triggered by the CPU test):
+watch -n 2 nvidia-smi                                                        # GPU temp/power
+watch -n 5 'ipmitool sdr type fan; ipmitool sdr type temperature | grep -iE "inlet|exhaust"'
+# EXPECT fans to climb above the ~3,800 floor as GPU temp rises. ABORT if GPU >85 °C and fans are NOT climbing.
+```
+
+---
+
 ## Related
 - [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC 192.168.10.20, RTX 8000 48GB (installed 2026-07-01))
 - [[Power Distribution]] — UPS A (Middle Atlantic)
