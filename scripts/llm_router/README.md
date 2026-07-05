@@ -7,8 +7,24 @@ FastAPI service that presents an **OpenAI-compatible** `/v1/chat/completions` AP
 
 ## Routing
 - Default → local Ollama (`qwen2.5:72b`).
+- `model: "rag"` → **RAG over the Home-Lab vault**: embeds the query, retrieves the top-K chunks, grounds the local model on them, and cites `[source]` files.
 - → **Claude** when: the request body has `"escalate": true`, the requested `model` starts with `claude`, **or** the local Ollama call fails (auto-fallback).
 - Claude is enabled only when `ANTHROPIC_API_KEY` is set; otherwise Claude requests return `503` and the router serves local-only.
+
+## RAG (retrieval over the Home-Lab vault)
+- **Embeddings:** `nomic-embed-text` served by Ollama (GPU, local). **Index:** numpy cosine-similarity — `rag_embeddings.npy` + `rag_index.json` in `/opt/llm_router`, built by `rag_ingest.py`.
+- **Query:** `curl .../v1/chat/completions -d '{"model":"rag","messages":[{"role":"user","content":"..."}]}'`
+- **Re-index** when docs change (from Ares):
+  ```bash
+  rsync -a --prune-empty-dirs --exclude=.git --exclude=dotfiles \
+    --exclude='*CLAUDE.netframe.md' --exclude='*CLAUDE.dotfiles.md' \
+    --include='*/' --include='*.md' --exclude='*' \
+    ~/Home-Lab/ jarvis:/opt/llm_router/rag_docs/
+  ssh jarvis 'cd /opt/llm_router && venv/bin/python rag_ingest.py'   # then: systemctl restart llm_router
+  ```
+
+## VRAM note
+The Q4 `qwen2.5:72b` (~47 GB) barely fits 2×24 GB, leaving almost no room for the KV cache — so the router caps the local context at `OLLAMA_NUM_CTX` (default **8192**) via Ollama's native `/api/chat` to keep it (mostly) on GPU. For fully GPU-resident, drop to `4096`; for a faster/roomier assistant, point `LOCAL_MODEL` at a 32B.
 
 > The original spec called for logprob-confidence routing, but Ollama does not expose per-token logprobs — escalation is by explicit flag / model / failure instead. Streaming (`"stream": true`) is not yet implemented; requests are served non-streamed.
 
