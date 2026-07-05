@@ -114,7 +114,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 ## Active Projects
 
 ### llm_router.py (Jarvis)
-FastAPI, OpenAI-compatible. Routes between local Ollama (Qwen2.5 72B, Jarvis 2× RTX 6000, 48GB total) and Claude API fallback (`claude-opus-4-8`, adaptive thinking, official SDK). **ACTIVE 2026-07-04** — systemd `llm_router.service` on Jarvis `:8000`, source in `Home-Lab/scripts/llm_router/`. Escalates to Claude on `escalate:true` / `model=claude-*` / local failure. Claude fallback gated on `ANTHROPIC_API_KEY` in `/etc/llm_router.env` (unset → local-only). Note: Ollama has no logprobs, so routing is by flag/model/failure, not confidence; streaming not yet implemented.
+FastAPI, OpenAI-compatible. Routes between local Ollama (Qwen2.5 72B, Jarvis 2× RTX 6000, 48GB total) and Claude API fallback (`claude-opus-4-8`, adaptive thinking, official SDK). **ACTIVE 2026-07-04** — systemd `llm_router.service` on Jarvis `:8000`, source in `Home-Lab/scripts/llm_router/`. Escalates to Claude on `escalate:true` / `model=claude-*` / local failure. Claude fallback gated on `ANTHROPIC_API_KEY` in `/etc/llm_router.env` (unset → local-only). Fronted by **NPM `http://llm.netframe.local`** (proxy host id 5 → .31:8000, HTTP-only) + Pi-hole local DNS `llm.netframe.local→.181` (resolves only for Pi-hole clients). Note: Ollama has no logprobs, so routing is by flag/model/failure, not confidence; streaming not yet implemented.
 
 ### DUNE Agent — Fernanda (QuarkyLab)
 RAG pipeline over DUNE experiment codebase. RTX 8000 48GB (installed 2026-07-01). Vector store: ChromaDB or Qdrant (TBD).
