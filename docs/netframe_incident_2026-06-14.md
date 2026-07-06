@@ -1,6 +1,6 @@
 # NetFRAME Homelab — Session Log & Incident Report
 **Date:** June 14–15, 2026  
-**Node:** pve2 (HP EliteDesk G4 SFF, i7-8700, 48GB RAM)  
+**Node:** pve2 (HP EliteDesk G4 SFF, i7-8700, 32GB RAM)  
 **Session Goal:** Install step-ca internal CA on pve2  
 **Outcome:** Internet restored, pve2 management stabilized at 192.168.10.204
 
