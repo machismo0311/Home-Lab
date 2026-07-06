@@ -58,7 +58,7 @@ Headscale runs as LXC container **105** on **pve3**.
 | **pve3** | HP EliteDesk G4 SFF | **Management services** | 192.168.10.201 |
 | pve4 | HP EliteDesk G3 Mini | General compute | 192.168.10.202 |
 | pve5 | HP EliteDesk G3 Mini | Fernanda ML node | 192.168.10.203 |
-| QuarkyLab | Dell R730 | ML inference, RTX 6000 → RTX 8000 planned | 192.168.10.x |
+| QuarkyLab | Dell R730 | ML inference, RTX 8000 48GB (installed 2026-07-01) | 192.168.10.x |
 | Jarvis | Dell R730 | LLM inference, 2× RTX 6000 planned | 192.168.10.x |
 | Randy | SuperMicro CSE-219U | TrueNAS / storage | 192.168.10.x |
 

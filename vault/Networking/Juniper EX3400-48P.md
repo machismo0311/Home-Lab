@@ -28,8 +28,8 @@
 | Management access (SSH) | ✅ Working — `ssh mason@192.168.10.50` |
 | ge-0/0/32 uplink to UniFi | ✅ Working (access port, VLAN 1 only) |
 | DAC xe-0/2/3 → UniFi SFP 2 | ⚠️ DOWN — speed mismatch (10G vs 1G EEPROM) |
-| VLAN segmentation | ⏸️ Planned — not yet configured |
-| Trunk to OPNsense | ⏸️ Planned — post-OPNsense cutover |
+| VLAN segmentation | ✅ Live — activated 2026-06-25 (EX3400 ELS); see [[Runbook/VLAN-Activation-2026-06-25]] |
+| Trunk to OPNsense | ✅ Live — OPNsense cutover complete; ge-0/0/46 trunk to UniFi Port 24, verified end-to-end |
 | WiFi → EX3400 path | ⚠️ BROKEN — use wired enp0s31f6 on Ares |
 
 > **⚠️ WiFi access to EX3400 is broken.** Always use wired interface on Ares:
@@ -57,38 +57,38 @@ commit
 
 ### ELS VLAN Syntax
 
-> [!NOTE] VLANs are planned but not yet configured. These are reference commands for when VLAN segmentation is implemented.
+> [!NOTE] Below is the **live config** deployed 2026-06-25 (see [[Runbook/VLAN-Activation-2026-06-25]]). On JunOS ELS, `native-vlan-id` must sit at the **physical interface level**, NOT under `unit 0 family ethernet-switching` — that misplacement caused the earlier trunk outage.
 
 ```junos
-# Create VLANs
-set vlans MGMT vlan-id 10
-set vlans COMPUTE vlan-id 20
-set vlans STORAGE vlan-id 30
-set vlans SERVICES vlan-id 40
-set vlans IOT vlan-id 50
-set vlans VOIP vlan-id 60
-set vlans LAB vlan-id 70
-set vlans GUEST vlan-id 99
+# VLANs — default (VLAN 1, management) is built-in; the rest are defined by name
+set vlans trusted vlan-id 20      # Trusted / iDRAC
+set vlans servers vlan-id 30      # Servers
+set vlans iot     vlan-id 40      # IoT
+set vlans voip    vlan-id 50      # VoIP
+set vlans guest   vlan-id 60      # Guest
+set vlans lab     vlan-id 70      # Lab
 
-# Access port (single VLAN, untagged)
+# Access port (single VLAN, untagged) — example
 set interfaces ge-0/0/0 unit 0 family ethernet-switching interface-mode access
-set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members COMPUTE
+set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members servers
 
-# Trunk port (multiple VLANs, tagged)
-set interfaces ge-0/0/47 unit 0 family ethernet-switching interface-mode trunk
-set interfaces ge-0/0/47 unit 0 family ethernet-switching vlan members [MGMT COMPUTE SERVICES IOT VOIP LAB GUEST]
+# Trunk uplink to UniFi Port 24 — the deployed ge-0/0/46 config
+set interfaces ge-0/0/46 native-vlan-id 1                        # ← INTERFACE level (the key ELS fix)
+set interfaces ge-0/0/46 unit 0 family ethernet-switching interface-mode trunk
+set interfaces ge-0/0/46 unit 0 family ethernet-switching vlan members [ default trusted servers iot voip guest lab ]
 ```
 
-### ge-0/0/32 Uplink to UniFi (current — access only)
+### ge-0/0/32 Uplink to UniFi (access only — VLAN 1)
 
-```junos
-# Current config: access port, passes only default VLAN
-# This is a known limitation — native-vlan-id is not supported on EX3400
-# Fix: configure as trunk without native-vlan-id
-set interfaces ge-0/0/32 unit 0 family ethernet-switching interface-mode trunk
-set interfaces ge-0/0/32 unit 0 family ethernet-switching vlan members all
-# (do NOT add native-vlan-id — not supported, was root cause of previous trunk failure)
-```
+`ge-0/0/32` is a legacy access uplink carrying the default VLAN (1) only. The tagged
+trunk to the UniFi was ultimately deployed on **ge-0/0/46** (not ge-0/0/32) — see the
+trunk config above and [[Runbook/VLAN-Activation-2026-06-25]].
+
+> ⚠️ **Correction:** an earlier version of this note claimed "native-vlan-id is not
+> supported on the EX3400." That is **false** — it is supported, but on JunOS ELS it must
+> be set at the **physical interface level** (`set interfaces ge-0/0/46 native-vlan-id 1`),
+> not under `unit 0 family ethernet-switching`. The wrong placement — not lack of support —
+> was the root cause of the original trunk failure.
 
 ### Management IP
 
@@ -109,21 +109,29 @@ set protocols rstp bridge-priority 4096
 
 ## Port Map
 
-| Port Range | Assignment | Mode | VLAN(s) |
+### Confirmed / live (from [[Runbook/VLAN-Activation-2026-06-25]] + `CLAUDE.md`)
+
+| Port | Assignment | Mode | VLAN(s) / Status |
 |---|---|---|---|
-| ge-0/0/0–7 | R730 Jarvis (4× NIC + iDRAC) | Trunk / Access | COMPUTE, MGMT (planned) |
-| ge-0/0/8–11 | R730 quarkylab (4× NIC + iDRAC) | Trunk / Access | COMPUTE, MGMT (planned) |
-| ge-0/0/12–15 | SuperMicro (4× NIC + IPMI) | Trunk / Access | COMPUTE, MGMT (planned) |
-| ge-0/0/16–19 | EliteDesk G4 SFF ×2 (pve2, pve3) | Access | COMPUTE (current: untagged) |
-| ge-0/0/20–23 | EliteDesk G3 Mini ×2 (pve4, pve5) | Access | COMPUTE (current: untagged) |
-| ge-0/0/24–27 | Mac mini (pve1) + RPi 4 | Access | current: untagged |
-| ge-0/0/28–35 | Available / future | — | — |
-| ge-0/0/32 | **Copper uplink → UniFi USW-24** | **Access (not trunk yet)** | Default VLAN only |
-| ge-0/0/36–39 | Cisco CP-8841 phones ×5 (planned) | Access | VOIP (planned) |
-| ge-0/0/44 | NetApp DS4246 mgmt | Access | MGMT (planned) |
-| ge-0/0/45 | Uplink to EX2300 | Trunk | All |
-| ge-0/0/46 | Uplink to OPNsense/Proxmox (planned) | Trunk | All |
-| xe-0/2/3 | DAC → UniFi SFP 2 (**⚠️ DOWN**) | Trunk | All (when fixed) |
+| ge-0/0/32 | Copper uplink → UniFi USW-24 | Access | `default` (VLAN 1) only — legacy uplink |
+| ge-0/0/38 | APC AP7901 managed PDU | Access | `default` (VLAN 1) |
+| ge-0/0/45 | Uplink to EX2300 | Trunk | all VLANs (1G) |
+| ge-0/0/46 | **Trunk uplink → UniFi Port 24** | Trunk | ✅ **LIVE 2026-06-25** — members `default trusted servers iot voip guest lab`; `native-vlan-id 1` |
+| xe-0/2/0 | Randy nic3 (10G data) | — | 10GbE link |
+| xe-0/2/3 | DAC → UniFi SFP 2 | Trunk | ⚠️ **DOWN** — 10G/1G EEPROM speed mismatch |
+
+### Planned / unverified (from the 2026-06-14 buildout — confirm with `show ethernet-switching interface` / `show lldp neighbors` on the live switch)
+
+| Port Range | Assignment (as planned) | Mode |
+|---|---|---|
+| ge-0/0/0–7 | R730 Jarvis (NICs + iDRAC) | Trunk / Access |
+| ge-0/0/8–11 | R730 QuarkyLab (NICs + iDRAC) | Trunk / Access |
+| ge-0/0/12–15 | SuperMicro / Randy (NICs + IPMI) | Trunk / Access |
+| ge-0/0/16–19 | EliteDesk G4 SFF ×2 (pve2, pve3) | Access |
+| ge-0/0/20–23 | EliteDesk G3 Mini ×2 (pve4, pve5) | Access |
+| ge-0/0/24–27 | Mac mini (pve1) + RPi 4 | Access |
+| ge-0/0/36–39 | Cisco CP-8841 phones ×5 | Access (VoIP) |
+| ge-0/0/44 | NetApp DS4246 mgmt | Access |
 
 ---
 
