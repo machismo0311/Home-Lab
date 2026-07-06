@@ -15,11 +15,10 @@
 %  CONFIGURATION  —  edit these, then recompile
 %------------------------------------------------------------------------------
 \newcommand{\LabName}{QuarkyLab}                       % cluster display name
-\newcommand{\LabHost}{quarkylab}                       % SSH target over the VPN
-                                                       %   (Headscale MagicDNS name,
-                                                       %    or the 100.64.0.x address)
-\newcommand{\HeadscaleURL}{https://headscale.kylemason.org} % Headscale login server  <-- CONFIRM
-\newcommand{\AdminEmail}{kyle@kylemason.org}           % where students send their public key
+\newcommand{\LabHost}{quarkylab}                       % SSH alias (you define it in ~/.ssh/config)
+\newcommand{\AccessHost}{quarkylab.kylemason.org}      % Cloudflare-protected SSH hostname
+\newcommand{\AccessURL}{https://quarkylab.kylemason.org} % Cloudflare Access sign-in URL
+\newcommand{\ContactVia}{our shared Discord channel}   % how students reach the admin (help + key submission)
 \newcommand{\GPUName}{NVIDIA RTX 8000 (48\,GB)}        % the shared GPU
 \newcommand{\ShardMem}{6\,GB}                          % GPU memory per shard (hard cap)
 \newcommand{\MaxTime}{2 hours}                         % max wall time per job
@@ -98,7 +97,7 @@
   showstringspaces=false, breaklines=true, breakatwhitespace=false,
   columns=fullflexible, keepspaces=true, upquote=true,
   escapeinside={(*@}{@*)},
-  morekeywords={ssh,ssh-keygen,scp,rsync,sbatch,squeue,sacct,scancel,scontrol,cat,type,conda,source,python,tailscale,ping,mkdir,ls,cd,nano}
+  morekeywords={ssh,ssh-keygen,scp,rsync,sbatch,squeue,sacct,scancel,scontrol,cat,type,conda,source,python,cloudflared,winget,brew,ping,mkdir,ls,cd,nano}
 }
 \lstdefinestyle{py}{
   language=Python,
@@ -166,7 +165,7 @@ This guide takes you from a blank computer to running your first GPU program, in
 
 \begin{enumerate}
   \item \textbf{Create an identity key} on your own computer (a one-time setup).
-  \item \textbf{Join the private network} that \LabName{} lives on (a secure VPN).
+  \item \textbf{Set up secure access} to \LabName{} (Cloudflare Tunnel --- a one-time client install).
   \item \textbf{Connect} to \LabName{} with a single command.
   \item \textbf{Learn where your files live} on the cluster.
   \item \textbf{Submit your first GPU job} and read its results.
@@ -230,7 +229,7 @@ cat ~/.ssh/id_ed25519.pub
 type $env:USERPROFILE\.ssh\id_ed25519.pub
 \end{lstlisting}
 
-The output is a single line beginning with \code{ssh-ed25519}. Copy that entire line and email it to your administrator at \textbf{\AdminEmail}, telling them your name and (if known) your assigned \code{studentNN} username.
+The output is a single line beginning with \code{ssh-ed25519}. Copy that entire line and send it to the administrator on \textbf{\ContactVia}, telling them your name and (if known) your assigned \code{studentNN} username.
 
 \begin{warnbox}
 Send only the \code{.pub} (public) line. \textbf{Never send or share the private key} (\code{id\_ed25519}, no \code{.pub}). Anyone with your private key can log in as you.
@@ -241,60 +240,46 @@ Your administrator adds your key to the cluster. Until they confirm it is added,
 \end{notebox}
 
 %==============================================================================
-\section{Step 2 --- Join the private network (VPN)}
+\section{Step 2 --- Set up secure access}
 %==============================================================================
-\LabName{} is not exposed to the open internet. To reach it from anywhere, you join a private, encrypted network using a free app called \textbf{Tailscale}, connected to our own coordination server (\textbf{Headscale}). This is a one-time install plus a login.
+\LabName{} is not exposed to the open internet. You reach it through a \textbf{Cloudflare Tunnel}: a small helper called \textbf{cloudflared} opens a secure, \emph{outbound} connection on your behalf, and your SSH key logs you in. There is no VPN to leave running --- just a one-time install and one addition to your SSH configuration.
 
-\subsection{Install the Tailscale app}
-\osbadge{Windows}
-Download and run the installer from \url{https://tailscale.com/download/windows}. Accept the defaults. A Tailscale icon appears in your system tray.
+\subsection{Install cloudflared}
+\osbadge{Windows (PowerShell)}
+\begin{lstlisting}
+winget install --id Cloudflare.cloudflared
+\end{lstlisting}
 
 \osbadge{macOS}
-Install from the Mac App Store (search \emph{Tailscale}) or \url{https://tailscale.com/download/mac}. A Tailscale icon appears in your menu bar.
+\begin{lstlisting}
+brew install cloudflared
+\end{lstlisting}
+No Homebrew? Download the \code{cloudflared} binary from \url{https://github.com/cloudflare/cloudflared/releases/latest}.
 
 \osbadge{Linux}
-Run the official installer, then start the service:
-\begin{lstlisting}
-curl -fsSL https://tailscale.com/install.sh | sh
-\end{lstlisting}
+Install the \code{cloudflared} package for your distribution from \url{https://github.com/cloudflare/cloudflared/releases/latest} (or via your package manager).
 
-\subsection{Connect to our network}
-Instead of Tailscale's default sign-in, point the app at our coordination server. Your administrator will give you either a \textbf{sign-up link} or a one-time \textbf{authentication key}.
+\subsection{Point SSH through the tunnel}
+Add the block below to your SSH \emph{config} file --- \code{\textasciitilde/.ssh/config} on macOS/Linux, or \code{\%USERPROFILE\%\textbackslash.ssh\textbackslash config} on Windows. Create the file if it does not exist.
+\begin{lstlisting}
+Host (*@\texttt{\LabHost}@*)
+    HostName (*@\texttt{\AccessHost}@*)
+    ProxyCommand cloudflared access ssh --hostname %h
+    IdentityFile ~/.ssh/id_ed25519
+\end{lstlisting}
+Now a short \code{\LabHost} stands in for the full hostname everywhere, and the connection is routed through Cloudflare automatically.
 
-\osbadge{Linux (and macOS/Windows with the CLI installed)}
-\begin{lstlisting}
-sudo tailscale up --login-server (*@\texttt{\HeadscaleURL}@*)
-\end{lstlisting}
-This prints a URL. Open it in your browser and follow the prompts to register your device. If your administrator gave you an authentication key instead, use:
-\begin{lstlisting}
-sudo tailscale up --login-server (*@\texttt{\HeadscaleURL}@*) --authkey <key-from-admin>
-\end{lstlisting}
-
-\osbadge{Windows / macOS (graphical app)}
-Right-click the Tailscale icon and choose \emph{Preferences} (or \emph{Use custom coordination server} / \emph{Change server}). Enter:
-\begin{lstlisting}
-(*@\texttt{\HeadscaleURL}@*)
-\end{lstlisting}
-Then click \emph{Log in} and complete the prompts your administrator described.
-
-\subsection{Confirm you are connected}
-\begin{lstlisting}
-tailscale status
-\end{lstlisting}
-You should see \LabName{} (or \code{\LabHost}) listed. As a final check, make sure you can reach it:
-\begin{lstlisting}
-ping (*@\texttt{\LabHost}@*)
-\end{lstlisting}
-Replies mean the network is up. (Press \code{Ctrl}+\code{C} to stop \code{ping}.)
+\subsection{First connection}
+When you first connect (Step~3), \code{cloudflared} routes you through the tunnel and SSH logs you in with your key --- there is nothing extra to sign into. (Your administrator may later add an email sign-in step; if so, the first connection will also open a one-time browser login.)
 
 \begin{tipbox}
-Leave Tailscale running whenever you want to use \LabName. If a connection later ``times out,'' the first thing to check is that Tailscale is connected (\code{tailscale status}).
+There is nothing to ``leave running'' --- \code{cloudflared} connects on demand each time you \code{ssh}.
 \end{tipbox}
 
 %==============================================================================
 \section{Step 3 --- Connect to \texorpdfstring{\LabName}{the cluster}}
 %==============================================================================
-With your key added (Step~1) and the VPN up (Step~2), connect with one command. Use \emph{your} assigned username in place of \code{studentNN}:
+With your key added (Step~1) and access set up (Step~2), connect with one command. Use \emph{your} assigned username in place of \code{studentNN}:
 \begin{lstlisting}
 ssh studentNN@(*@\texttt{\LabHost}@*)
 \end{lstlisting}
@@ -316,8 +301,8 @@ The login node is a shared front desk, not a workbench. \textbf{Do not run heavy
 \textbf{Symptom} & \textbf{Most likely fix} \\
 \midrule
 \code{Permission denied (publickey)} & Your key is not added yet, or you used the wrong username. Confirm with your administrator; check you typed \code{studentNN} correctly. \\
-\code{Connection timed out} & The VPN is not connected. Run \code{tailscale status}; reconnect (Step~2). \\
-\code{Could not resolve hostname} & Same as above --- the VPN provides the name \code{\LabHost}. \\
+\code{cloudflared: command not found} & The helper is not installed or not on your \code{PATH} --- re-check the install in Step~2. \\
+Connection hangs or won't start & Check the \code{\textasciitilde/.ssh/config} block from Step~2 is present and \code{quarkylab.kylemason.org} resolves, then retry. \\
 Asked for a \emph{password} & Password login is off. You must connect with your SSH key; re-check Step~1. \\
 \bottomrule
 \end{tabularx}
@@ -486,7 +471,7 @@ When your job runs, it lands in a container preloaded with a scientific Python s
 \end{itemize}
 
 \begin{notebox}
-Need a package that is not listed? It cannot be installed at job time (no internet in jobs). Email \AdminEmail{} and ask for it to be added to the container image.
+Need a package that is not listed? It cannot be installed at job time (no internet in jobs). Ask the administrator on \ContactVia{} to add it to the container image.
 \end{notebox}
 
 %==============================================================================
@@ -514,7 +499,7 @@ Even where a different scheduler is used (PBS/Torque, LSF, or Grid Engine), the 
 %==============================================================================
 \section{Getting help}
 %==============================================================================
-Stuck, or need a package added to the environment? Contact the cluster administrator at \textbf{\AdminEmail}. When you write, include your \code{studentNN} username, the command you ran, and any error message you saw --- it makes help much faster.
+Stuck, or need a package added to the environment? Contact the cluster administrator on \textbf{\ContactVia}. When you write, include your \code{studentNN} username, the command you ran, and any error message you saw --- it makes help much faster.
 
 \vspace{1em}
 \begin{center}
@@ -532,7 +517,7 @@ Stuck, or need a package added to the environment? Contact the cluster administr
 \textbf{Command} & \textbf{Purpose} \\
 \midrule
 \code{ssh-keygen -t ed25519} & Create your SSH key (one time) \\
-\code{tailscale up -{}-login-server \HeadscaleURL} & Join the private network \\
+\code{winget/brew install cloudflared} & Install the tunnel helper (one time) \\
 \code{ssh studentNN@\LabHost} & Log in to the cluster \\
 \code{scp <file> studentNN@\LabHost:\textasciitilde/} & Upload a file \\
 \code{sbatch train.sh} & Submit a job \\
@@ -547,7 +532,7 @@ Stuck, or need a package added to the environment? Contact the cluster administr
 \begin{description}[leftmargin=!,labelwidth=3.2cm,itemsep=3pt]
   \item[SSH] Secure Shell --- the secure way you connect to and control a remote computer from a terminal.
   \item[SSH key] A pair of files (private + public) that proves your identity in place of a password.
-  \item[VPN] Virtual Private Network --- a secure, private tunnel that lets your computer reach \LabName{} from anywhere.
+  \item[Cloudflare Tunnel] The secure path you connect through --- \code{cloudflared} dials out to Cloudflare (no inbound ports) and forwards your SSH to \LabName{} from anywhere.
   \item[Node] A single computer in the cluster. You first land on the \emph{login node}.
   \item[Scheduler] The program (SLURM) that queues and runs everyone's jobs fairly.
   \item[Job] A unit of work you submit with \code{sbatch}, described by a small job script.

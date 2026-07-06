@@ -1,0 +1,257 @@
+%==============================================================================
+%  QuarkyLab GPU Cluster — Researcher Guide
+%  NetFRAME Home Lab
+%  Build:  tectonic QuarkyLab-Researcher-Guide.tex
+%  Source-of-truth prose also lives in QuarkyLab-Researcher-Guide.md
+%==============================================================================
+\documentclass[11pt]{article}
+
+%------------------------------------------------------------------------------
+%  CONFIGURATION
+%------------------------------------------------------------------------------
+\newcommand{\LabName}{QuarkyLab}
+\newcommand{\LabHost}{quarkylab}
+\newcommand{\AccessHost}{quarkylab.kylemason.org}
+\newcommand{\GPUName}{NVIDIA RTX 8000 (48\,GB)}
+\newcommand{\HomeQuota}{150\,GB}
+\newcommand{\Contact}{our shared Discord channel}
+\newcommand{\GuideVersion}{1.0}
+\newcommand{\GuideOwner}{NetFRAME Home Lab}
+%------------------------------------------------------------------------------
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage[margin=1in,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{titletoc}
+\usepackage[hidelinks]{hyperref}
+
+%--- palette ------------------------------------------------------------------
+\definecolor{quarkA}{HTML}{0B3D66}
+\definecolor{quarkB}{HTML}{1E88A8}
+\definecolor{quarkAccent}{HTML}{E8A33D}
+\definecolor{codebg}{HTML}{F6F8FA}
+\definecolor{codeframe}{HTML}{D6DEE7}
+\definecolor{codekw}{HTML}{0B3D66}
+\definecolor{codecom}{HTML}{6A9A5B}
+\definecolor{codestr}{HTML}{A6522C}
+\definecolor{noteblue}{HTML}{2C6FB5}
+\definecolor{warnred}{HTML}{B23B36}
+\definecolor{tipgreen}{HTML}{2E7D46}
+\definecolor{rulegray}{HTML}{C9D3DD}
+
+\hypersetup{
+  colorlinks=true, linkcolor=quarkA, urlcolor=quarkB, citecolor=quarkB,
+  pdftitle={\LabName{} GPU Cluster --- Researcher Guide},
+  pdfauthor={\GuideOwner}, bookmarksnumbered=true
+}
+
+%--- headers / footers --------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[L]{\small\textsc{\LabName{} Researcher Guide}}
+\fancyhead[R]{\small\leftmark}
+\fancyfoot[L]{\small \GuideOwner}
+\fancyfoot[C]{\small v\GuideVersion}
+\fancyfoot[R]{\small\thepage}
+
+%--- section styling ----------------------------------------------------------
+\titleformat{\section}{\Large\bfseries\color{quarkA}}{\thesection}{0.6em}{}[{\color{rulegray}\titlerule[0.8pt]}]
+\titleformat{\subsection}{\large\bfseries\color{quarkB}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{2.2ex plus 1ex minus .2ex}{1.2ex plus .2ex}
+
+%--- code listings ------------------------------------------------------------
+\lstdefinestyle{shell}{
+  language=bash,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, framesep=6pt, rulecolor=\color{codeframe},
+  xleftmargin=10pt, xrightmargin=6pt,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecom}\itshape,
+  stringstyle=\color{codestr},
+  showstringspaces=false, breaklines=true, breakatwhitespace=false,
+  columns=fullflexible, keepspaces=true, upquote=true,
+  escapeinside={(*@}{@*)},
+  morekeywords={ssh,ssh-keygen,scp,rsync,cloudflared,winget,brew,apptainer,conda,curl,bash,tmux,screen,nohup,nvidia-smi,python,cat}
+}
+\lstset{style=shell}
+\newcommand{\code}[1]{\texttt{#1}}
+
+%--- admonitions --------------------------------------------------------------
+\newtcolorbox{notebox}{enhanced,breakable,colback=noteblue!6,colframe=noteblue,
+  coltitle=white,fonttitle=\bfseries,title=Note,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt}
+\newtcolorbox{tipbox}{enhanced,breakable,colback=tipgreen!7,colframe=tipgreen,
+  coltitle=white,fonttitle=\bfseries,title=Tip,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt}
+\newtcolorbox{warnbox}{enhanced,breakable,colback=warnred!6,colframe=warnred,
+  coltitle=white,fonttitle=\bfseries,title=Important,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt}
+
+\newcommand{\osbadge}[1]{\vspace{0.4ex}\noindent{\color{quarkA}\rule{2pt}{10pt}}\ \textbf{\color{quarkA}#1}\par\nopagebreak\vspace{0.3ex}}
+
+\setlist[enumerate]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+\setlist[itemize]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+\renewcommand{\arraystretch}{1.25}
+
+%==============================================================================
+\begin{document}
+
+%--- title block --------------------------------------------------------------
+\begin{center}
+{\color{quarkA}\rule{\linewidth}{2pt}}\\[0.4cm]
+{\huge\bfseries\color{quarkA} \LabName{} GPU Cluster}\\[0.25cm]
+{\Large\color{quarkB} Researcher Guide}\\[0.3cm]
+{\normalsize Remote access + the commands to run your research}\\[0.35cm]
+{\color{quarkA}\rule{\linewidth}{2pt}}\\[0.5cm]
+\end{center}
+
+\begin{tcolorbox}[colback=quarkB!6,colframe=quarkB,arc=3pt,boxrule=0.8pt]
+\centering\itshape Researchers get a normal interactive shell with direct GPU access --- no SLURM required. This guide assumes you are comfortable at the command line.\\[2pt]
+Admin, key requests, and help: \textbf{contact Kyle on \Contact.}
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+%==============================================================================
+\section{Access (one-time)}
+%==============================================================================
+You reach \LabName{} through a \textbf{Cloudflare Tunnel} --- no VPN, no inbound ports, and the server's IP stays hidden. Login is by \textbf{SSH key}. Do this once.
+
+\subsection{Create an SSH key and send the public half}
+\begin{lstlisting}
+ssh-keygen -t ed25519 -C "you@lab"
+cat ~/.ssh/id_ed25519.pub
+\end{lstlisting}
+Send that \code{.pub} line to Kyle on \Contact. He adds it to your account and tells you your \textbf{username} (e.g.\ \code{cephandrius}). \textbf{Never} send the private key (\code{id\_ed25519}, the one without \code{.pub}).
+
+\subsection{Install cloudflared}
+\osbadge{macOS}
+\code{brew install cloudflared}
+
+\osbadge{Windows (PowerShell)}
+\code{winget install -{}-id Cloudflare.cloudflared}
+
+\osbadge{Linux}
+Package or static binary from \url{https://github.com/cloudflare/cloudflared/releases/latest}
+
+\subsection{Route SSH through the tunnel}
+Add this to \code{\textasciitilde/.ssh/config} (create the file if it does not exist):
+\begin{lstlisting}
+Host (*@\texttt{\LabHost}@*)
+    HostName (*@\texttt{\AccessHost}@*)
+    ProxyCommand cloudflared access ssh --hostname %h
+    IdentityFile ~/.ssh/id_ed25519
+\end{lstlisting}
+
+\subsection{Connect}
+\begin{lstlisting}
+ssh <your-username>@(*@\texttt{\LabHost}@*)
+\end{lstlisting}
+\code{cloudflared} dials out on demand and your key logs you in (accept the host-key prompt with \code{yes} the first time). You land on a normal shell in your home directory.
+
+\begin{notebox}
+An email sign-in gate (Cloudflare Access) may be added later; if so, your first connection will also open a one-time browser login. Nothing you set up above changes.
+\end{notebox}
+
+%==============================================================================
+\section{The machine}
+%==============================================================================
+\begin{itemize}
+  \item 1\,$\times$ \textbf{Quadro RTX 8000, 48\,GB} --- driver 550.163.01, CUDA 12.1 stack.
+  \item \code{nvidia-smi} shows GPU status and current usage. You share this \textbf{one physical GPU} with students' batch jobs and Fernanda --- glance at it before grabbing a lot of VRAM.
+\end{itemize}
+
+%==============================================================================
+\section{GPU and the ML environment}
+%==============================================================================
+The curated stack is an Apptainer image whose \code{ml} conda environment has \textbf{Python 3.11, PyTorch 2.5.1+cu121, TensorFlow 2.21}, plus NumPy, pandas, SciPy, scikit-learn, and the HuggingFace stack. Image: \code{/data/containers/base.sif} (fast local copy at \code{/workspace/containers/base.sif}).
+\begin{lstlisting}
+# run a script on the GPU
+apptainer exec --nv /data/containers/base.sif python train.py
+
+# interactive shell inside the container
+apptainer shell --nv /data/containers/base.sif
+
+# quick sanity check
+apptainer exec --nv /data/containers/base.sif \
+  python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+# -> True Quadro RTX 8000
+\end{lstlisting}
+\begin{itemize}
+  \item \code{python} inside the image is already the \code{ml} env (\code{/opt/conda/envs/ml}).
+  \item \code{-{}-nv} is what exposes the GPU --- omit it and CUDA is invisible.
+  \item Your \textbf{home} and \textbf{current directory} are auto-mounted; bind extra paths with \code{-B /host/path:/container/path}.
+\end{itemize}
+
+%==============================================================================
+\section{Your own environment (optional)}
+%==============================================================================
+No sudo, but your home is yours. For a custom stack, install Miniforge in your home:
+\begin{lstlisting}
+curl -L -o ~/miniforge.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+bash ~/miniforge.sh -b -p ~/miniforge3
+~/miniforge3/bin/conda create -n myenv python=3.11 pytorch-cuda=12.1 ...
+\end{lstlisting}
+The NVIDIA driver is already on the host --- install a CUDA-matched PyTorch/TF in your env, or just use the container.
+
+%==============================================================================
+\section{Storage}
+%==============================================================================
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Path} & \textbf{Use} & \textbf{Notes} \\
+\midrule
+\code{\textasciitilde} = \code{/workspace/researchers/<you>} & code + results & \HomeQuota{} quota, backed up nightly \\
+\code{/workspace/scratch/<you>} & fast scratch & not backed up; files older than 14 days auto-purged \\
+\code{/data/shared} & shared datasets / docs & read-only \\
+\code{/data} & bulk (NFS, \textasciitilde{}23\,TB) & ask Kyle for a writable project dir if you need one \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+%==============================================================================
+\section{Moving data}
+%==============================================================================
+\code{scp} and \code{rsync} use your SSH config, so they route through the tunnel with no extra flags:
+\begin{lstlisting}
+scp bigfile.tar quarkylab:~/                 # upload
+scp quarkylab:~/results.csv .                # download
+rsync -avP ./dataset/ quarkylab:~/dataset/   # sync a folder
+\end{lstlisting}
+
+%==============================================================================
+\section{Long-running work: use tmux}
+%==============================================================================
+SSH sessions can drop (laptop sleep, network blips). A detached session keeps your job alive:
+\begin{lstlisting}
+tmux new -s run        # start; launch your training inside
+# Ctrl-b then d to detach; reconnect later:
+ssh quarkylab
+tmux attach -t run
+\end{lstlisting}
+(\code{screen} works too; \code{nohup cmd \&} for fire-and-forget.)
+
+%==============================================================================
+\section{Etiquette}
+%==============================================================================
+\begin{itemize}
+  \item One physical GPU, shared. Running directly (outside SLURM) you are \textbf{not} VRAM-capped --- check \code{nvidia-smi} first and don't OOM others.
+  \item For multi-day campaigns there is a \code{research} SLURM partition (interactive allowed, priority over students) if you'd rather queue and preempt-share --- optional, coordinate with Kyle.
+\end{itemize}
+
+\vspace{0.6cm}
+\begin{center}\small Help: contact Kyle on \Contact.\end{center}
+
+\end{document}
