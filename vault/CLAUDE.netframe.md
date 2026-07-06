@@ -94,6 +94,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
 | Pi-hole | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
 | Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Live widgets (Proxmox/Pi-hole/Jellyfin/Scrutiny/UPS); Power & UPS group via PeaNUT container (:8081→8080, NUT bridge); NPM proxy host id 4 + Lets Encrypt (CF DNS-01) + basic auth (kyle); :3000 firewalled to NPM; tokens/creds in /opt/homepage/config + compose (not git). See Homepage-Setup-2026-06-26.md & Power Distribution.md |
+| Open WebUI | LXC 107, pve3 (.185) | http://chat.netframe.local | Chat UI (ChatGPT-style) → llm_router `:8000` via OpenAI endpoint; models `local`/`rag`. Native pip (Debian 12 CT, /opt/open-webui venv, systemd), NPM proxy host id 6, Pi-hole DNS →.181, onboot=1. Created 2026-07-05. First visit creates the admin account. **TODO: add CT 107 to PBS backup** |
 | nginx-proxy (NPM) | LXC 101, pve3 (.181) | Admin http://192.168.10.181:81 | onboot=1; :81 restricted to Ares (.199) via DOCKER-USER fw (F-05) ✅ |
 | Vaultwarden | LXC 102, pve3 | http://192.168.10.182 | Docker Compose, healthy ✅ onboot=1 |
 | Prometheus/Grafana/Loki | LXC 103, pve3 (.183) | Grafana http://192.168.10.183:3000 | Stack active ✅; 8 nodes scraped; Prom/Loki localhost-only (F-03) |
@@ -151,7 +152,7 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 - Randy AVAGO 3108 relocated to a known-good PCIe slot 2026-07-01 after its original slot failed (controller undetected at POST → "no boot device"). Original slot is DEAD — do not reuse. Triage: no MegaRAID banner at POST = physical/slot fault, NOT a BIOS/OpROM setting; blinking-green D13 LED = card healthy. See Runbook/Randy-PCIe-Slot-Recovery-2026-07-01.md
 - Randy corosync singleton after reboot: from pve2 `pvecm delnode Randy`, then on Randy `pkill pmxcfs; systemctl start pve-cluster`
 - Jarvis root was 6GB (disk-full during upgrade) — now 56GB with sda added to pve VG
-- pve3 LXCs (101/102/103/105) all have onboot=1 set — verify before rebooting pve3
+- pve3 LXCs (101/102/103/105/106/107) all have onboot=1 set — verify before rebooting pve3 (107 = Open WebUI, added 2026-07-05)
 - Proxmox 9.x ships enterprise repos in .list AND .sources formats — disable all 6 files
 - Do not mix RDIMMs and LRDIMMs (confirmed incompatible on R730s)
 - StorCLI not in apt — download from Broadcom portal manually, SCP to node
