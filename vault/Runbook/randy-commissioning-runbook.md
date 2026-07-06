@@ -12,7 +12,7 @@
 | Component | Detail |
 |---|---|
 | Chassis | SuperMicro CSE-219U 2U 24-bay |
-| CPU | Dual Intel Xeon E5-2690 v4 (2× 14c/28t = 56 cores / 48 logical) |
+| CPU | Dual Intel Xeon E5-2690 v4 (2× 14c/28t = 28 cores / 56 threads) |
 | RAM | 128 GB ECC DDR4 |
 | RAID Controller | AVAGO 3108 MegaRAID (SAS-12G) |
 | NIC | Mellanox ConnectX-3 MCX312A dual-port 10GbE |
@@ -155,7 +155,9 @@ zpool create -f -o ashift=12 datastore \
 # Verify
 zpool status datastore
 zpool list datastore
-# Expected: 29.4TB raw / 19.5TB usable
+# Expected: 29.4TB raw / 19.5TB usable (original 3-vdev build)
+# NOTE: pool later expanded 2026-06-25 with a 4th RAIDZ2 (4× Seagate ST2000NX0423)
+#       → now 36.7TB raw / ~23TB usable
 ```
 
 ### Step 7 — Install Proxmox Backup Server
@@ -252,7 +254,7 @@ pct exec 103 -- bash -c "kill -HUP \$(pgrep prometheus)"
 | km-cluster member | ✅ Joined |
 | 10G link (nic3 → xe-0/2/0) | ✅ 10000Mb/s Full Duplex |
 | RAID-1 boot mirror | ✅ Optimal |
-| ZFS datastore pool | ✅ ONLINE, 19.5TB usable |
+| ZFS datastore pool | ✅ ONLINE, 19.5TB usable (expanded 2026-06-25 → 36.7TB raw / ~23TB usable) |
 | PBS 4.2.2 | ✅ Running, datastore configured |
 | randy-pbs in cluster | ✅ Shared across all nodes |
 | Headscale | ✅ Online at 100.64.0.2 |
@@ -265,11 +267,11 @@ pct exec 103 -- bash -c "kill -HUP \$(pgrep prometheus)"
 ## Pending
 
 - [ ] 4th DAC cable for nic2 → xe-0/2/2 (second 10G port)
-- [ ] Scrutiny web UI for visual drive health
-- [ ] Backup schedules on all cluster nodes → randy-pbs
-- [ ] Migrate Prometheus/Grafana/Loki from management G4 to Randy
+- [x] Scrutiny web UI for visual drive health ✅ (live at 192.168.10.183:8080; collector on Randy)
+- [x] Backup schedules on all cluster nodes → randy-pbs ✅ (LXCs 02:00 / VMs 03:00 daily, 7d+4w)
+- [ ] ~~Migrate Prometheus/Grafana/Loki from management G4 to Randy~~ — superseded: stack deployed on pve3 LXC 103 instead
 - [ ] DS4246 connection via LSI 9207-8e HBA
-- [ ] Jellyfin with RX 580 ROCm transcoding
+- [ ] Jellyfin RX 580 ROCm transcoding — Jellyfin installed & live (v10.11.11); hardware transcode still pending RX 580 power cable
 
 ---
 

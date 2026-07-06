@@ -38,7 +38,7 @@ QuarkyLab: SSH works — `ssh quarkylab` via `fernanda@quarkylab` key (id_ed2551
 | IP (mgmt VLAN 1) | 192.168.10.187 |
 | Service IP (VLAN 30) | 192.168.30.187 — NFS export + PBS + egress (dual-homed 2026-07-02) |
 | IPMI | 192.168.20.22 (ADMIN, **VLAN 20** since 2026-07-03) |
-| CPUs | 2x E5-2690 v4 (56 cores / 48 logical) |
+| CPUs | 2x E5-2690 v4 (28 cores / 56 threads) |
 | RAM | 128GB ECC DDR4 |
 | Kernel | 7.0.12-1-pve |
 | NIC | Mellanox ConnectX-3 MCX312A dual-port 10GbE |
