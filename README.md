@@ -12,14 +12,14 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 | Hostname | Role | IP | CPU | RAM | GPU | PVE | Kernel |
 |---|---|---|---|---|---|---|---|
 | **Randy** | Storage / PBS | 192.168.10.187 | 2× E5-2690 v4 | 128 GB | RX 580 8GB | 9.1.1 | 7.0.12-1 |
-| **QuarkyLab** | ML / Fernanda | 192.168.10.179 | 2× E5-2699 v4 | 512 GB | RTX 6000 24GB → RTX 8000 48GB† | 9.2.3 | 6.14.11-9-pve† |
-| **Jarvis** | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | — (2× RTX 6000 planned)‡ | 9.2.3 | 6.14.11-9-pve‡ |
-| **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 48 GB | — | 9.2.3 | 7.0.12-1 |
-| **pve3** | Cluster node | 192.168.10.201 | i7-8700 | 32 GB | — | 9.2.3 | 7.0.12-1 |
+| **QuarkyLab** | ML / Fernanda | 192.168.10.179 | 2× E5-2699 v4 | 512 GB | RTX 8000 48GB† | 9.2.3 | 6.14.11-9-pve† |
+| **Jarvis** | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | 2× RTX 6000 (48GB total)‡ | 9.2.3 | 6.14.11-9-pve‡ |
+| **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 32 GB | — | 9.2.3 | 7.0.12-1 |
+| **pve3** | Cluster node | 192.168.10.201 | i7-8700 | 48 GB | — | 9.2.3 | 7.0.12-1 |
 | **pve4** | Cluster node | 192.168.10.202 | i5-7500T | 32 GB | — | 9.2.3 | 7.0.12-1 |
 | **pve5** | Cluster node | 192.168.10.203 | i5-7500T | 32 GB | — | 9.2.3 | 7.0.12-1 |
 
-†QuarkyLab: RTX 6000 24GB now → RTX 8000 48GB planned swap (card in hand). Kernel pinned — NVIDIA 550.163.01 requires 6.14.11-9-pve.  
+†QuarkyLab: RTX 8000 48GB installed & verified 2026-07-01 (nvidia-smi reports 48GB on NVIDIA 550.163.01; driver-free Turing swap). Kernel pinned — NVIDIA 550.163.01 requires 6.14.11-9-pve.  
 ‡Jarvis: **2× RTX 6000 installed & verified 2026-07-04** — 24GB each / 48GB total (driver 550.163.01, kernel 6.14.11-9-pve). Required a nouveau blacklist on first boot; fans managed by the `gpu-fan-control` daemon. Ollama GPU-backed, qwen2.5:72b pulled.
 
 ---
@@ -50,8 +50,8 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 ### Randy — Internal (Proxmox Backup Server)
 
 - **Boot:** RAID-1 mirror on 2× Seagate SAS SSDs via AVAGO 3108 MegaRAID
-- **Data pool:** ZFS `datastore` — 3× RAIDZ2 vdevs of 6× Toshiba AL15SEB18EQ 1.6TB 10K SAS
-- **Usable:** ~19.5TB | **PBS fingerprint:** `da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9`
+- **Data pool:** ZFS `datastore` — 4× RAIDZ2 vdevs: 3× 6-wide Toshiba AL15SEB18EQ 1.6TB 10K SAS + 1× 4-wide Seagate ST2000NX0423 1.8TB SATA (all in-pool, no spares)
+- **Capacity:** 36.7TB raw / ~23TB usable | **PBS fingerprint:** `da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9`
 - **PBS UI:** `https://192.168.10.187:8007`
 
 ### DS4246 — External JBOD
@@ -66,14 +66,14 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 | Service | Host | URL / Port | Notes |
 |---|---|---|---|
-| Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS ~19.5TB — daily backups 02:00/03:00 |
+| Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS 36.7TB raw / ~23TB usable — daily backups 02:00/03:00 |
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.7 |
 | Pi-hole | pve1 (LXC, Mac Mini) | `192.168.10.177` | DNS filter — standalone node, NOT pve3 |
 | Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
 | Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
 | step-ca | pve2 | `https://192.168.10.204:443` | Internal CA, `*.netframe.local` TLS |
 | Vaultwarden | pve3 (LXC 102) | `http://192.168.10.182` | Active ✅ (healthy, onboot=1) |
-| Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | Installed (v0.31.1); pending 2× RTX 6000 install |
+| Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | v0.31.1, GPU-backed on 2× RTX 6000 (installed 2026-07-04); qwen2.5:72b tensor-split across both |
 
 ---
 
@@ -102,12 +102,12 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 
 ## Planned / In Progress
 
-- [x] Randy commissioned — PBS live, ZFS datastore ~19.5TB
+- [x] Randy commissioned — PBS live, ZFS datastore 36.7TB raw / ~23TB usable
 - [x] Full cluster upgrade — all nodes PVE 9.2.3 / kernel 7.0.12-1 (2026-06-22)
 - [x] NVIDIA 550 driver on QuarkyLab — kernel pinned to 6.14.11-9-pve
 - [x] Jarvis GPU software stack staged (2026-07-01) — kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS built, Ollama on /opt/models
-- [ ] QuarkyLab RTX 6000 → RTX 8000 48GB swap (card in hand)
-- [ ] Jarvis 2× RTX 6000 install (cards in hand; gated on Dell N08NH aux power cables + R730 GPU riser)
+- [x] QuarkyLab RTX 6000 → RTX 8000 48GB swap ✅ 2026-07-01 (nvidia-smi reports 48GB, NVIDIA 550.163.01)
+- [x] Jarvis 2× RTX 6000 install ✅ 2026-07-04 (24GB each / 48GB total; Ollama GPU-backed, qwen2.5:72b)
 - [x] Backup schedules configured — daily to randy-pbs, 7d+4w retention
 - [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25
 - [x] Wazuh agent 4.9.2 on all 8 nodes → full SIEM coverage ✅ 2026-06-25
@@ -115,7 +115,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] VLAN activation ✅ 2026-06-25 — EX3400 ge-0/0/46 trunk live, verified end-to-end (DHCP lease on VLAN 20). Fix: native-vlan-id at interface level (ELS)
 - [x] Jellyfin installed on Randy v10.11.11 — http://192.168.10.187:8096 ✅ (GPU transcoding pending RX 580 power cable)
 - [x] Prometheus node-exporter deployed on all 8 nodes (randy/pve2/pve3/pve4/pve5/quarkylab/jarvis/pve1) ✅
-- [x] Scrutiny — drive health UI live at http://192.168.10.183:8080 (41 drives, 6h collection) ✅
+- [x] Scrutiny — drive health UI live at http://192.168.10.183:8080 (~50 drives, collectors on Randy + QuarkyLab, 6h) ✅
 - [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
 - [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
 - [ ] Cyberpunk monitoring dashboard — live API integration
