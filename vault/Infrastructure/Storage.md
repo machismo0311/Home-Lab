@@ -13,28 +13,46 @@
 | Rack Position | U8–U12 |
 | Bay Count | 24 bays |
 | Interface | SAS (dual IOM6 modules) |
-| Currently Populated | 6× HGST 2TB SATA |
-| Total Raw (current) | 12 TB |
+| Currently Populated | **16× 4 TB SAS** (9× HGST HUS724040ALS641 + 7× Seagate ST4000NM0063); 8 bays empty |
+| Total Raw (current) | **~64 TB** |
+| Sector format | **512 B native** — *not* NetApp 520 B, so usable without reformatting |
+| Attached to | **Randy** (SuperMicro) via **LSI SAS2308** HBA (PCI `85:00.0`, `mpt2sas`, SCSI host11) |
+| Pathing | Dual IOM6 → every disk on **2 paths** (32× `sdX` for 16 disks); **multipath NOT yet configured** |
+| Enclosure SES id | `0x500a098005bb7186` (vendor NETAPP, product DS424IOM6) |
 | Max Capacity | 24× drives |
 | Weight (populated) | ~45 lbs — mount before drives above |
 
----
-
-## Current Drive Inventory
-
-| Bay | Drive | Capacity | Type | Status |
-|---|---|---|---|---|
-| 1 | HGST HUS726020ALS210 | 2 TB | SATA 7.2K | Active |
-| 2 | HGST HUS726020ALS210 | 2 TB | SATA 7.2K | Active |
-| 3 | HGST HUS726020ALS210 | 2 TB | SATA 7.2K | Active |
-| 4 | HGST HUS726020ALS210 | 2 TB | SATA 7.2K | Active |
-| 5 | HGST HUS726020ALS210 | 2 TB | SATA 7.2K | Active |
-| 6 | HGST HUS726020ALS210 | 2 TB | SATA 7.2K | Active |
-| 7–24 | *Empty* | — | — | Unpopulated |
+> ⚠️ **Inventory corrected 2026-07-07.** This doc previously listed *6× HGST 2 TB SATA / 12 TB* — the shelf has since been repopulated with **16× 4 TB SAS**. Discovered during the Randy sdb replacement; see [[Runbook/Cluster-Health-Fixes-2026-07-07]] §4d.
 
 ---
 
-## Storage Architecture (Planned)
+## Current Drive Inventory (2026-07-07)
+
+**16× 4 TB SAS 7.2K, all SMART health OK, grown-defect lists ~0, 512 B sectors. Blank — no ZFS pool, no partitions, no filesystems.** These are *used* enterprise drives (mixed power-on hours), so long SMART self-tests were started 2026-07-07 to qualify them before any data use. Bay↔serial mapping not yet done.
+
+| Model | Qty | Capacity | Type | Power-on hrs | Grown defects | SMART |
+|---|---|---|---|---|---|---|
+| HGST HUS724040ALS641 | 9 | 4 TB | SAS 7.2K | 5× ~6.7 k · 4× ~25 k | 0 | OK |
+| Seagate ST4000NM0063 | 7 | 4 TB | SAS 7.2K | used | 0 (one drive = 1) | OK |
+
+**Serials** — HGST: `PCKM0TGX PCKM3Z1X PCKMBNUX PCKMPEJX PCKMREXX` (~6.7 k h), `PCKKXHMX PCKMH28X PCKMKTYX PCKN02AX` (~25 k h). Seagate: `Z1Z862D3 Z1Z85V35 Z1Z861TP Z1Z861NW Z1Z85TD4 Z1Z861CF Z1Z861AQ`.
+
+8 bays remain empty (24-bay shelf, 16 populated).
+
+---
+
+## Current State & Next Steps (as of 2026-07-07)
+
+- **Status:** attached, powered, healthy, **blank/unallocated** (~64 TB raw idle). Purpose TBD.
+- **Long SMART self-tests running** on all 16 (started 07-07 ~10:3x; SAS extended ≈ 7–8 h) to qualify the used drives.
+- **Before building any pool:** configure `multipathd` (or deliberately single-path) — the dual IOM6 shelf presents each disk on 2 paths, so ZFS must not be pointed at raw `sdX` or it may grab the same disk twice.
+- **Pool design:** revisit the planning below for 16× 4 TB (e.g. two 8-wide RAIDZ2 vdevs ≈ 48 TB usable, or one 16-wide RAIDZ2/3). Group by model within vdevs where practical.
+
+---
+
+## Storage Architecture (Planned — pre-2026-07-07, predates the 16× 4 TB repopulation)
+
+> The mermaid/pool tables below were drafted for the old 6× 2 TB fill. Numbers need reworking for 16× 4 TB (see "Current State & Next Steps" above); kept for the architectural intent.
 
 ```mermaid
 flowchart TB
@@ -80,9 +98,9 @@ zfs set sharenfs="rw=@10.0.30.0/24,no_root_squash" datastore/vms
 
 ## SAS HBA Notes
 
-- DS4246 connects via SAS to a host HBA card
-- R730s and SuperMicro have PCIe slots — verify HBA compatibility (LSI 9300-8e or equivalent)
-- Run HBA in **IT mode** (passthrough) — not IR mode — for ZFS direct disk access
+- **Actual HBA in use:** LSI **SAS2308** (Fusion-MPT SAS-2, 9207-8e-class) in **Randy**, PCI `85:00.0`, driver `mpt2sas`, SCSI host11 — already presenting drives as JBOD (IT-mode behaviour), good for ZFS.
+- DS4246 has **dual IOM6** modules → connect both for redundancy, but then **multipath is required** (each disk appears twice otherwise).
+- Run HBA in **IT mode** (passthrough) — not IR mode — for ZFS direct disk access.
 
 ---
 
