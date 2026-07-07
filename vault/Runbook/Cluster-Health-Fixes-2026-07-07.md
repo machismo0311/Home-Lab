@@ -139,7 +139,7 @@ zpool status datastore   # watch resilver to completion, then state → ONLINE
 **New disk:** ST2000NX0423, **SN W460W2XM**, WWN `…ac21b79a`, MegaRAID `/c0/e0/s20`. SMART **PASSED**, 0 reallocated / 0 pending at install.
 > ⚠️ **The "new" disk is a used, same-era drive — Power_On_Hours = 52,164 (~5.95 yr), nearly identical to the failed W460W2Y3 (52,416 h).** Healthy now, but treat as a **stopgap**: it may not have much runway. Recommend sourcing a genuinely fresh 2 TB and swapping again when convenient; keep the weekly scrub until then.
 
-> 📌 **Undocumented hardware noticed during the swap:** Randy now enumerates ~30 extra **4 TB** SAS/SATA disks (ST4000NM0063, HUS724040ALS641) on a **second controller/enclosure** (SCSI host 4, SES id `0x500304801ef4e13f`) that are **not** in `datastore` and not in the CLAUDE.md hardware table. Unknown whether newly attached or long-present-but-idle. **Flagged for review** — not touched.
+> 📌 **Second storage tier discovered & investigated (07-07):** the "extra disks" are a **NetApp DS4246 shelf** (dual IOM6, SES `0x500a098005bb7186`) on Randy's **LSI SAS2308** HBA (PCI `85:00.0`, `mpt2sas`, host11) — **16× 4 TB SAS** (9× HGST HUS724040ALS641 + 7× Seagate ST4000NM0063), 512 B sectors, all SMART OK, blank/no pool, ~64 TB raw idle. 32 `sdX` = 16 disks dual-pathed (no multipath yet). Powered ~6 days, so long-present-but-idle, not attached during the swap. Full inventory now in [[Infrastructure/Storage]]; long SMART self-tests started 07-07 to qualify the used drives.
 
 ---
 
@@ -153,7 +153,8 @@ zpool status datastore   # watch resilver to completion, then state → ONLINE
 - [x] Randy sdb long self-test (07-07 07:39) → **read failure @ LBA 3875904942, confirms media damage; pending 23→21; no data impact.**
 - [x] **Randy sdb replaced 07-07 10:21** — new W460W2XM resilvered in (2.85 G / 0 errors), pool ONLINE, redundancy restored. See §4d.
 - [ ] **Randy: replacement is a used same-age disk (52,164 h)** — source a genuinely fresh 2 TB and swap again; keep weekly scrub until then.
-- [ ] **Randy: investigate ~30 undocumented 4 TB disks on 2nd controller** (SCSI host 4, SES `0x500304801ef4e13f`) — reconcile with hardware table / decide use. See §4d.
+- [x] **Randy 2nd-tier storage investigated & documented (07-07)** — NetApp DS4246, 16× 4 TB SAS on LSI SAS2308, blank/~64 TB idle; inventory corrected in [[Infrastructure/Storage]]; long SMART self-tests running.
+- [ ] **DS4246: qualify drives (self-tests ~07-07 eve), configure multipath, decide purpose + pool layout** before use. See [[Infrastructure/Storage]].
 - [ ] QuarkyLab root fs at 82% — cleanup pass before it bites (OS root; the big ZFS workspace datasets are near-empty).
 - [ ] Confirm VM 100 nightly backup (03:00) succeeds unattended on 07-08.
 - [ ] Re-run scrutiny collector on Jarvis after the new drives are installed.
