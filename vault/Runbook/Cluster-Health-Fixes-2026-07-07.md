@@ -100,9 +100,13 @@ The sweep saw 8× "Failed to start `nut-driver@midatlantic`" at boot — the SNM
 
 **Actions taken 2026-07-07 ~02:14:**
 - **ZFS scrub** of `datastore` → `repaired 0B in 00:00:28 with 0 errors` (pool holds only ~72 G).
-- **Long SMART self-test** on sdb started (`smartctl -t long /dev/sdb`), ETA ~08:03 EDT. *[Result pending — will resolve the 23 pending sectors one way or the other: re-read OK → count drops; re-read fails → converts to reallocated/uncorrectable.]*
+- **Long SMART self-test** on sdb (`smartctl -t long /dev/sdb`), started ~02:14, finished ~07:39 EDT.
 
-**Recommendation:** this is the **oldest, most-worn disk in the pool** (6 yr, 869 reallocations, growing pending count). Not urgent given raidz2, but it is the **#1 proactive replacement candidate** — order a spare 2 TB and `zpool replace` at convenience. *[Update this section with the self-test outcome.]*
+**Self-test result (07-07 ~07:39): `Completed: read failure` — hard unreadable sector at LBA 3875904942.** The scan lingered ~25 min in its final segment retrying the marginal region, then aborted on an unrecoverable read. Pending sectors dropped **23 → 21** (a couple re-read/reallocated), but the hard read failure **confirms real, non-transient media damage** rather than soft/transient errors. `Reported_Uncorrect` and `Offline_Uncorrectable` remain 0 (this Seagate doesn't tick 187 for the event); `Reallocated_Sector_Ct` unchanged at 869.
+
+**Data impact: none.** ZFS still `ONLINE` / `No known data errors`, sdb READ/WRITE/CKSUM = 0, and no kernel medium errors — the bad LBA sits in **unused space** (pool ~72 G of ~23 T used), so it was never read by live I/O, and raidz2 covers the vdev regardless.
+
+**Recommendation (upgraded → REPLACE): the self-test read failure changes this from "watch" to "replace."** This is the oldest, most-worn disk in the pool (6 yr / 52,421 h, 869 reallocations, 21 pending + a confirmed unreadable LBA). No emergency (raidz2 + no data affected), but **order a spare 2 TB (Seagate ST2000NX0423-class) and `zpool replace datastore sdb <new>`** at the next convenient window. Until then, a scrub will heal any parity mismatch if that region ever gets live data; consider a periodic scrub to keep coverage confirmed.
 
 ---
 
@@ -113,7 +117,8 @@ The sweep saw 8× "Failed to start `nut-driver@midatlantic`" at boot — the SNM
 - Cosmetic boot-log noise eliminated (openipmi, vfio typos, scrutiny race).
 
 ## 6. Follow-ups
-- [ ] Randy sdb long self-test result (~08:03 EDT 07-07) → record above; decide on spare/replacement.
+- [x] Randy sdb long self-test (07-07 07:39) → **read failure @ LBA 3875904942, confirms media damage; pending 23→21; no data impact.**
+- [ ] **Order spare 2 TB + `zpool replace` sdb on Randy** — self-test confirmed a hard bad sector (was "watch," now "replace").
 - [ ] QuarkyLab root fs at 82% — cleanup pass before it bites (OS root; the big ZFS workspace datasets are near-empty).
 - [ ] Confirm VM 100 nightly backup (03:00) succeeds unattended on 07-08.
 - [ ] Re-run scrutiny collector on Jarvis after the new drives are installed.
