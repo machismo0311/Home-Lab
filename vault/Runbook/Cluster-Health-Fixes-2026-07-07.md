@@ -106,7 +106,32 @@ The sweep saw 8× "Failed to start `nut-driver@midatlantic`" at boot — the SNM
 
 **Data impact: none.** ZFS still `ONLINE` / `No known data errors`, sdb READ/WRITE/CKSUM = 0, and no kernel medium errors — the bad LBA sits in **unused space** (pool ~72 G of ~23 T used), so it was never read by live I/O, and raidz2 covers the vdev regardless.
 
-**Recommendation (upgraded → REPLACE): the self-test read failure changes this from "watch" to "replace."** This is the oldest, most-worn disk in the pool (6 yr / 52,421 h, 869 reallocations, 21 pending + a confirmed unreadable LBA). No emergency (raidz2 + no data affected), but **order a spare 2 TB (Seagate ST2000NX0423-class) and `zpool replace datastore sdb <new>`** at the next convenient window. Until then, a scrub will heal any parity mismatch if that region ever gets live data; consider a periodic scrub to keep coverage confirmed.
+**Recommendation (upgraded → REPLACE): the self-test read failure changes this from "watch" to "replace."** This is the oldest, most-worn disk in the pool (6 yr / 52,421 h, 869 reallocations, 21 pending + a confirmed unreadable LBA). No emergency (raidz2 + no data affected), but **order a spare 2 TB (Seagate ST2000NX0423-class) and replace** at the next convenient window.
+
+### 4a. Physical location & locate procedure
+| Field | Value |
+|---|---|
+| OS device (pre-pull) | `/dev/sdb` |
+| Serial | **W460W2Y3** |
+| WWN / ZFS member | `wwn-0x5000c500ac21b85c` |
+| Controller path | AVAGO 3108 MegaRAID **`/c0/e0/s20`** (enclosure 0, slot 20), JBOD |
+
+**Locating the drive (what works on this box):**
+- ❌ `storcli64 /c0/e0/s20 start locate` reports success but does **not** light the backplane LED — the disk is **JBOD** (MegaRAID only drives locate LEDs for configured drives).
+- ❌ SES/`sg_ses` slot-ident by SAS address fails — sdb is **SATA** behind the SAS expander, so its SES slot advertises an expander address, not the drive WWN.
+- ✅ **Activity-LED pulse** (reliable, controller-agnostic): `/root/locate-sdb.sh` on Randy loops `dd if=/dev/sdb ...` reading only the healthy first 6 GB in a 6 s-on / 3 s-off pulse. Watch for the one bay blinking in that rhythm. Start: `nohup /root/locate-sdb.sh >/dev/null 2>&1 &`. Stop: `kill $(cat /root/locate-sdb.pid)`. (Script kept on Randy for the next time.)
+
+### 4b. Removal verified — 2026-07-07
+Drive pulled and **confirmed correct**: `/dev/sdb` gone from OS; the 4 Seagate pool disks now show only W460W25Y / W460VVTP / W460W1FJ (**W460W2Y3 absent**); `zpool status` = **DEGRADED**, `raidz2-3` member `wwn-0x5000c500ac21b85c` = **REMOVED**, all other members ONLINE, **`errors: No known data errors`** (1 of 2 tolerable losses used). Pool is fully readable/writable meanwhile.
+
+**Replace when the new disk is seated** (identify its `/dev/sdX`, then):
+```bash
+zpool replace datastore wwn-0x5000c500ac21b85c /dev/<newdisk>
+zpool status datastore   # watch resilver to completion, then state → ONLINE
+```
+
+### 4c. Periodic scrub cron (added 07-07)
+`/etc/cron.d/zfs-scrub-datastore` → `0 2 * * 0 root /usr/sbin/zpool scrub datastore` (**weekly, Sun 02:00**), a heightened cadence while the pool runs degraded. The distro `zfs-scrub.timer` already scrubs all pools **monthly** — dial this weekly cron back or remove it after the resilver completes.
 
 ---
 
@@ -118,7 +143,7 @@ The sweep saw 8× "Failed to start `nut-driver@midatlantic`" at boot — the SNM
 
 ## 6. Follow-ups
 - [x] Randy sdb long self-test (07-07 07:39) → **read failure @ LBA 3875904942, confirms media damage; pending 23→21; no data impact.**
-- [ ] **Order spare 2 TB + `zpool replace` sdb on Randy** — self-test confirmed a hard bad sector (was "watch," now "replace").
+- [~] **Randy sdb replacement IN PROGRESS** — bad disk (W460W2Y3, `/c0/e0/s20`, wwn ...ac21b85c) **removed & verified 07-07**, pool DEGRADED/no data errors. Awaiting spare 2 TB → `zpool replace datastore wwn-0x5000c500ac21b85c /dev/<new>` then watch resilver. See §4a/§4b.
 - [ ] QuarkyLab root fs at 82% — cleanup pass before it bites (OS root; the big ZFS workspace datasets are near-empty).
 - [ ] Confirm VM 100 nightly backup (03:00) succeeds unattended on 07-08.
 - [ ] Re-run scrutiny collector on Jarvis after the new drives are installed.
