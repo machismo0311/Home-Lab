@@ -131,7 +131,15 @@ zpool status datastore   # watch resilver to completion, then state → ONLINE
 ```
 
 ### 4c. Periodic scrub cron (added 07-07)
-`/etc/cron.d/zfs-scrub-datastore` → `0 2 * * 0 root /usr/sbin/zpool scrub datastore` (**weekly, Sun 02:00**), a heightened cadence while the pool runs degraded. The distro `zfs-scrub.timer` already scrubs all pools **monthly** — dial this weekly cron back or remove it after the resilver completes.
+`/etc/cron.d/zfs-scrub-datastore` → `0 2 * * 0 root /usr/sbin/zpool scrub datastore` (**weekly, Sun 02:00**). The distro `zfs-scrub.timer` already scrubs all pools **monthly**. Weekly is being **kept for now** because the replacement drive is itself aged (see §4d) — revisit dialing back to monthly once a fresh disk is fitted.
+
+### 4d. Replacement complete — 2026-07-07 10:21
+`zpool replace datastore wwn-0x5000c500ac21b85c /dev/disk/by-id/wwn-0x5000c500ac21b79a` → **resilvered 2.85 G in 00:01:03 with 0 errors**. `raidz2-3` now: `wwn-0x5000c500ac21b79a` + the 3 originals, all ONLINE; pool **ONLINE**, `No known data errors`, full raidz2 redundancy restored.
+
+**New disk:** ST2000NX0423, **SN W460W2XM**, WWN `…ac21b79a`, MegaRAID `/c0/e0/s20`. SMART **PASSED**, 0 reallocated / 0 pending at install.
+> ⚠️ **The "new" disk is a used, same-era drive — Power_On_Hours = 52,164 (~5.95 yr), nearly identical to the failed W460W2Y3 (52,416 h).** Healthy now, but treat as a **stopgap**: it may not have much runway. Recommend sourcing a genuinely fresh 2 TB and swapping again when convenient; keep the weekly scrub until then.
+
+> 📌 **Undocumented hardware noticed during the swap:** Randy now enumerates ~30 extra **4 TB** SAS/SATA disks (ST4000NM0063, HUS724040ALS641) on a **second controller/enclosure** (SCSI host 4, SES id `0x500304801ef4e13f`) that are **not** in `datastore` and not in the CLAUDE.md hardware table. Unknown whether newly attached or long-present-but-idle. **Flagged for review** — not touched.
 
 ---
 
@@ -143,7 +151,9 @@ zpool status datastore   # watch resilver to completion, then state → ONLINE
 
 ## 6. Follow-ups
 - [x] Randy sdb long self-test (07-07 07:39) → **read failure @ LBA 3875904942, confirms media damage; pending 23→21; no data impact.**
-- [~] **Randy sdb replacement IN PROGRESS** — bad disk (W460W2Y3, `/c0/e0/s20`, wwn ...ac21b85c) **removed & verified 07-07**, pool DEGRADED/no data errors. Awaiting spare 2 TB → `zpool replace datastore wwn-0x5000c500ac21b85c /dev/<new>` then watch resilver. See §4a/§4b.
+- [x] **Randy sdb replaced 07-07 10:21** — new W460W2XM resilvered in (2.85 G / 0 errors), pool ONLINE, redundancy restored. See §4d.
+- [ ] **Randy: replacement is a used same-age disk (52,164 h)** — source a genuinely fresh 2 TB and swap again; keep weekly scrub until then.
+- [ ] **Randy: investigate ~30 undocumented 4 TB disks on 2nd controller** (SCSI host 4, SES `0x500304801ef4e13f`) — reconcile with hardware table / decide use. See §4d.
 - [ ] QuarkyLab root fs at 82% — cleanup pass before it bites (OS root; the big ZFS workspace datasets are near-empty).
 - [ ] Confirm VM 100 nightly backup (03:00) succeeds unattended on 07-08.
 - [ ] Re-run scrutiny collector on Jarvis after the new drives are installed.
