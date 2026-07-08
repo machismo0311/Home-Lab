@@ -125,13 +125,26 @@ exportfs -ra && exportfs -v | grep bulk'
 - 8 empty bays remain. Grow by **adding another 8-wide RAIDZ2 vdev** (keep vdev geometry uniform) — never widen an existing vdev.
 - Keep pool **< ~80% full** for performance/CoW headroom (~32 TiB practical on this layout).
 
+## ✅ BUILD COMPLETE — 2026-07-08 ~03:40
+Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **0 errors**, 58.2 T raw / **~41.3 TiB usable**. `datastore` untouched throughout.
+- **Datasets:** `bulk/media` (movies, 1M/lz4), `bulk/fernanda` (1M/lz4), `bulk/archive` (1M/zstd), `bulk/misc` (128k/lz4). All writable.
+- **NFS:** `bulk/fernanda` → `192.168.30.179` (rw,sync,no_subtree_check,no_root_squash), mirrors the `/datastore/quarkylab` convention. **`bulk/media` export PENDING** — needs media-server host/IP + rw-vs-ro decision.
+- **Protection:** weekly scrub cron added (`bulk` Sun 02:30); smartd monitoring all 16 shelf drives (per-serial state files); ZED active (emails root); initial `scrub bulk` = 0 errors.
+
 ## Validation checklist (post-build)
-- [ ] `zpool status bulk` → ONLINE, 2× raidz2, 0 errors
-- [ ] `multipath -ll` → 16 maps, 2 active paths each
-- [ ] Reboot Randy → pool auto-imports, multipath re-forms, `datastore` unaffected
-- [ ] Initial `zpool scrub bulk` → 0 errors
-- [ ] NFS mount from a VLAN-30 client works; write/read a large file
-- [ ] smartd/ZED alerting confirmed on the new drives
+- [x] `zpool status bulk` → ONLINE, 2× raidz2, 0 errors
+- [x] `multipath -ll` → 16 maps, 2 active paths each
+- [ ] **Reboot Randy** → confirm pool auto-imports, multipath re-forms, `datastore` unaffected *(not yet tested — do at next maintenance window)*
+- [x] Initial `zpool scrub bulk` → 0 errors
+- [ ] NFS mount from QuarkyLab (`bulk/fernanda`) — write/read test *(pending Fernanda use)*
+- [x] smartd/ZED alerting confirmed on the new drives
+
+## Remaining / follow-ups
+- [ ] **`bulk/media` NFS export** — provide media-server IP + rw/ro; then add to `/etc/exports`.
+- [ ] **Snapshots** — `bulk/fernanda` holds non-repro research data: add `sanoid` (or a snapshot cron) with retention. Not yet configured.
+- [ ] **Quota/reservation** — optional: reservation on `bulk/fernanda` and/or quota on `bulk/media` so one can't starve the other. Set once footprints known.
+- [ ] **Reboot-persistence test** (see checklist).
+- [ ] **Off-box backup** for anything critical on `bulk/fernanda` — this pool is same-host as `datastore`, not a backup.
 
 ## Rollback
 Nothing destructive until `zpool create`. To undo pre-data: `zpool destroy bulk` (only if empty), `systemctl disable --now multipathd` + remove `/etc/multipath.conf`, `apt-get remove multipath-tools`. The internal `datastore` pool is never touched by this plan.

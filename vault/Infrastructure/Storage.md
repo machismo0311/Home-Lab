@@ -46,7 +46,7 @@
 - **Status:** attached, powered, healthy, **blank/unallocated** (~64 TB raw idle). Purpose TBD.
 - **Long SMART self-tests running** on all 16 (started 07-07 ~10:3x; SAS extended ≈ 7–8 h) to qualify the used drives.
 - **Before building any pool:** configure `multipathd` (or deliberately single-path) — the dual IOM6 shelf presents each disk on 2 paths, so ZFS must not be pointed at raw `sdX` or it may grab the same disk twice.
-- **Pool design:** **decided 2026-07-07 → bulk/media pool `bulk`, 2× 8-wide RAIDZ2 (~40 TiB usable).** Full step-by-step in [[Runbook/DS4246-Pool-Buildout-Plan-2026-07-07]] (qualify → multipath → create → datasets → NFS → protection).
+- **Pool BUILT 2026-07-08 → `bulk`, 2× 8-wide RAIDZ2, ~41.3 TiB usable, ONLINE.** All 16 drives passed long self-tests; multipath (exact-wwid whitelist) → 16 maps; datasets `media`/`fernanda`/`archive`/`misc`; `bulk/fernanda` NFS→QuarkyLab .179; weekly scrub + smartd + ZED. `bulk/media` export still pending a media-server target. Full record: [[Runbook/DS4246-Pool-Buildout-Plan-2026-07-07]].
 
 ---
 
