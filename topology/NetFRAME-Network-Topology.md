@@ -598,7 +598,7 @@ Findings F-03 (Prometheus/Loki localhost-only), F-05 (NPM `:81` Ares-only), OOB 
 | **F-5** | 🟡 Low | Wazuh VM 104 lacks qemu-guest-agent → unclean stop on host reboot corrupts the indexer. | Install `qemu-guest-agent`, set `--agent enabled=1`, one cold start. |
 | **F-6** | 🟡 Low | `xe-0/2/3` DAC to UniFi down (10G/1G EEPROM mismatch). | Replace with a speed-matched SFP or accept as decommissioned. |
 | **F-7** | 🟢 Info | VLANs 40/50/60/70 defined but lightly/not populated (VoIP/FreePBX deferred). | Populate or prune to keep the VLAN map honest. |
-| **F-8** | ⚠️ Medium | **Open no-auth SOCKS5 proxy** on an Amazon IoT device (`192.168.10.112:1080`) — an unauthenticated open proxy on the flat LAN. | Identify the device, disable the proxy, or move it to the IoT VLAN 40 with egress-only firewalling. |
+| **F-8** | 🟡 Low | **Amazon Echo (Alexa) on the flat management VLAN 1** (`192.168.10.112`, MAC `(OUI only)`, first seen 2026-06-14; identified via Pi-hole DNS fingerprint — `mmechocaptiveportal.com`, `msh.amazon.com`, `api.amazonalexa.com`). Its intermittent `:1080` SOCKS5 listener advertises *no-auth* (`05 00`) but **does not relay** — CONNECT requests go unanswered and all relay tests (internal, external, SOCKS4) fail. Verified at the protocol level: a **benign Echo firmware artifact, not an open proxy.** The real exposure is a closed-firmware cloud-tethered IoT device sharing L2 with infrastructure. | Move to **IoT VLAN 40** (egress-only; deny VLAN 1/20/30). **Scheduled — the Echo will be relocated to the IoT network soon.** The SOCKS port itself needs no action. |
 
 ---
 
@@ -639,7 +639,7 @@ Findings F-03 (Prometheus/Loki localhost-only), F-05 (NPM `:81` Ares-only), OOB 
 | .31 Jarvis | 22, 111, 3128, **8000**, 9100 | SSH · Proxmox · **llm_router** · node-exporter |
 | .50 EX3400 | 22, 830 | SSH + NETCONF |
 | .100/.199 Ares | 21, 22, 111, 139, 445, 2049, 9090 | FTP · Samba · NFS · Cockpit (workstation) |
-| .112 (Amazon IoT) | **1080**, 8888 | ⚠️ **open no-auth SOCKS5** (F-8) |
+| .112 (Amazon Echo) | 1080, 8888 | Alexa speaker; intermittent **non-relaying** SOCKS5 handshake (F-8) → IoT VLAN 40 soon |
 | .148 Homepage | 22, 8081 | SSH · PeaNUT |
 | .172 (printer) | 80, 443, 515, 631, 9100 | Network printer (LPD/IPP/JetDirect) |
 | .177 Pi-hole | 22, 53, 80, 443 | dnsmasq pi-hole v2.92.2 + admin |
