@@ -155,7 +155,7 @@ ZFS replication (`syncoid`, ships with sanoid) from Randy to QuarkyLab's `worksp
 - **Target pruning:** sanoid **prune-only** on QuarkyLab (`autosnap=no, autoprune=yes`, 36h/30d/8w/6m) so replicated snapshots don't accumulate forever.
 - **Restore:** `syncoid` back the other way, or read files directly at `/workspace/backup/randy-fernanda` on QuarkyLab.
 
-> ⚠️ **Off-box, not off-site.** QuarkyLab is in the same rack — this protects against Randy hardware failure, NOT site loss (fire/theft/flood). No off-site target exists yet. **Next tier:** `restic`/`borg` → cloud (B2/rsync.net) or a remote node for true DR.
+> ⚠️ **Off-box, not off-site.** QuarkyLab is in the same rack — this protects against Randy hardware failure, NOT site loss (fire/theft/flood). No off-site target exists yet. **Next tier planned:** restic → Backblaze B2 — see [[Runbook/Offsite-Backup-restic-B2-Plan-2026-07-08]] (pricing compared, B2 chosen; needs a B2 key to execute).
 > Also: only `bulk/fernanda` is replicated (media/archive are re-acquirable). Add stanzas if other datasets need off-box copies.
 
 ## Rollback
