@@ -23,7 +23,7 @@
 | Phase | Scope | Status | Date done | Verified by (evidence) |
 |---|---|---|---|---|
 | **1** | BMCs → VLAN 20 + credential rotation | ✅ **Done & verified** | 2026-07-03 | **All 3 BMCs on VLAN 20** (iDRAC `.20.20`/`.20.21`, IPMI `.20.22`); creds rotated → Vaultwarden; native VLAN 1 dropped (1.4); Ares `.20` leg persisted; docs synced. **1.5 firewall verified**: Ares→BMC pass (HTTPS 302/302/200), pve3 (VLAN 1) + Randy (VLAN 30) → BMC **blocked**; BMC egress default-denied. ⚠️ Ares wired `enp0s31f6` flapped 3× (hardware — see log). |
-| **2** | Service LXCs → VLAN 30 (dual-home NPM; +Open WebUI) | 🟡 Planning done — awaiting UniFi prereq | 2026-07-08 | Recon + revised plan complete (see revision block). Next: operator trunks VLAN 30 → pve3 UniFi port; then dual-home NPM + move Vaultwarden/Homepage/Grafana/OpenWebUI one at a time, `.30.x`, verify via NPM front door each. |
+| **2** | Service LXCs → VLAN 30 (dual-home NPM; +Open WebUI) | 🟡 In progress — Step 0 ✅ | 2026-07-08 | Recon+plan done. **Step 0 ✅ (2026-07-08):** operator tagged VLAN 30 on pve3's UniFi port; verified — pve3 temp `vmbr0.30` reached `.30.1` (OPNsense) + `.30.187` (Randy), 0% loss, then cleaned up. UniFi controller = **192.168.10.2** (not `.1.1`=OPNsense). `nic0` uplink already trunks VID 2-4094; bridge self only had VID 1 (why first host-test false-negatived). Next: dual-home NPM (CT101 `net1` tag=30 `.30.181`). |
 | **3** | VLAN 1 mgmt-plane firewall clamp (OPNsense) | ⬜ Not started | — | _mgmt plane unreachable from a VLAN 30 host; reachable from Ares/VLAN 20; DNS resolves from all tiers_ |
 
 **Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done & verified · ↩️ Rolled back
