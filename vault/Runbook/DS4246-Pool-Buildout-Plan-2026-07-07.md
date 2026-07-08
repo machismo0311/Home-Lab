@@ -29,6 +29,8 @@ done'
 ```
 **Pass criteria (all 16):** self-test `Completed` (no "read failure"), grown-defect list stable (≤ a few, not climbing), 0 new reallocations. **Reject any drive that fails** — pull it, use one of the 8 empty bays / a spare instead. Do not build a vdev short; keep vdevs at 8.
 
+> ✅ **PHASE 1 PASSED — 2026-07-08 ~03:27.** All 16 long self-tests `Completed` clean (LBA `-`, sense `[- - -]`), **0 failures, 0 new reallocations**; grown defects all 0 except sdx/Z1Z861CF = 1 (stable, passed). Tests ran ~17 h (SAS background, slow). Power-on hours (replacement-priority reference): **sdap/Z1Z862D3 = 60,310 h (oldest)**; Seagates sdao 12,527 · sdaq/sdar/sdan/sdy 22,137 · sdx 22,170; HGSTs — sdac 25,124 · sdab 25,128 · sdad 25,057 · sdag 25,097 · sdal 6,737 · sdas 6,736 · sdam 6,734 · sdaj 6,745 · sdak 6,747. **Cleared to build.** → proceed to Phase 2.
+
 ## Phase 2 — Multipath (GATE)
 The dual IOM6 shelf presents each disk on **2 paths** (32 `sdX` for 16 disks). Install + configure multipath so each disk is a single `/dev/mapper` device.
 ```bash
