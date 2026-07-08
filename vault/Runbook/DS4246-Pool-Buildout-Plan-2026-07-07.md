@@ -52,30 +52,49 @@ multipath -r
 sleep 2
 multipath -ll | grep -E "mpath|status" | head -40'
 ```
-- The `blacklist` protects the internal `datastore`/boot disks (currently `sda`–`sdv`); **re-verify those device letters at run time** — a reboot can shuffle them. Safer alternative: blacklist by WWN-prefix and whitelist only the shelf WWNs (`0x5000c50063…`, `0x5000cca05cc…`).
 - Result: 16× `/dev/mapper/mpathX`, each aggregating the 2 paths. Confirm `multipath -ll` shows **2 active paths per mpath**.
 
-## Phase 3 — Create the pool
-Balance models and spread the 4 highest-hour HGST drives across both vdevs (don't concentrate the most-worn disks in one vdev). Suggested split (by WWN suffix):
+> ✅ **PHASE 2 DONE — 2026-07-08 ~03:40.** Installed `multipath-tools`; used an **exact-wwid whitelist** (all 16 shelf wwids; `blacklist { wwid ".*" }` + `blacklist_exceptions`), so the internal disks can never be captured. Verified: **16 maps, 2 active paths each; zero datastore/boot disks in any map; `datastore` still ONLINE / no errors.** multipathd enabled (persists reboot). mpath↔drive binding stored in `/etc/multipath/bindings`.
 
-| vdev | Seagate `0x5000c50063…` | HGST `0x5000cca05cc…` |
-|---|---|---|
-| **raidz2-0** | 7228f7 · 7238eb · 724197 · 72476b | 9af48 · cbb218 · cbe1d8 · cc5580 |
-| **raidz2-1** | 725497 · 7257b7 · 725b7f | c8894 · ccb198 · cce820 · ccf754 · cd78dc |
+**mpath ↔ drive ↔ POH map (from `multipath -ll` + smartctl):**
 
+| mpath | wwid | serial | model | POH | vdev |
+|---|---|---|---|---|---|
+| mpathe | …637228f7 | Z1Z862D3 | Seagate | **60,310** (oldest) | 0 |
+| mpathd | …637238eb | Z1Z85V35 | Seagate | 12,527 | 0 |
+| mpathf | …63724197 | Z1Z861TP | Seagate | 22,137 | 0 |
+| mpathg | …6372476b | Z1Z861NW | Seagate | 22,137 | 0 |
+| mpathj | …ccc8894 | PCKMH28X | HGST | 25,129 (worn) | 0 |
+| mpathk | …cc9af48 | PCKKXHMX | HGST | 25,124 (worn) | 0 |
+| mpathb | …ccc5580 | PCKMBNUX | HGST | 6,735 | 0 |
+| mpathh | …ccbe1d8 | PCKM3Z1X | HGST | 6,737 | 0 |
+| mpatha | …637257b7 | Z1Z861CF | Seagate | 22,170 (1 defect) | 1 |
+| mpathc | …63725497 | Z1Z85TD4 | Seagate | 22,137 | 1 |
+| mpathi | …63725b7f | Z1Z861AQ | Seagate | 22,137 | 1 |
+| mpathl | …cccb198 | PCKMKTYX | HGST | 25,058 (worn) | 1 |
+| mpathm | …ccd78dc | PCKN02AX | HGST | 25,098 (worn) | 1 |
+| mpathn | …ccce820 | PCKMPEJX | HGST | 6,746 | 1 |
+| mpatho | …cccf754 | PCKMREXX | HGST | 6,748 | 1 |
+| mpathp | …ccbb218 | PCKM0TGX | HGST | 6,738 | 1 |
+
+Worn-drive spread: 4 highest-hour HGSTs split **2+2**; oldest Seagate (mpathe) and 1-defect Seagate (mpatha) in **different** vdevs. Models balanced 4S+4H / 3S+5H.
+
+## Phase 3 — Create the pool  ← **AWAITING GO-AHEAD**
 ```bash
-# Use the /dev/mapper/mpath* names that map to the WWNs above (from `multipath -ll`).
 ssh randy '
 zpool create -o ashift=12 \
   -O compression=lz4 -O atime=off -O relatime=off -O xattr=sa -O acltype=posixacl \
   -O recordsize=1M -O mountpoint=/mnt/bulk \
   bulk \
-  raidz2 /dev/mapper/<8 mpaths for vdev0> \
-  raidz2 /dev/mapper/<8 mpaths for vdev1>
+  raidz2 /dev/mapper/mpathe /dev/mapper/mpathd /dev/mapper/mpathf /dev/mapper/mpathg \
+         /dev/mapper/mpathj /dev/mapper/mpathk /dev/mapper/mpathb /dev/mapper/mpathh \
+  raidz2 /dev/mapper/mpatha /dev/mapper/mpathc /dev/mapper/mpathi /dev/mapper/mpathl \
+         /dev/mapper/mpathm /dev/mapper/mpathn /dev/mapper/mpatho /dev/mapper/mpathp
 zpool status bulk'
 ```
 - **ashift=12** (safe/aligned even on 512 B drives).
 - **recordsize=1M** + **lz4** — ideal for large media/archive files (media is largely incompressible; lz4 is near-free and skips uncompressible blocks). Consider `zstd` only for compressible archive datasets.
+- mpath names are persisted in `/etc/multipath/bindings`, so `/dev/mapper/mpathX` is stable across reboots.
 
 ## Phase 4 — Datasets & tuning
 ```bash
