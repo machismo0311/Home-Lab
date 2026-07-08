@@ -23,7 +23,7 @@
 | Phase | Scope | Status | Date done | Verified by (evidence) |
 |---|---|---|---|---|
 | **1** | BMCs → VLAN 20 + credential rotation | ✅ **Done & verified** | 2026-07-03 | **All 3 BMCs on VLAN 20** (iDRAC `.20.20`/`.20.21`, IPMI `.20.22`); creds rotated → Vaultwarden; native VLAN 1 dropped (1.4); Ares `.20` leg persisted; docs synced. **1.5 firewall verified**: Ares→BMC pass (HTTPS 302/302/200), pve3 (VLAN 1) + Randy (VLAN 30) → BMC **blocked**; BMC egress default-denied. ⚠️ Ares wired `enp0s31f6` flapped 3× (hardware — see log). |
-| **2** | Service LXCs (NPM·Vaultwarden·Grafana·Homepage) → VLAN 30 | ⬜ Not started | — | _each service reachable through NPM front door on `.30.x`; `getent hosts` OK; Grafana still scrapes `:9100`_ |
+| **2** | Service LXCs → VLAN 30 (dual-home NPM; +Open WebUI) | 🟡 Planning done — awaiting UniFi prereq | 2026-07-08 | Recon + revised plan complete (see revision block). Next: operator trunks VLAN 30 → pve3 UniFi port; then dual-home NPM + move Vaultwarden/Homepage/Grafana/OpenWebUI one at a time, `.30.x`, verify via NPM front door each. |
 | **3** | VLAN 1 mgmt-plane firewall clamp (OPNsense) | ⬜ Not started | — | _mgmt plane unreachable from a VLAN 30 host; reachable from Ares/VLAN 20; DNS resolves from all tiers_ |
 
 **Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done & verified · ↩️ Rolled back
@@ -144,6 +144,31 @@ Add now: **allow Ares → VLAN 20** (BMC mgmt ports 443/623/5900), **deny all ot
 ---
 
 # Phase 2 — Service LXCs → VLAN 30 (reuse the servers segment)
+
+> ### 🔄 EXECUTION PLAN — revised & reconciled 2026-07-08 (read this first)
+> A live survey reconciled the 5-day-old plan below. Key deltas + decisions:
+> - **pve3 is behind the UniFi switch** (its MAC is on EX3400 `ge-0/0/46`, the UniFi trunk). So VLAN 30 → pve3 is a **UniFi access-port** change (native VLAN 1 + tagged VLAN 30), **not** an EX3400 change. VLAN 30 already transits `ge-0/0/46`. **Operator applies it in UniFi; verify before any container moves.**
+> - **`vmbr0` is VLAN-aware** on pve3 → per-container `pct set --net0 ...,tag=30` works (no sub-interface needed).
+> - The four movers are **DHCP-reserved** (OPNsense, by MAC) → convert to **static** on VLAN 30 to avoid a VLAN 30 DHCP dependency.
+> - **NPM: dual-home, do NOT re-IP** (decision 2026-07-08). Add a VLAN 30 vNIC (`.30.181`), keep the VLAN 1 leg (`.181`) for WAN ingress + `:81` admin. No OPNsense WAN-forward or admin-allowlist changes; NPM reaches moved backends on VLAN 30 and still reaches Wazuh/llm on VLAN 1.
+> - **Open WebUI CT 107 (`.185`) INCLUDED** (new service since original plan) → `.30.185`.
+>
+> **NPM coupling map** (CT 101 Docker `jc21/nginx-proxy-manager`; `set $server` in `/opt/nginx-proxy-manager/data/nginx/proxy_host/*.conf`):
+> | Public name | Upstream now | Backend | Action |
+> |---|---|---|---|
+> | vault.kylemason.org | `.10.182` | Vaultwarden CT102 | → `.30.182` |
+> | grafana.kylemason.org | `.10.183` | Grafana CT103 | → `.30.183` (+ VLAN30→VLAN1 `:9100` allow for Prom scrape) |
+> | homepage.kylemason.org | `.10.148` | Homepage CT106 | → `.30.148` |
+> | chat.netframe.local | `.10.185` | Open WebUI CT107 | → `.30.185` |
+> | llm.netframe.local | `.10.31` | llm_router (Jarvis) | stay (optional repoint → `.30.31`) |
+> | wazuh.kylemason.org | `.10.184` | Wazuh (QuarkyLab VM104) | stay VLAN 1 |
+>
+> **Sequence — one at a time; `vzdump` snapshot + verify + git checkpoint between each:**
+> 0. **Operator (UniFi):** trunk VLAN 30 → pve3 port (native 1 + tagged 30). **Verify:** temp `vmbr0.30` on pve3 (`192.168.30.250/24`) pings `.30.1`, then remove it.
+> 1. **Dual-home NPM** — add `net1` `tag=30` `.30.181` to CT 101; verify WAN ingress + `:81` admin still work.
+> 2. **Pilot: Vaultwarden CT102** → `.30.182`; repoint NPM `$server`; verify `vault.kylemason.org` end-to-end.
+> 3. **Homepage CT106** → `.30.148`; then **Grafana CT103** → `.30.183` (add `:9100` allow); then **Open WebUI CT107** → `.30.185`.
+> - **Stay on VLAN 1:** Headscale CT105, Wazuh VM104, Pi-hole (DNS reachable cross-VLAN by firewall allow).
 
 **Why:** isolate internet-exposed apps from the hypervisor management plane. This reuses the **exact dual-home mechanics** of the VLAN 30 migration — but here we tag a *container's* vNIC, not the host's. **The pve3 host mgmt IP stays on VLAN 1.**
 
