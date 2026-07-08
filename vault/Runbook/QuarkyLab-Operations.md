@@ -11,6 +11,7 @@ The reliability/observability layer added around the student environment (2026-0
 | `scratch-purge.timer` | daily 04:30 | delete `/workspace/scratch/*/` files >14 days (`scratch-purge.sh`) |
 | `sync-base-sif.timer` | daily 05:00 | refresh local `/workspace/containers/base.sif` from `/data` master (`sync-base-sif.sh`) |
 | `quarkylab-metrics.timer` | every 30 s | publish GPU/SLURM metrics to node_exporter (`quarkylab-metrics.sh`) |
+| `quarkylab-researcher-alert.timer` | every 60 s | Discord ping on a researcher's first login / SLURM job (`quarkylab-researcher-alert.sh`) |
 | *(Randy)* GC daily 03:00 + verify Sun 04:00 | | PBS datastore hygiene |
 
 ## Data protection
@@ -29,6 +30,17 @@ The reliability/observability layer added around the student environment (2026-0
 - **Metrics:** `quarkylab-metrics.sh` writes GPU (util/mem/temp/power) + SLURM (running/pending/students_active/shards_allocated) as `quarkylab_*` gauges to node_exporter's textfile dir (`/var/lib/prometheus/node-exporter/`). QuarkyLab is already a Prometheus target (`instance="quarkylab"`, job `proxmox-nodes`) — **confirmed live in Prometheus**.
 - **Grafana dashboard: IMPORTED & live** → `http://192.168.10.183:3000/d/quarkylab-gpu/quarkylab-gpu-cluster` (uid `quarkylab-gpu`, 7 panels: GPU util, GPU memory used/total, temp, power, shards-allocated gauge, active students, SLURM running/pending). Source JSON kept at `QuarkyLab:/root/quarkylab-grafana-dashboard.json`. Grafana is docker in pve3 LXC103; re-import via `pct exec 103 -- curl -u admin:<pw> -XPOST localhost:3000/api/dashboards/db -d @payload`.
 - Example PromQL: `quarkylab_gpu_utilization_percent`, `quarkylab_gpu_memory_used_bytes / quarkylab_gpu_memory_total_bytes`, `quarkylab_slurm_shards_allocated`.
+
+## Researcher-activity alerts (2026-07-08)
+`quarkylab-researcher-alert.sh` (systemd `quarkylab-researcher-alert.timer`, 60 s poll) fires a **Discord** ping the **first time** any real user does either of:
+- **logs in over SSH** — parsed from sshd `Accepted` lines via `journalctl -u ssh --since @<watermark> -g 'Accepted'` (catches LAN, Headscale, and Cloudflare-tunnel/localhost sources), or
+- **submits a SLURM job** — union of `squeue` + `sacct`, tracked by max numeric JobID.
+
+- **Who counts:** non-admin human accounts only — students, researchers, and `fernanda` (uid 1000–59999). **Excluded:** `kyle`, `machismo`, `root`, and **`monitor`** (the NetFRAME health daemon SSHes in every 15 min → would be constant noise).
+- **Once per event:** watermarks in `/var/lib/quarkylab-alert/{last_jobid,last_login_epoch}`, **seeded to "now" at install** so only *future* activity alerts (no history replay).
+- **Webhook:** root-only `/etc/quarkylab-alert.conf` (`DISCORD_WEBHOOK=…`, mode `600`, **kept out of git** — same house Discord channel as the NUT/Grafana UPS alerts). If the webhook is empty the script still `logger -t qlab-alert` to the journal.
+- **Modes:** `--seed` (reset watermarks to now), `--test` (send a test ping). Install seeds watermarks + enables the timer.
+- Script `/usr/local/sbin/quarkylab-researcher-alert.sh`; units `/etc/systemd/system/quarkylab-researcher-alert.{service,timer}`. **Installed, detection-replay tested, and Discord delivery confirmed 2026-07-08.**
 
 ## 8-way load-tested
 8 concurrent student jobs ran, each hard-capped, 8 MPS servers coexisting, clean drain — see [[Runbook/QuarkyLab-Phase04-GPU-Sharing-2026-07-02]].
