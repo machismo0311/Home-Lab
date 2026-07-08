@@ -128,7 +128,7 @@ exportfs -ra && exportfs -v | grep bulk'
 ## ✅ BUILD COMPLETE — 2026-07-08 ~03:40
 Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **0 errors**, 58.2 T raw / **~41.3 TiB usable**. `datastore` untouched throughout.
 - **Datasets:** `bulk/media` (movies, 1M/lz4), `bulk/fernanda` (1M/lz4), `bulk/archive` (1M/zstd), `bulk/misc` (128k/lz4). All writable.
-- **NFS:** `bulk/fernanda` → `192.168.30.179` (rw,sync,no_subtree_check,no_root_squash), mirrors the `/datastore/quarkylab` convention. **`bulk/media` export PENDING** — needs media-server host/IP + rw-vs-ro decision.
+- **NFS:** `bulk/fernanda` → `192.168.30.179` (rw,sync,no_subtree_check,no_root_squash), mirrors the `/datastore/quarkylab` convention. **`bulk/media` needs NO NFS** — Jellyfin runs *natively on Randy* (`:8096`), so it reads `/mnt/bulk/media` off the local FS. Structure `movies/tv/music` created, owned `jellyfin:jellyfin`, RW-verified. Remaining: add `/mnt/bulk/media/*` as library folders in the Jellyfin UI (old `/datastore/media` was empty — nothing to migrate).
 - **Protection:** weekly scrub cron added (`bulk` Sun 02:30); smartd monitoring all 16 shelf drives (per-serial state files); ZED active (emails root); initial `scrub bulk` = 0 errors.
 
 ## Validation checklist (post-build)
@@ -140,7 +140,7 @@ Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **
 - [x] smartd/ZED alerting confirmed on the new drives
 
 ## Remaining / follow-ups
-- [ ] **`bulk/media` NFS export** — provide media-server IP + rw/ro; then add to `/etc/exports`.
+- [x] **`bulk/media`** — no NFS needed (Jellyfin native on Randy). Folders `movies/tv/music` created, jellyfin-owned, RW-verified. **Left to do: add them as libraries in Jellyfin UI** (Dashboard → Libraries → Add Media Library → folder `/mnt/bulk/media/movies` etc.).
 - [x] **Snapshots** — **sanoid 2.2.0 configured 2026-07-08** for `bulk/fernanda`: policy 36 hourly / 30 daily / 8 weekly / 6 monthly, autoprune on; `sanoid.timer` every 15 min. Config `/etc/sanoid/sanoid.conf` (+ `sanoid.defaults.conf`). First snapshots taken. *(To also snapshot `bulk/media`/`archive`, add a `[bulk/media]` stanza — currently fernanda-only. Note: snapshots are same-pool protection, NOT an off-box backup.)*
 - [ ] **Quota/reservation** — optional: reservation on `bulk/fernanda` and/or quota on `bulk/media` so one can't starve the other. Set once footprints known.
 - [ ] **Reboot-persistence test** (see checklist).
