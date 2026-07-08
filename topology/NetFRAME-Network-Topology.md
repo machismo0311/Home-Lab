@@ -359,8 +359,8 @@ Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) repla
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 46 GB | — | 7.0.12-1-pve | Service host (6 LXCs) |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 31 GB | — | 7.0.12-1-pve | |
 | pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 31 GB | — | 7.0.12-1-pve | |
-| **QuarkyLab** | Dell R730 (svc 1S8WR22) | 2× E5-2699 v4 | 503 GB LRDIMM | **RTX 8000 48 GB** | **6.14.11-9-pve** (pinned) | ML / DUNE agent; Wazuh VM 104 |
-| **Jarvis** | Dell R730 (svc DWG7HH2) | 2× E5-2687W v4 | 377 GB LRDIMM | **2× RTX 6000 (48 GB)** | **6.14.11-9-pve** (pinned) | LLM inference; 10G ConnectX |
+| **QuarkyLab** | Dell R730 | 2× E5-2699 v4 | 503 GB LRDIMM | **RTX 8000 48 GB** | **6.14.11-9-pve** (pinned) | ML / DUNE agent; Wazuh VM 104 |
+| **Jarvis** | Dell R730 | 2× E5-2687W v4 | 377 GB LRDIMM | **2× RTX 6000 (48 GB)** | **6.14.11-9-pve** (pinned) | LLM inference; 10G ConnectX |
 | **Randy** | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 | 125 GB ECC | RX 580 8 GB (transcode) | 7.0.12-1-pve | PBS / ZFS / Jellyfin; Mellanox 10G |
 | pve1 | Mac Mini (2011) | — | — | — | — | **Standalone** (not in cluster); Pi-hole host |
 
@@ -419,7 +419,7 @@ datastore (pool)
 
 ### 8.2 NetApp DS4246 (JBOD expansion)
 
-24-bay 4U SAS shelf attached via the LSI 9207-8e (IT mode). **Live observation:** the shelf's drives currently enumerate as **duplicate serial pairs** (e.g. `Z1Z861CF`, `PCKMH28X` appear twice) — this is **dual-path SAS multipath** through the shelf's two I/O modules presenting each physical disk on two SAS paths. Present population is **4 TB** class (Seagate `ST4000NM0063` + HGST `HUS724040ALS641`), a build-out in progress toward a bulk/media pool.
+24-bay 4U SAS shelf attached via the LSI 9207-8e (IT mode). **Live observation:** the shelf's drives currently enumerate as **duplicate serial pairs** (each physical serial appears twice) — this is **dual-path SAS multipath** through the shelf's two I/O modules presenting each physical disk on two SAS paths. Present population is **4 TB** class (Seagate `ST4000NM0063` + HGST `HUS724040ALS641`), a build-out in progress toward a bulk/media pool.
 
 > ⚠️ **Drift vs. docs:** the CLAUDE.md/Rack notes describe the DS4246 as 2 TB-class; the live shelf is 4 TB-class and mid-buildout (`DS4246-Pool-Buildout-Plan-2026-07-07`). Configure `multipath`/dm before pooling to avoid using both paths as separate vdev members. See finding **F-3**.
 
