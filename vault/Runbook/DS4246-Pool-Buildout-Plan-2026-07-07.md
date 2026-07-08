@@ -141,7 +141,7 @@ Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **
 
 ## Remaining / follow-ups
 - [ ] **`bulk/media` NFS export** — provide media-server IP + rw/ro; then add to `/etc/exports`.
-- [ ] **Snapshots** — `bulk/fernanda` holds non-repro research data: add `sanoid` (or a snapshot cron) with retention. Not yet configured.
+- [x] **Snapshots** — **sanoid 2.2.0 configured 2026-07-08** for `bulk/fernanda`: policy 36 hourly / 30 daily / 8 weekly / 6 monthly, autoprune on; `sanoid.timer` every 15 min. Config `/etc/sanoid/sanoid.conf` (+ `sanoid.defaults.conf`). First snapshots taken. *(To also snapshot `bulk/media`/`archive`, add a `[bulk/media]` stanza — currently fernanda-only. Note: snapshots are same-pool protection, NOT an off-box backup.)*
 - [ ] **Quota/reservation** — optional: reservation on `bulk/fernanda` and/or quota on `bulk/media` so one can't starve the other. Set once footprints known.
 - [ ] **Reboot-persistence test** (see checklist).
 - [ ] **Off-box backup** for anything critical on `bulk/fernanda` — this pool is same-host as `datastore`, not a backup.
