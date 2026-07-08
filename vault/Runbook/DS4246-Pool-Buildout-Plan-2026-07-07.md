@@ -134,7 +134,7 @@ Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **
 ## Validation checklist (post-build)
 - [x] `zpool status bulk` → ONLINE, 2× raidz2, 0 errors
 - [x] `multipath -ll` → 16 maps, 2 active paths each
-- [ ] **Reboot Randy** → confirm pool auto-imports, multipath re-forms, `datastore` unaffected *(not yet tested — do at next maintenance window)*
+- [x] **Reboot Randy** → **PASSED 2026-07-08.** After reboot: multipath re-formed (16 maps), `bulk` auto-imported ONLINE (16/16 mpath members), all datasets mounted, NFS/Jellyfin/PBS/sanoid back, cluster rejoined 7/7. `datastore` unaffected. Pool is reboot-safe.
 - [x] Initial `zpool scrub bulk` → 0 errors
 - [ ] NFS mount from QuarkyLab (`bulk/fernanda`) — write/read test *(pending Fernanda use)*
 - [x] smartd/ZED alerting confirmed on the new drives
