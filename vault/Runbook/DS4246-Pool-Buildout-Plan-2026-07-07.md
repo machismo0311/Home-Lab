@@ -144,7 +144,19 @@ Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **
 - [x] **Snapshots** — **sanoid 2.2.0 configured 2026-07-08** for `bulk/fernanda`: policy 36 hourly / 30 daily / 8 weekly / 6 monthly, autoprune on; `sanoid.timer` every 15 min. Config `/etc/sanoid/sanoid.conf` (+ `sanoid.defaults.conf`). First snapshots taken. *(To also snapshot `bulk/media`/`archive`, add a `[bulk/media]` stanza — currently fernanda-only. Note: snapshots are same-pool protection, NOT an off-box backup.)*
 - [ ] **Quota/reservation** — optional: reservation on `bulk/fernanda` and/or quota on `bulk/media` so one can't starve the other. Set once footprints known.
 - [ ] **Reboot-persistence test** (see checklist).
-- [ ] **Off-box backup** for anything critical on `bulk/fernanda` — this pool is same-host as `datastore`, not a backup.
+- [x] **Off-box backup — DONE 2026-07-08** (see §7). `bulk/fernanda` replicates to QuarkyLab every 6 h via syncoid. ⚠️ **Off-box only, NOT off-site** (both in the same rack) — user has no off-site target yet; add cloud/remote (restic/borg) later for disaster protection.
+
+## 7. Off-box backup — `bulk/fernanda` → QuarkyLab (2026-07-08)
+ZFS replication (`syncoid`, ships with sanoid) from Randy to QuarkyLab's `workspace` pool (9 TB free) — a separate R730, so it survives a Randy chassis/pool failure.
+
+- **Auth:** dedicated ed25519 key `/root/.ssh/id_syncoid` on Randy → QuarkyLab root `authorized_keys`, restricted `from="192.168.30.187"` (Randy's VLAN30 IP).
+- **Target:** `workspace/backup/randy-fernanda` on QuarkyLab, **readonly=on**. Carries the sanoid snapshot history.
+- **Schedule:** Randy `syncoid-fernanda.timer` every 6 h (`00,06,12,18:20`, Persistent). Service `syncoid-fernanda.service` → `syncoid --sshkey=/root/.ssh/id_syncoid bulk/fernanda root@192.168.30.179:workspace/backup/randy-fernanda`.
+- **Target pruning:** sanoid **prune-only** on QuarkyLab (`autosnap=no, autoprune=yes`, 36h/30d/8w/6m) so replicated snapshots don't accumulate forever.
+- **Restore:** `syncoid` back the other way, or read files directly at `/workspace/backup/randy-fernanda` on QuarkyLab.
+
+> ⚠️ **Off-box, not off-site.** QuarkyLab is in the same rack — this protects against Randy hardware failure, NOT site loss (fire/theft/flood). No off-site target exists yet. **Next tier:** `restic`/`borg` → cloud (B2/rsync.net) or a remote node for true DR.
+> Also: only `bulk/fernanda` is replicated (media/archive are re-acquirable). Add stanzas if other datasets need off-box copies.
 
 ## Rollback
 Nothing destructive until `zpool create`. To undo pre-data: `zpool destroy bulk` (only if empty), `systemctl disable --now multipathd` + remove `/etc/multipath.conf`, `apt-get remove multipath-tools`. The internal `datastore` pool is never touched by this plan.
