@@ -102,14 +102,15 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Wazuh | QuarkyLab VM 104 | `https://192.168.10.184` | SIEM — migrated from pve2 |
 | step-ca | pve2 | https://192.168.10.204:443 | *.netframe.local TLS — active ✅ password at /etc/step-ca/secrets/password |
 | Jellyfin | Randy (host) | http://192.168.10.187:8096 | v10.11.11; media at /datastore/media/{movies,tv,music}; GPU transcoding pending RX 580 power cable |
-| Ollama | Jarvis | llm.netframe.local | v0.31.1 installed (CPU-only), models on /opt/models (98G LV) — awaiting 2× RTX 6000 |
+| Ollama | Jarvis | llm.netframe.local | v0.31.1, **GPU-backed** (2× RTX 6000); models on `tank/models` ZFS dataset (7.2T pool) since 2026-07-08 (was /opt/models 98G LV, kept as rollback) |
 
 **Wazuh VM 104 is on QuarkyLab** (migrated from pve2). IP: 192.168.10.184 (DHCP). Dashboard: `https://192.168.10.184`.
 
 ## Storage
 - **Randy ZFS:** `datastore` — 4x RAIDZ2 (3x 6-wide Toshiba 1.636TB 10K SAS + 1x 4-wide Seagate ST2000NX0423 1.819TB SATA), 36.7T raw / ~23T usable, 19.5G used
 - **Randy boot:** RAID-1, 2x Seagate ST200FM0053 via AVAGO 3108 MegaRAID
-- **Jarvis root:** pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade; **/opt/models 98G LV** added 2026-07-01 for LLM weights (OLLAMA_MODELS)
+- **Jarvis root:** pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade; boot also on internal IDSDM SD (`sdb`). (`/opt/models` 98G LV retained as rollback after the ZFS move below)
+- **Jarvis ZFS (2026-07-08):** new drives on the onboard **LSI SAS-3 3008 (HBA330, IT mode)**, by-id. `tank` = raidz1 5× 2TB HDD (ST2000NX046x), **7.2T** usable, `/tank` — model library + bulk; `scratch` = 1× 200GB SSD (ST200FM0053 `sdc`), 181G, `/scratch` — fast scratch. Ollama `OLLAMA_MODELS` moved LV→**`tank/models`** (drop-in `ollama.service.d/override.conf`; old 98G `/opt/models` LV kept as rollback). Bay-0 SSD is the OS disk → only the 2nd SSD was free, so `scratch` is single-disk.
 - **DS4246 JBOD:** 13x Toshiba 1.8TB + 19x Dell/Seagate 2TB SAS, via LSI 9207-8e (IT mode) — passthrough pending
 
 ## Active Projects

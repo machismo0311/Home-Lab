@@ -29,7 +29,7 @@
 | **CPU** | 2× Intel Xeon E5-2687W v4 (12c each · 48t total) |
 | **RAM** | 384 GB LRDIMM ECC DDR4 |
 | **GPU** | 2× NVIDIA Quadro RTX 6000 **24 GB each (48 GB total)** — installed & verified 2026-07-04 (driver 550.163.01, `03:00.0`+`82:00.0`) |
-| Storage | pve LVM 56GB — sda (186GB ST200FM0053 SAS SSD) added to VG 2026-06-22 after disk-full during upgrade; **/opt/models 98G LV** (2026-07-01) for LLM weights |
+| Storage | **Boot/OS:** internal IDSDM SD module (`sdb`) + `pve` LVM on sda (186 GB ST200FM0053 SAS SSD, root 56 GB). **ZFS (2026-07-08, HBA330 IT-mode):** `tank` = raidz1 5× 2 TB HDD (**7.2 TB**, `/tank`) for the model library/bulk + `scratch` = 1× 200 GB SSD (`sdc`, 181 GB, `/scratch`). Ollama models moved LV→`tank/models` (`OLLAMA_MODELS=/tank/models`); old 98 G `/opt/models` LV kept as rollback |
 | NICs | 4× Broadcom BCM57800 1/10G onboard (nic0–3; nic2→vmbr0 = mgmt/corosync VLAN 1) + Mellanox ConnectX-3 10GbE (`enp132s0`→vmbr1 = **VLAN 30 servers** via EX3400 xe-0/2/2, 2026-07-04) |
 | Remote Mgmt | iDRAC 8 (192.168.10.21) |
 | Depth | ~28" — **rear panel removed** from NetFRAME CS9000 |
@@ -40,7 +40,7 @@
 
 LLM inference node (**GPU software stack ready; awaiting cards**):
 - **llm_router.py** — FastAPI, OpenAI-compatible; routes between local Ollama (Qwen2.5 72B on 2× RTX 6000) and Claude API fallback (`claude-opus-4-8`). **ACTIVE 2026-07-04** — systemd `llm_router.service` on `:8000`, venv `/opt/llm_router`, source in `Home-Lab/scripts/llm_router/`. Local path verified end-to-end. Claude fallback gated on `ANTHROPIC_API_KEY` in `/etc/llm_router.env` (currently unset → local-only; Claude requests 503 until set). Fronted by **NPM at `http://llm.netframe.local`** (proxy host id 5 → `.31:8000`, HTTP-only, open) + **Pi-hole local DNS** `llm.netframe.local → 192.168.10.181` — resolves for Pi-hole-DNS clients (Ares repointed to Pi-hole `.177` 2026-07-05, so it works there too). **RAG (2026-07-05):** `model:"rag"` retrieves from the Home-Lab vault (nomic-embed-text embeddings + numpy cosine index, 418 chunks; rebuild with `rag_ingest.py`) and cites `[source]` files. Local context capped `OLLAMA_NUM_CTX=8192` — the Q4 72B (~47 GB) barely fits 48 GB, so it spills slightly to CPU; drop to 4096 for fully-GPU, or use a 32B for speed.
-- Ollama v0.31.1 (`llm.netframe.local`) — installed, CPU-only for now; models on /opt/models (98G LV). Awaiting GPUs.
+- Ollama v0.31.1 (`llm.netframe.local`) — **GPU-backed on 2× RTX 6000**; models on the **`tank/models`** ZFS dataset (7.2 TB pool) since 2026-07-08 (was `/opt/models` 98 G LV, kept as rollback).
 - General VM hosting / heavy non-GPU workloads.
 
 > [!WARNING] Power
