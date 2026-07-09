@@ -1,7 +1,7 @@
 # Jarvis On-Call Discord Bot — Runbook
 
 **Node:** Jarvis (Dell PowerEdge R730, service tag DWG7HH2)
-**Status:** 🟡 Built & committed 2026-07-08 — pending deploy on Jarvis
+**Status:** 🟢 Deployed & live on Jarvis 2026-07-09 (systemd `jarvis-oncall`, DM-only)
 **Author:** Kyle Mason (NetFRAME homelab)
 **Source:** `Home-Lab/scripts/jarvis-oncall/` (see its `README.md`)
 **Related:** [[Runbook/Jarvis-LLM-Platform-2026-07-05]] · [[Infrastructure/Proxmox Cluster]] · [[Infrastructure/Services & VMs]] · [[Runbook/Security-VLAN-Segmentation-Phased-2026-07-03]]
@@ -87,6 +87,25 @@ locally.
 - Trigger a restart proposal → expect the confirm prompt; reply `no` (verify
   nothing runs), then reply `yes` on a safe unit (e.g. `jellyfin` on Randy) and
   confirm `audit.jsonl` records `confirmed` + `executed_mutation`.
+
+## 6b. Deployment record (2026-07-09)
+
+Deployed & verified live:
+- Code → `/opt/jarvis-oncall/` (venv: discord.py 2.7.1, httpx, PyYAML). systemd
+  `jarvis-oncall` enabled; logs in as `Jarvis On-Call#6033`, DM-only.
+- `llm_router.py` updated with the tool-calling passthrough (live file backed up
+  → `llm_router.py.bak-preoncall-2026-07-08`) and restarted.
+- Sudoers installed on all 6 remote nodes (quarkylab/randy/pve2–5) via
+  `visudo`-validated write; `monitor` now has `qm`/`pct` (+`zpool` on ZFS nodes)
+  and the per-node restart allowlist. Jarvis needs none (local/root service).
+- **Bugfix during bring-up:** the follow-up (tool-result) call 400'd because the
+  bot echoes assistant `tool_calls` in OpenAI shape (arguments as a JSON string)
+  but Ollama `/api/chat` wants an object. Fixed with `_ollama_inbound_tool_calls`
+  in the router (commit 6376609). Verified end-to-end: DM → `gpu_status` on
+  Jarvis + QuarkyLab → analysis; audit.jsonl records each run.
+
+Claude fallback is OFF (`ANTHROPIC_API_KEY` unset) → tool-calling runs on the
+local qwen2.5:72b, which handles it fine.
 
 ## 7. Notes / TODO
 
