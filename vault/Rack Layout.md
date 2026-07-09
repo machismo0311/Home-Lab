@@ -42,7 +42,7 @@
 │  U21  │                                 │
 ├───────┼─────────────────────────────────┤
 │ U20–  │ Dell R730 #1 — ML Node          │ ◄ 44c/88t │ 512GB │ RTX 8000 48GB
-│  U18  │   (2U — rear panel removed)     │   Fernanda's CUDA workloads
+│  U18  │   (2U — rear panel removed)     │   the researcher's CUDA workloads
 ├───────┼─────────────────────────────────┤
 │  U17  │ ─── Spacer ───                  │
 ├───────┼─────────────────────────────────┤

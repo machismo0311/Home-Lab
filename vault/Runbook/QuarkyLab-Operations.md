@@ -25,7 +25,7 @@ The reliability/observability layer added around the student environment (2026-0
 - **`base.sif` runs from the LOCAL copy** `/workspace/containers/base.sif`, not Randy NFS — a Randy hiccup no longer blocks student job launch. `/data/shared` is bound **only when reachable** (optional; holds just the quickstart). The `/data` copy stays the rebuild master; the daily `sync-base-sif` timer refreshes the local copy after rebuilds.
 
 ## Scheduling fairness
-- **`PriorityType=priority/multifactor`** with `PriorityWeightFairshare=100000`, `PriorityWeightAge=10000`, `PriorityDecayHalfLife=3-0` — among 20 students (equal shares), queue order favors those who've used the GPU least. Preemption (research > student `PriorityTier`) still governs Fernanda's priority.
+- **`PriorityType=priority/multifactor`** with `PriorityWeightFairshare=100000`, `PriorityWeightAge=10000`, `PriorityDecayHalfLife=3-0` — among 20 students (equal shares), queue order favors those who've used the GPU least. Preemption (research > student `PriorityTier`) still governs the researcher's priority.
 
 ## Monitoring
 - **Metrics:** `quarkylab-metrics.sh` writes GPU (util/mem/temp/power) + SLURM (running/pending/students_active/shards_allocated) as `quarkylab_*` gauges to node_exporter's textfile dir (`/var/lib/prometheus/node-exporter/`). QuarkyLab is already a Prometheus target (`instance="quarkylab"`, job `proxmox-nodes`) — **confirmed live in Prometheus**.

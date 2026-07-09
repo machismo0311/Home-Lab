@@ -49,7 +49,7 @@
 
 ## Purpose
 
-- Fernanda's ML workloads / **DUNE agent** (RAG pipeline over the DUNE experiment codebase)
+- the researcher's ML workloads / **DUNE agent** (RAG pipeline over the DUNE experiment codebase)
 - CUDA compute (PyTorch, TensorFlow, JAX), training / fine-tuning
 - Vector store (ChromaDB or Qdrant — TBD)
 

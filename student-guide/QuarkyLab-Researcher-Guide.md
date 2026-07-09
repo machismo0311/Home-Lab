@@ -33,7 +33,7 @@ No VPN, no inbound ports, nothing to leave running — `cloudflared` dials out t
 ## 2. The machine
 
 - 1× **Quadro RTX 8000, 48 GB** · driver 550.163.01 · CUDA 12.1 stack.
-- `nvidia-smi` — GPU status / who's on it. You share this **one physical GPU** with students' SLURM jobs and Fernanda, so glance before grabbing lots of VRAM.
+- `nvidia-smi` — GPU status / who's on it. You share this **one physical GPU** with students' SLURM jobs and the researcher, so glance before grabbing lots of VRAM.
 
 ## 3. GPU + ML environment (Apptainer)
 

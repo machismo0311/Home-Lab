@@ -143,7 +143,7 @@ Proxmox VE 9.1 across seven nodes as of June 2026.
 \midrule
 \endhead
 Randy     & Storage / PBS  & 192.168.10.187 & 2x E5-2690 v4 & 128 GB & SuperMicro CSE-219U \\
-QuarkyLab & ML / Fernanda  & 192.168.10.30  & 2x E5-2699 v4 & 512 GB & R730, RTX 6000 24GB \\
+QuarkyLab & ML / the researcher  & 192.168.10.30  & 2x E5-2699 v4 & 512 GB & R730, RTX 6000 24GB \\
 Jarvis    & LLM Inference  & 192.168.10.31  & 2x E5-2687W v4& 384 GB & R730, RTX 8000 48GB \\
 pve2      & OPNsense host  & 192.168.10.204 & i7-8700       & 48 GB  & HP EliteDesk G4 SFF \\
 pve3      & Cluster node   & 192.168.10.201 & i7-8700       & 32 GB  & HP EliteDesk G4 SFF \\
@@ -341,7 +341,7 @@ proxmox-backup-manager datastore create datastore /datastore
 % =============================================================================
 
 \begin{infobox}[QuarkyLab]
-\textbf{Role:} Fernanda's ML research node \\
+\textbf{Role:} the researcher's ML research node \\
 \textbf{iDRAC:} 192.168.20.20 (VLAN 20; creds in Vaultwarden) \\
 \textbf{CPU:} Dual E5-2699 v4 (matched stepping) \quad \textbf{RAM:} 512 GB LRDIMM ECC \\
 \textbf{GPU:} RTX 6000 24 GB \quad \textbf{BIOS:} 2.19.0
@@ -425,7 +425,7 @@ PDU: APC AP7901 (ge-0/0/38 on EX3400).
   \item[\color{nfred}$\square$] Pin QuarkyLab kernel to 6.14.11-9-pve, install NVIDIA 550 driver
   \item[\color{nfred}$\square$] Configure backup schedules on all nodes pointing to randy-pbs
   \item[\color{nfred}$\square$] Activate VLANs (pve2 trunk connection to EX3400 pending)
-  \item[\color{nfred}$\square$] Migrate Fernanda devices from commercial Tailscale to Headscale
+  \item[\color{nfred}$\square$] Migrate the researcher devices from commercial Tailscale to Headscale
   \item[\color{nfred}$\square$] DS4246 connection to Randy via LSI 9207-8e HBA
   \item[\color{nfred}$\square$] FreePBX VoIP (5x Cisco CP-8841 phones acquired)
   \item[\color{nfred}$\square$] Jellyfin on Randy with RX 580 ROCm transcoding

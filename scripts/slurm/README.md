@@ -15,7 +15,7 @@ One physical node (QuarkyLab), two logical partitions:
 
 | Partition | Who | Wall-time | Priority | Behavior |
 |---|---|---|---|---|
-| `research` | Fernanda (`fernanda` group) | unlimited | high (tier 100) | Never queued behind students; can preempt |
+| `research` | the researcher (`fernanda` group) | unlimited | high (tier 100) | Never queued behind students; can preempt |
 | `students` | `students` group | 4h | low (tier 10) | Requeued if a research job needs the GPU |
 
 `PreemptType=preempt/partition_prio` + `PreemptMode=REQUEUE` is the actual
@@ -34,7 +34,7 @@ sudo systemctl enable --now munge slurmctld slurmd
 sacctmgr add qos student set MaxWall=04:00:00 MaxTRESPerUser=gres/gpu=1
 
 # Create the account/group associations
-sacctmgr add account research Description="Fernanda DUNE research"
+sacctmgr add account research Description="DUNE research"
 sacctmgr add account students Description="Semester coursework"
 sacctmgr add user fernanda Account=research
 # Add each student as they onboard:

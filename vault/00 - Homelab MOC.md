@@ -48,7 +48,7 @@ mindmap
 | U30 | Mac mini (pve1) + RPi 4 (1U shelf) | Pi-hole / cluster mgmt |
 | U29–U21 | *Open / cable mgmt* | — |
 | U20–U18 | Dell R730 — Jarvis | LLM node (2× RTX 6000 48GB total, installed 2026-07-04) |
-| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 8000 48GB, installed 2026-07-01 (Fernanda / DUNE) |
+| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 8000 48GB, installed 2026-07-01 (the researcher / DUNE) |
 | U14–U13 | SuperMicro CSE-219U — Randy | PBS, Jellyfin, ZFS storage |
 | U12–U7 | NetApp DS4246 (4U) | JBOD storage shelf |
 | U6 | Furman RP-8 | Power conditioning |
@@ -148,7 +148,7 @@ mindmap
 - [x] Jarvis 2× RTX 6000 install — installed & verified 2026-07-04 (48GB total, Ollama GPU-backed)
 - [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
 - [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error
-- [ ] Headscale Phase 3: migrate Kyle + Fernanda devices off commercial Tailscale
+- [ ] Headscale Phase 3: migrate Kyle + the researcher devices off commercial Tailscale
 - [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs
 - [ ] VoIP project (deferred — post core infra)
 - [ ] CCNA study cadence established (VetTec 2.0 pathway)

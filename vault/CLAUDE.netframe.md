@@ -26,7 +26,7 @@
 
 | Node | IP | CPUs | RAM | GPU | PVE | Role |
 |---|---|---|---|---|---|---|
-| QuarkyLab | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 8000 48GB† | 9.2.3 | Fernanda ML / DUNE agent |
+| QuarkyLab | 192.168.10.179 | 2x E5-2699 v4 | 512GB LRDIMM | RTX 8000 48GB† | 9.2.3 | ML / DUNE research |
 | Jarvis | 192.168.10.31 | 2x E5-2687W v4 | 384GB LRDIMM | 2× RTX 6000 24GB (48GB total)† | 9.2.3 | LLM inference |
 
 †GPU plan (2026-06-30): **QuarkyLab → RTX 8000 48GB — INSTALLED & VERIFIED 2026-07-01** (nvidia-smi reports 46080 MiB on driver 550.163.01, kernel 6.14.11-9-pve; driver-free Turing TU102 swap). **Jarvis → 2× RTX 6000, 24GB each / 48GB total — INSTALLED & VERIFIED 2026-07-04** (nvidia-smi 24576 MiB ×2, driver 550.163.01, kernel 6.14.11-9-pve; PCI 03:00.0+82:00.0). Required a nouveau blacklist on first boot (nouveau grabbed the cards since the driver was staged pre-install). Ollama v0.31.1 GPU-backed, qwen2.5:72b pulled (tensor-splits across both). Fans managed by the `gpu-fan-control` daemon (see fan note below).
@@ -120,7 +120,7 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 ### llm_router.py (Jarvis)
 FastAPI, OpenAI-compatible. Routes between local Ollama (Qwen2.5 72B, Jarvis 2× RTX 6000, 48GB total) and Claude API fallback (`claude-opus-4-8`, adaptive thinking, official SDK). **ACTIVE 2026-07-04** — systemd `llm_router.service` on Jarvis `:8000`, source in `Home-Lab/scripts/llm_router/`. Escalates to Claude on `escalate:true` / `model=claude-*` / local failure. Claude fallback gated on `ANTHROPIC_API_KEY` in `/etc/llm_router.env` (unset → local-only). Fronted by **NPM `http://llm.netframe.local`** (proxy host id 5 → .31:8000, HTTP-only) + Pi-hole local DNS `llm.netframe.local→.181` (resolves only for Pi-hole clients). **RAG (2026-07-05):** `model:"rag"` grounds answers on the Home-Lab vault (nomic-embed-text via Ollama + numpy cosine index, 418 chunks, `rag_ingest.py` to rebuild) with `[source]` citations. Local context capped `OLLAMA_NUM_CTX=8192` (72B Q4 ~47GB barely fits 48GB → minor CPU spill; 4096 = fully-GPU). Note: Ollama has no logprobs, so routing is by flag/model/failure, not confidence; streaming not yet implemented.
 
-### DUNE Agent — Fernanda (QuarkyLab)
+### DUNE Agent (QuarkyLab)
 RAG pipeline over DUNE experiment codebase. RTX 8000 48GB (installed 2026-07-01). Vector store: ChromaDB or Qdrant (TBD).
 
 ### NetFRAME Dashboard
