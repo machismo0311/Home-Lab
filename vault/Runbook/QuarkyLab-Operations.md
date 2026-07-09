@@ -12,6 +12,7 @@ The reliability/observability layer added around the student environment (2026-0
 | `sync-base-sif.timer` | daily 05:00 | refresh local `/workspace/containers/base.sif` from `/data` master (`sync-base-sif.sh`) |
 | `quarkylab-metrics.timer` | every 30 s | publish GPU/SLURM metrics to node_exporter (`quarkylab-metrics.sh`) |
 | `quarkylab-researcher-alert.timer` | every 60 s | Discord ping on a researcher's first login / SLURM job (`quarkylab-researcher-alert.sh`) |
+| `ac-snapshot.timer` | daily 23:55 | snapshot `ac -pd` + `ac -p` connect time → `/var/log/account/snapshots/YYYY-MM-DD.txt` (`ac-snapshot.sh`) |
 | *(Randy)* GC daily 03:00 + verify Sun 04:00 | | PBS datastore hygiene |
 
 ## Data protection
@@ -41,6 +42,16 @@ The reliability/observability layer added around the student environment (2026-0
 - **Webhook:** root-only `/etc/quarkylab-alert.conf` (`DISCORD_WEBHOOK=…`, mode `600`, **kept out of git** — same house Discord channel as the NUT/Grafana UPS alerts). If the webhook is empty the script still `logger -t qlab-alert` to the journal.
 - **Modes:** `--seed` (reset watermarks to now), `--test` (send a test ping). Install seeds watermarks + enables the timer.
 - Script `/usr/local/sbin/quarkylab-researcher-alert.sh`; units `/etc/systemd/system/quarkylab-researcher-alert.{service,timer}`. **Installed, detection-replay tested, and Discord delivery confirmed 2026-07-08.**
+- **Webhook live (2026-07-09):** real Discord webhook written to `/etc/quarkylab-alert.conf`; `--test` ping delivered (exit 0, journal `qlab-alert` confirmed). Alerting is fully active — no longer log-only.
+
+## Accounting & activity monitoring (2026-07-09)
+Process accounting was previously absent (`ac` not installed → connect time had to be reconstructed from `last`/wtmpdb durations). Now installed and running.
+
+- **`acct` 6.6.4-8 installed** — `acct.service` enabled + active; accounting writes to `/var/log/account/pacct`. Gives real per-user connect time **and** per-command history.
+- **Commands:** `ac -p` (total connect hrs/user), `ac -pd` (per-user, per-day), `sa -u` (every command + who ran it), `lastcomm <user>` (chronological command log for a user).
+- **Daily snapshot:** `ac-snapshot.timer` (23:55, `Persistent=true`) → `/usr/local/sbin/ac-snapshot.sh` writes dated `ac -pd` + `ac -p` to `/var/log/account/snapshots/YYYY-MM-DD.txt` (640), pruning snapshots >400 days. Durable per-day connect record even after `wtmp` rotates.
+- **Caveat — connect time ≠ shell time:** `ac`/`ac -pd` count any session that holds a login open, so **VPN / VS Code Remote-SSH** sessions inflate the hours (e.g. kieron showed 27 h via `ac -p` vs ~1 h 22 m of true interactive shell in `last`). Use `ac -pd` for *which days / trends*; use `last` durations for real human interactive time.
+- **pacct baseline:** the raw command log was reset 2026-07-09 11:23 (cleared install-time self-test entries) — so `lastcomm`/`sa` have **no records before that timestamp** by design (not data loss). Connect-time history (wtmp-based) was unaffected.
 
 ## 8-way load-tested
 8 concurrent student jobs ran, each hard-capped, 8 MPS servers coexisting, clean drain — see [[Runbook/QuarkyLab-Phase04-GPU-Sharing-2026-07-02]].
