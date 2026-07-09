@@ -35,7 +35,7 @@ flowchart TB
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 192.168.10.201 | Primary services (NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT) |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.202 | Cluster node |
 | pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.203 | Cluster node |
-| QuarkyLab | Dell R730 (svc tag (in ops vault)) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 8000 48GB (installed 2026-07-01) (Fernanda/DUNE); Wazuh VM 104. iDRAC 192.168.20.20 (VLAN 20) |
+| QuarkyLab | Dell R730 (svc tag (in ops vault)) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 8000 48GB (installed 2026-07-01) (the researcher/DUNE); Wazuh VM 104. iDRAC 192.168.20.20 (VLAN 20) |
 | Jarvis | Dell R730 | 2× E5-2687W v4 | 384GB | 192.168.10.31 | LLM node — 2× RTX 6000 48GB installed 2026-07-04, Ollama GPU-backed. iDRAC 192.168.20.21 (VLAN 20) |
 | Randy | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 (28c/56t) | 128GB | 192.168.10.187 | PBS, Jellyfin, ZFS storage (PVE 9.1.1). IPMI 192.168.20.22 (VLAN 20) |
 

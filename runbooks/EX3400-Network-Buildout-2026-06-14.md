@@ -29,7 +29,7 @@ Full-day buildout session. JunOS upgraded, VLAN infrastructure designed and comm
 | VLAN | Name | Subnet | Color | Endpoints |
 |---|---|---|---|---|
 | 1 | Management | 192.168.10.0/24 | 🔴 Red | Switch mgmt (.50), iDRAC ×3, APC AP7901 PDU, Middle Atlantic UPS |
-| 20 | Trusted | 192.168.20.0/24 | 🟡 Yellow | Ares (wired), Fernanda's laptop (occasional) |
+| 20 | Trusted | 192.168.20.0/24 | 🟡 Yellow | Ares (wired), the researcher's laptop (occasional) |
 | 30 | Servers | 192.168.30.0/24 | ⬛ Black | R730 #1, R730 #2, SuperMicro, Proxmox hosts |
 | 40 | IoT | 192.168.40.0/24 | 🔵 Blue | UniFi-side only (transit on EX3400) |
 | 50 | VoIP | 192.168.50.0/24 | 🟢 Green | UniFi-side only (transit on EX3400) |

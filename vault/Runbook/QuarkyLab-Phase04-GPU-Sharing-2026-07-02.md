@@ -6,10 +6,10 @@
 
 ## Status: ✅ DONE & VALIDATED — 2026-07-02 maintenance window
 
-Turns on GPU access for the multi-tenant student SLURM environment: students share the single **Quadro RTX 8000 (48 GB)** via `gres/shard` with a **hard per-job VRAM cap** (Phase 04b), researchers/Fernanda get the whole card, and Fernanda is guaranteed priority via preemption. No driver/kernel changes (pin on `6.14.11-9-pve` / NVIDIA `550.163.01` untouched).
+Turns on GPU access for the multi-tenant student SLURM environment: students share the single **Quadro RTX 8000 (48 GB)** via `gres/shard` with a **hard per-job VRAM cap** (Phase 04b), researchers/the researcher get the whole card, and the researcher is guaranteed priority via preemption. No driver/kernel changes (pin on `6.14.11-9-pve` / NVIDIA `550.163.01` untouched).
 
 > [!NOTE] Sharing = shard (scheduling) + per-job MPS (hard VRAM cap)
-> RTX 8000 is Turing → **no MIG**. `gres/shard` is the SLURM scheduling primitive (8 shards, keeps the card in **Default** compute mode so Fernanda stays native). Hard VRAM caps come from **per-job CUDA MPS run inside each student job's container** (Phase 04b) — NOT SLURM `gres/mps` (which would force `EXCLUSIVE_PROCESS` and break Fernanda) and NOT a host MPS daemon (cross-cgroup IPC fails with error 205).
+> RTX 8000 is Turing → **no MIG**. `gres/shard` is the SLURM scheduling primitive (8 shards, keeps the card in **Default** compute mode so the researcher stays native). Hard VRAM caps come from **per-job CUDA MPS run inside each student job's container** (Phase 04b) — NOT SLURM `gres/mps` (which would force `EXCLUSIVE_PROCESS` and break the researcher) and NOT a host MPS daemon (cross-cgroup IPC fails with error 205).
 
 ---
 
@@ -33,7 +33,7 @@ NodeName=QuarkyLab Name=shard Count=8
 | PartitionName student | added `PriorityTier=1`, `DefMemPerNode=48000`, `MaxMemPerNode=96000` |
 
 > [!IMPORTANT] DefMemPerNode is required for GPU concurrency
-> `DefMemPerNode` was `UNLIMITED`, so the first student job grabbed all 500 GB RAM and no second job could co-schedule (`PENDING (Resources)`) — defeating sharing. Bounding it to 48 G lets up to ~8 students run at once (8×48 G = 384 G, headroom for Fernanda + system). This is a memory-scheduling fix, unrelated to MPS.
+> `DefMemPerNode` was `UNLIMITED`, so the first student job grabbed all 500 GB RAM and no second job could co-schedule (`PENDING (Resources)`) — defeating sharing. Bounding it to 48 G lets up to ~8 students run at once (8×48 G = 384 G, headroom for the researcher + system). This is a memory-scheduling fix, unrelated to MPS.
 
 `cgroup.conf` unchanged — **`ConstrainDevices=yes` was already set**, and it is the real enforcement gate (a job with no GPU GRES is denied `/dev/nvidia*` in its cgroup).
 
@@ -53,7 +53,7 @@ Backups: `/etc/slurm.bak.<ts>/`, `job_submit.lua.bak.<ts>`.
 - Installed Debian **`nvidia-cuda-mps` 550.163.01-2** — byte-identical version to the pinned `libcuda1`, so it installs against the held driver (dry-run: 0 held pkgs touched); then `apt-mark hold`'d.
 - Host `nvidia-mps.service` was created but **disabled** — a *host* MPS daemon fails for jobs with `CUDA_ERROR_MAP_FAILED (205)` because the server (outside the job cgroup) and client (inside it) can't share IPC. Package kept only for the binaries.
 - **`/opt/mps/mps-exec.sh`** (755): starts `nvidia-cuda-mps-control -d` with a job-unique pipe dir `/scratch/.mps.$$`, exports `CUDA_MPS_PINNED_DEVICE_MEM_LIMIT=0=${MPS_MEM_GB}G`, sets an EXIT trap to quit MPS + clean the dir, then runs the user script via `/bin/bash -s`. Running MPS **inside** the job's container/cgroup removes the cross-cgroup boundary → the cap works.
-- Cap scales: `MPS_MEM_GB = SLURM_SHARDS_ON_NODE × 6`. GPU stays **Default** compute mode → Fernanda unaffected.
+- Cap scales: `MPS_MEM_GB = SLURM_SHARDS_ON_NODE × 6`. GPU stays **Default** compute mode → the researcher unaffected.
 
 ---
 
@@ -69,7 +69,7 @@ Backups: `/etc/slurm.bak.<ts>/`, `job_submit.lua.bak.<ts>`.
 | student `--gres=gpu:1` | **rejected** at submit ✓ |
 | **VRAM hard cap** (04b) | default job OOMs at ~6 GiB; `--gres=shard:2` OOMs at ~12 GiB (scales) ✓ |
 | **concurrency** (04b) | 3 students RUNNING at once, each capped, sharing the card (nvidia-smi: 3×~3 GiB + 3×26 MiB MPS servers) ✓ |
-| **Fernanda native** | research `gpu:1`: 47.8 GB visible, allocated 12 GiB uncapped ✓ |
+| **the researcher native** | research `gpu:1`: 47.8 GB visible, allocated 12 GiB uncapped ✓ |
 | **preemption** | student shard job RUNNING → fernanda `gpu:1` submitted → student REQUEUED, fernanda RUNNING ✓ |
 
 ---
@@ -77,8 +77,8 @@ Backups: `/etc/slurm.bak.<ts>/`, `job_submit.lua.bak.<ts>`.
 ## How it works (operations)
 
 - **Students** (`student` partition, default): just `sbatch job.sh`. They automatically get one shard with a **hard 6 GB VRAM cap**, run inside the container with `--nv`, isolated (no net, own home, `/data/shared` RO, `/scratch`, 48 GB RAM). Ask for more with `--gres=shard:N` → cap scales to `N×6 GB`. `studentqos` caps them at 1 running job → up to 8 students share the 8 shards concurrently.
-- **Researchers / Fernanda** (`research` partition): `--gres=gpu:1` for the whole card (bypass the container wrapper). `--gres=shard:N` also available.
-- **Fernanda guarantee:** research `PriorityTier=100` > student `PriorityTier=1` with `preempt/partition_prio` + `REQUEUE`. When she submits `gpu:1`, SLURM requeues student shard jobs to free the card; they restart automatically when she finishes. No static reservation needed (the old Phase-02 "permanent reservation" item is satisfied this way).
+- **Researchers / the researcher** (`research` partition): `--gres=gpu:1` for the whole card (bypass the container wrapper). `--gres=shard:N` also available.
+- **the researcher guarantee:** research `PriorityTier=100` > student `PriorityTier=1` with `preempt/partition_prio` + `REQUEUE`. When she submits `gpu:1`, SLURM requeues student shard jobs to free the card; they restart automatically when she finishes. No static reservation needed (the old Phase-02 "permanent reservation" item is satisfied this way).
 
 > [!WARNING] REQUEUE, not SUSPEND
 > GPU preemption uses **REQUEUE** deliberately — a SUSPENDed CUDA process keeps its VRAM, so it wouldn't actually free the card. Requeue kills+requeues the student job, releasing the GPU.

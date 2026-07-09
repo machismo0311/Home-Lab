@@ -329,9 +329,9 @@ Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) repla
 | `100.64.0.6` | Jarvis | tagged-devices | tag:ssh | 🟢 online |
 | `100.64.0.7` | QuarkyLab | tagged-devices | tag:ssh | 🟢 online |
 | `100.64.0.8` | pve1 | tagged-devices | tag:ssh | 🟢 online |
-| `100.64.0.9` | FUS22-009897 (Fernanda's Mac) | fernanda | — | offline |
+| `100.64.0.9` | FUS22-009897 (the researcher's Mac) | fernanda | — | offline |
 
-> **Migration note:** QuarkyLab + Fernanda's Mac must migrate together in Headscale Phase 2 — do not migrate one without the other.
+> **Migration note:** QuarkyLab + the researcher's Mac must migrate together in Headscale Phase 2 — do not migrate one without the other.
 
 ---
 
@@ -516,7 +516,7 @@ llm_router.service  (Jarvis :8000, FastAPI)         models: "local" | "rag" | "c
 | Router | `llm_router.service` (systemd, `Home-Lab/scripts/llm_router/`) |
 | RAG rebuild | `rag_ingest.py` |
 | Front door | NPM `llm.netframe.local` (proxy id 5) + Pi-hole local DNS |
-| ML node | QuarkyLab RTX 8000 48 GB → Fernanda / DUNE RAG agent (ChromaDB/Qdrant TBD) |
+| ML node | QuarkyLab RTX 8000 48 GB → the researcher / DUNE RAG agent (ChromaDB/Qdrant TBD) |
 
 > **Wow factor:** ask `chat.netframe.local` a question about the homelab and the `"rag"` model answers *grounded on your own Obsidian vault with citations* — served entirely on-prem, with a one-flag escalation to Claude Opus for hard queries.
 

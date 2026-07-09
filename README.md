@@ -12,7 +12,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 | Hostname | Role | IP | CPU | RAM | GPU | PVE | Kernel |
 |---|---|---|---|---|---|---|---|
 | **Randy** | Storage / PBS | 192.168.10.187 | 2× E5-2690 v4 | 128 GB | RX 580 8GB | 9.1.1 | 7.0.12-1 |
-| **QuarkyLab** | ML / Fernanda | 192.168.10.179 | 2× E5-2699 v4 | 512 GB | RTX 8000 48GB† | 9.2.3 | 6.14.11-9-pve† |
+| **QuarkyLab** | ML / the researcher | 192.168.10.179 | 2× E5-2699 v4 | 512 GB | RTX 8000 48GB† | 9.2.3 | 6.14.11-9-pve† |
 | **Jarvis** | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | 2× RTX 6000 (48GB total)‡ | 9.2.3 | 6.14.11-9-pve‡ |
 | **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 32 GB | — | 9.2.3 | 7.0.12-1 |
 | **pve3** | Cluster node | 192.168.10.201 | i7-8700 | 48 GB | — | 9.2.3 | 7.0.12-1 |

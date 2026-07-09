@@ -23,7 +23,7 @@
 
 ### Problem
 
-Fernanda's ML environment on QuarkyLab was only accessible via commercial Tailscale. The free tier provides 6 seats — 2 used by Kyle and Fernanda — leaving 4 remaining. With ~15 students needing access each semester, a self-hosted solution was required.
+the researcher's ML environment on QuarkyLab was only accessible via commercial Tailscale. The free tier provides 6 seats — 2 used by Kyle and the researcher — leaving 4 remaining. With ~15 students needing access each semester, a self-hosted solution was required.
 
 ### Decision: Headscale
 
@@ -57,7 +57,7 @@ Headscale runs as LXC container **105** on **pve3**.
 | pve2 | HP EliteDesk G4 SFF | OPNsense, step-ca | 192.168.10.204 |
 | **pve3** | HP EliteDesk G4 SFF | **Management services** | 192.168.10.201 |
 | pve4 | HP EliteDesk G3 Mini | General compute | 192.168.10.202 |
-| pve5 | HP EliteDesk G3 Mini | Fernanda ML node | 192.168.10.203 |
+| pve5 | HP EliteDesk G3 Mini | ML research node | 192.168.10.203 |
 | QuarkyLab | Dell R730 | ML inference, RTX 8000 48GB (installed 2026-07-01) | 192.168.10.x |
 | Jarvis | Dell R730 | LLM inference, 2× RTX 6000 (48GB total, installed 2026-07-04) | 192.168.10.x |
 | Randy | SuperMicro CSE-219U | TrueNAS / storage | 192.168.10.x |
@@ -245,7 +245,7 @@ headscale nodes list
 | ID | Username | Purpose | Status |
 |----|----------|---------|--------|
 | 1 | kyle | Admin / Kyle's devices | Active |
-| — | fernanda | Fernanda's devices | Pending migration |
+| — | fernanda | the researcher's devices | Pending migration |
 | — | student-* | Per-student, per-semester | Created at onboarding |
 
 ### Registered Nodes
@@ -256,7 +256,7 @@ headscale nodes list
 
 ### Commercial Tailscale Status
 
-Fernanda and remaining devices are still on commercial Tailscale (`machismo0311@`). Migration is planned for a dedicated maintenance window after Headscale is proven stable.
+the researcher and remaining devices are still on commercial Tailscale (`machismo0311@`). Migration is planned for a dedicated maintenance window after Headscale is proven stable.
 
 ---
 
@@ -382,8 +382,8 @@ pct status 105
 - [ ] Resolve MagicDNS `/etc/resolv.conf` permission error on Ares
 - [ ] Verify `.netframe.local` hostnames resolve via Pi-hole
 
-### Phase 3 — Migrate Kyle and Fernanda
-- [ ] Choose maintenance window when Fernanda is not actively using QuarkyLab
+### Phase 3 — Migrate Kyle and the researcher
+- [ ] Choose maintenance window when the researcher is not actively using QuarkyLab
 - [ ] Stage physical console access for pve3 and QuarkyLab
 - [ ] Create `fernanda` user in Headscale
 - [ ] Migrate devices one at a time — verify each before touching the next
@@ -414,7 +414,7 @@ pct status 105
 | Item | Description | Priority |
 |------|-------------|----------|
 | Ares DNS fix | Resolve MagicDNS `/etc/resolv.conf` permission error | Medium |
-| Fernanda migration | Move Fernanda's devices to Headscale | High |
+| the researcher migration | Move the researcher's devices to Headscale | High |
 | Kyle device migration | Move remaining Kyle devices | High |
 | VLAN 30 migration | Move Headscale to VLAN 30 before student onboarding | High |
 | DNS record | Create `headscale.netframe.local` A record → 192.168.10.186 | Medium |

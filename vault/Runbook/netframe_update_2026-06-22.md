@@ -9,7 +9,7 @@
 | Hostname | Role | IP | CPU | RAM | GPU |
 |---|---|---|---|---|---|
 | Randy | Storage / PBS | 192.168.10.187 | 2× E5-2690 v4 | 128GB | RX 580 8GB |
-| QuarkyLab | ML / Fernanda | 192.168.10.30 | 2× E5-2699 v4 | 512GB | RTX 6000 24GB |
+| QuarkyLab | ML / the researcher | 192.168.10.30 | 2× E5-2699 v4 | 512GB | RTX 6000 24GB |
 | Jarvis | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384GB | RTX 8000 48GB |
 | pve2 | OPNsense host | 192.168.10.204 | i7-8700 | 32GB | — |
 | pve3 | Cluster node | 192.168.10.201 | i7-8700 | 48GB | — |
@@ -20,7 +20,7 @@ Cluster: **km-cluster**, Proxmox VE 9.1. pve1 (Mac Mini 2011) removed.
 
 **GPU final assignment** (reversed from original plan):
 - Jarvis → RTX 8000 48GB (Ollama/LLM inference)
-- QuarkyLab → RTX 6000 24GB (Fernanda/DUNE agent)
+- QuarkyLab → RTX 6000 24GB (the researcher/DUNE agent)
 
 ---
 

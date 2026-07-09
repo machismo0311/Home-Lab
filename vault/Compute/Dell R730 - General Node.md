@@ -66,7 +66,7 @@ racadm -r 192.168.20.21 -u root -p "$IDRAC_PASS" serveraction powercycle
 - **nouveau conflict (fixed):** on first boot with GPUs present, `nouveau` grabbed both cards (the driver was staged when no GPU was installed, so it was never blacklisted) → `nvidia-smi` failed "No devices probed." Fix: `/etc/modprobe.d/blacklist-nouveau.conf` (`blacklist nouveau` + `options nouveau modeset=0`) + `update-initramfs -u` + reboot → nvidia binds.
 - **ConnectX-3 10GbE** added same trip: `84:00.0` → `enp132s0`. **Cabled + configured 2026-07-04 to carry VLAN 30** (NFS/PBS/egress): EX3400 **`xe-0/2/2`** set to access VLAN 30 (`servers`); Jarvis `vmbr1` (bridge on `enp132s0`) holds `192.168.30.31/24` gw `.30.1`; old tagged `vmbr0.30` on the 1G removed. Mgmt/corosync stay on the onboard 1G (`vmbr0`/nic2, VLAN 1). Verified: 10000Mb/s, default route + PBS `.30.187` over the 10G, cluster 7/7 quorate. (2nd port `enp132s0d1` down/unused.)
 - **Ollama** now GPU-backed (v0.31.1; models later moved to `tank/models` ZFS dataset 2026-07-08); **qwen2.5:72b** pulled (~47 GB, tensor-splits across both cards). `llm_router.py` can be activated.
-- Headscale Phase 2: QuarkyLab + Fernanda's Mac must migrate together — do not migrate one without the other.
+- Headscale Phase 2: QuarkyLab + the researcher's Mac must migrate together — do not migrate one without the other.
 
 ---
 

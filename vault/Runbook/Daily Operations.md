@@ -181,7 +181,7 @@ systemctl restart crowdsec
 
 ## 🔒 Headscale (self-hosted VPN control plane)
 
-> Headscale runs on pve3 CT 105 (192.168.10.186). Ares uses Headscale. Fernanda's devices still on commercial Tailscale — migration pending.
+> Headscale runs on pve3 CT 105 (192.168.10.186). Ares uses Headscale. the researcher's devices still on commercial Tailscale — migration pending.
 
 ```bash
 # Health check
@@ -197,7 +197,7 @@ pct exec 105 -- journalctl -u headscale -n 30 --no-pager
 pct exec 105 -- systemctl restart headscale
 ```
 
-## 🔒 Tailscale (commercial — Fernanda's devices)
+## 🔒 Tailscale (commercial — the researcher's devices)
 
 ```bash
 # Status on any node
