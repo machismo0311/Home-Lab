@@ -1,0 +1,22 @@
+# /etc/sudoers.d/jarvis-oncall-readonly  (install per node; validate: visudo -c)
+#
+# Read-only diagnostics the bot runs as the low-priv `monitor` user that need
+# root. Additive to the existing NetFRAME /etc/sudoers.d/monitor rules.
+#
+# Jarvis is checked locally by the bot's own (root) service, so it needs NO
+# sudoers entry. Install this only on the REMOTE nodes the bot reaches.
+#
+#   check_service_status -> systemctl status   (no sudo needed)
+#   tail_logs            -> journalctl          (no sudo; monitor must be able
+#                                                to read the journal — group
+#                                                systemd-journal or adm)
+#   gpu_status / disk_usage -> nvidia-smi / df  (no sudo needed)
+#   zpool_status         -> /usr/sbin/zpool status *   (root)
+#   vm_status            -> /usr/sbin/qm list, /usr/sbin/pct list   (root)
+
+# --- Proxmox nodes with VMs/CTs (pve2, pve3, pve4, pve5, randy, quarkylab) ---
+monitor ALL=(root) NOPASSWD: /usr/sbin/qm list, /usr/sbin/pct list
+
+# --- ZFS nodes (randy, quarkylab) — may already be covered by the existing
+#     monitor sudoers; keep only if `sudo -n zpool status` is denied there ---
+monitor ALL=(root) NOPASSWD: /usr/sbin/zpool status *

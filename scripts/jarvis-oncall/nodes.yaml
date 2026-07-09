@@ -1,0 +1,103 @@
+# Jarvis On-Call — node registry
+#
+# Single source of truth for the bot. Adding a node here (no code change) makes
+# every tool function reach it. The bot SSHes from Jarvis as the low-priv
+# `monitor` user (reused from the NetFRAME health daemon); Jarvis itself is
+# checked locally. `restart` lists the ONLY systemd units restart_service will
+# touch on that node — everything not listed is refused, and read-only tools
+# (status/logs/zpool/gpu/disk/vm) work regardless of this list.
+#
+# ssh_host: address the bot connects to. Prefer mgmt VLAN 1 (stable, corosync
+# path stays untouched). `local: true` runs commands on Jarvis without SSH.
+# `reachable: false` nodes are registered for context but never contacted.
+
+defaults:
+  ssh_user: monitor
+  ssh_key: /opt/netframe-monitor/monitor_key   # ed25519 "jarvis-cluster-monitor"
+  ssh_opts: "-o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new"
+
+nodes:
+  jarvis:
+    ssh_host: 127.0.0.1
+    local: true
+    role: "LLM inference node — Dell R730, 2x RTX 6000 (48GB total), Ollama + llm_router"
+    quirks: >
+      Kernel PINNED to 6.14.11-9-pve (GRUB_DEFAULT) for NVIDIA 550.163.01 — never
+      upgrade the kernel. gpu-fan-control daemon owns the fans (closed-loop
+      nvidia-smi -> ipmitool); if it dies fans fail safe to auto. Ollama models
+      live on the ZFS `tank/models` dataset. llm_router listens :8000.
+    zpools: [tank, scratch]
+    has_gpu: true
+    restart: [llm_router, ollama, netframe-monitor, netframe-report-web, gpu-fan-control]
+
+  quarkylab:
+    ssh_host: 192.168.10.179
+    role: "ML node — Dell R730, RTX 8000 48GB, SLURM student compute; hosts Wazuh VM 104"
+    quirks: >
+      Kernel PINNED to 6.14.11-9-pve — never upgrade. Wazuh VM 104 has NO
+      qemu-guest-agent: a host reboot hard-stops it and wazuh-indexer comes back
+      unhealthy — fix with `qm stop 104 && qm start 104` (host-level, NOT a
+      restart_service target). iDRAC on VLAN 20 (.20.20).
+    zpools: [datastore]
+    has_gpu: true
+    restart: [slurmctld, slurmd, munge]
+
+  randy:
+    ssh_host: 192.168.10.187
+    role: "Storage/PBS — SuperMicro CSE-219U, ZFS `datastore` (4x RAIDZ2), PBS + Jellyfin, DS4246 shelf"
+    quirks: >
+      ZFS `datastore` = 4x RAIDZ2 (~23T usable). AVAGO 3108 JBOD mode may reset
+      after reboot (re-run storcli64 jbod). Two separate HBAs: boot on AVAGO 3108
+      RAID-1, data on LSI 9207-8e IT mode. PBS UI :8007. IPMI on VLAN 20 (.20.22).
+    zpools: [datastore]
+    has_gpu: false
+    restart: [proxmox-backup, proxmox-backup-proxy, jellyfin, zfs-zed]
+
+  pve2:
+    ssh_host: 192.168.10.204
+    role: "Cluster node — hosts OPNsense VM 100 (LIVE router/firewall/DHCP) + step-ca"
+    quirks: >
+      ⚠️ OPNsense VM 100 is the LIVE LAN router — it is a VM, restart it via
+      `qm` at the host, NEVER as a systemd unit, and treat any pve2 network
+      change with extreme care (prior outage). corosync/pve-cluster intentionally
+      excluded from restart.
+    zpools: []
+    has_gpu: false
+    restart: [pveproxy, pvedaemon, pvestatd]
+
+  pve3:
+    ssh_host: 192.168.10.201
+    role: "Primary services node — LXCs: NPM(101), Vaultwarden(102), Grafana/Loki(103), Headscale(105), Homepage(106), Open WebUI(107)"
+    quirks: >
+      All service LXCs have onboot=1. NUT server/monitor run here. Restart LXCs
+      via `pct` at host level (not restart_service).
+    zpools: []
+    has_gpu: false
+    restart: [pveproxy, pvedaemon, pvestatd, nut-server, nut-monitor]
+
+  pve4:
+    ssh_host: 192.168.10.202
+    role: "Cluster node — HP EliteDesk G3 Mini"
+    quirks: ""
+    zpools: []
+    has_gpu: false
+    restart: [pveproxy, pvedaemon, pvestatd]
+
+  pve5:
+    ssh_host: 192.168.10.203
+    role: "Cluster node — HP EliteDesk G3 Mini"
+    quirks: ""
+    zpools: []
+    has_gpu: false
+    restart: [pveproxy, pvedaemon, pvestatd]
+
+  # Standalone Mac Mini (Pi-hole host) — NOT in km-cluster and has no `monitor`
+  # user, so the bot cannot reach it yet. Registered for context only.
+  pve1:
+    ssh_host: 192.168.10.193
+    reachable: false
+    role: "STANDALONE Mac Mini (NOT km-cluster) — hosts Pi-hole LXC (.177)"
+    quirks: "No monitor user provisioned; provision one to enable bot access."
+    zpools: []
+    has_gpu: false
+    restart: []

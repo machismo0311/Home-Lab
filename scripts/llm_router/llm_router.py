@@ -72,18 +72,84 @@ def _wants_claude(model: str, body: dict) -> bool:
     return isinstance(model, str) and model.lower().startswith("claude")
 
 
-def _split_system(messages: list[dict]) -> tuple[str, list[dict]]:
+def _text_of(content) -> str:
+    if isinstance(content, list):
+        return "".join(p.get("text", "") for p in content if isinstance(p, dict))
+    return content or ""
+
+
+def _messages_to_anthropic(messages: list[dict]) -> tuple[str, list[dict]]:
+    """Split system out and convert an OpenAI-style message list (including
+    assistant tool_calls and role='tool' results) to Anthropic message blocks."""
     system_parts, conv = [], []
     for m in messages:
         role = m.get("role")
-        content = m.get("content", "")
-        if isinstance(content, list):
-            content = "".join(p.get("text", "") for p in content if isinstance(p, dict))
+        content = _text_of(m.get("content", ""))
         if role == "system":
             system_parts.append(content)
+        elif role == "tool":
+            conv.append({"role": "user", "content": [{
+                "type": "tool_result",
+                "tool_use_id": m.get("tool_call_id", ""),
+                "content": content,
+            }]})
+        elif role == "assistant" and m.get("tool_calls"):
+            blocks = [{"type": "text", "text": content}] if content else []
+            for tc in m["tool_calls"]:
+                fn = tc.get("function", {})
+                raw = fn.get("arguments", "{}")
+                try:
+                    args = json.loads(raw) if isinstance(raw, str) else raw
+                except Exception:
+                    args = {}
+                blocks.append({"type": "tool_use", "id": tc.get("id", ""),
+                               "name": fn.get("name", ""), "input": args})
+            conv.append({"role": "assistant", "content": blocks})
         elif role in ("user", "assistant"):
             conv.append({"role": role, "content": content})
     return "\n\n".join(system_parts), conv
+
+
+def _oa_tools_to_anthropic(tools: list[dict]) -> list[dict]:
+    out = []
+    for t in tools or []:
+        fn = t.get("function", t) if isinstance(t, dict) else {}
+        out.append({
+            "name": fn.get("name"),
+            "description": fn.get("description", ""),
+            "input_schema": fn.get("parameters", {"type": "object", "properties": {}}),
+        })
+    return out
+
+
+def _oa_tool_choice_to_anthropic(tc):
+    if tc in (None, "auto"):
+        return {"type": "auto"}
+    if tc == "required":
+        return {"type": "any"}
+    if tc == "none":
+        return None
+    if isinstance(tc, dict) and tc.get("type") == "function":
+        return {"type": "tool", "name": tc["function"]["name"]}
+    return {"type": "auto"}
+
+
+def _ollama_tool_calls(raw) -> list[dict] | None:
+    """Normalize Ollama /api/chat tool_calls to OpenAI shape (args as a string)."""
+    if not raw:
+        return None
+    out = []
+    for i, tc in enumerate(raw):
+        fn = tc.get("function", {}) if isinstance(tc, dict) else {}
+        args = fn.get("arguments", {})
+        if not isinstance(args, str):
+            args = json.dumps(args)
+        out.append({
+            "id": tc.get("id") or f"call_{i}_{uuid.uuid4().hex[:8]}",
+            "type": "function",
+            "function": {"name": fn.get("name", ""), "arguments": args},
+        })
+    return out
 
 
 def _last_user(messages: list[dict]) -> str:
@@ -102,30 +168,40 @@ async def _ollama_chat(body: dict) -> JSONResponse:
     msgs = []
     for m in body.get("messages", []):
         role = m.get("role")
-        if role not in ("system", "user", "assistant"):
+        if role not in ("system", "user", "assistant", "tool"):
             continue
-        content = m.get("content", "")
-        if isinstance(content, list):
-            content = "".join(p.get("text", "") for p in content if isinstance(p, dict))
-        msgs.append({"role": role, "content": content})
+        msg = {"role": role, "content": _text_of(m.get("content", ""))}
+        # Preserve the tool-calling round-trip (Ollama /api/chat understands these).
+        if role == "assistant" and m.get("tool_calls"):
+            msg["tool_calls"] = m["tool_calls"]
+        if role == "tool" and m.get("name"):
+            msg["tool_name"] = m["name"]
+        msgs.append(msg)
     num_predict = int(body.get("max_tokens") or 1024)
     payload = {
         "model": LOCAL_MODEL, "messages": msgs, "stream": False,
         "options": {"num_ctx": OLLAMA_NUM_CTX, "num_predict": num_predict},
     }
+    if body.get("tools"):
+        payload["tools"] = body["tools"]
     async with httpx.AsyncClient(timeout=600) as c:
         r = await c.post(f"{OLLAMA_URL}/api/chat", json=payload)
         r.raise_for_status()
         d = r.json()
     pin, pout = d.get("prompt_eval_count", 0), d.get("eval_count", 0)
+    out_msg = d.get("message", {}) or {}
+    message = {"role": "assistant", "content": out_msg.get("content", "")}
+    tool_calls = _ollama_tool_calls(out_msg.get("tool_calls"))
+    finish = "stop"
+    if tool_calls:
+        message["tool_calls"] = tool_calls
+        finish = "tool_calls"
     return JSONResponse({
         "id": "chatcmpl-" + uuid.uuid4().hex,
         "object": "chat.completion",
         "created": int(time.time()),
         "model": LOCAL_MODEL,
-        "choices": [{"index": 0,
-                     "message": {"role": "assistant", "content": d.get("message", {}).get("content", "")},
-                     "finish_reason": "stop"}],
+        "choices": [{"index": 0, "message": message, "finish_reason": finish}],
         "usage": {"prompt_tokens": pin, "completion_tokens": pout, "total_tokens": pin + pout},
     })
 
@@ -163,22 +239,43 @@ async def _rag_chat(body: dict) -> JSONResponse:
 async def _claude_chat(body: dict) -> JSONResponse:
     if not CLAUDE_ENABLED:
         raise HTTPException(503, "Claude fallback not configured (ANTHROPIC_API_KEY unset)")
-    system, conv = _split_system(body.get("messages", []))
+    system, conv = _messages_to_anthropic(body.get("messages", []))
     max_tokens = int(body.get("max_tokens") or MAX_TOKENS_DEFAULT)
-    kwargs = dict(model=CLAUDE_MODEL, max_tokens=max_tokens, messages=conv,
-                  thinking={"type": "adaptive"})
+    kwargs = dict(model=CLAUDE_MODEL, max_tokens=max_tokens, messages=conv)
     if system:
         kwargs["system"] = system
+    if body.get("tools"):
+        # Forced tool use is incompatible with extended thinking, and tool loops
+        # must preserve thinking blocks — so we run tools without thinking.
+        kwargs["tools"] = _oa_tools_to_anthropic(body["tools"])
+        choice = _oa_tool_choice_to_anthropic(body.get("tool_choice"))
+        if choice:
+            kwargs["tool_choice"] = choice
+    else:
+        kwargs["thinking"] = {"type": "adaptive"}
     resp = await _aclient.messages.create(**kwargs)
-    text = ("[Claude declined to respond to this request.]" if resp.stop_reason == "refusal"
-            else "".join(b.text for b in resp.content if b.type == "text"))
+
+    text_parts, tool_calls = [], []
+    if resp.stop_reason == "refusal":
+        text_parts.append("[Claude declined to respond to this request.]")
+    else:
+        for b in resp.content:
+            if b.type == "text":
+                text_parts.append(b.text)
+            elif b.type == "tool_use":
+                tool_calls.append({"id": b.id, "type": "function",
+                                   "function": {"name": b.name, "arguments": json.dumps(b.input)}})
+    message = {"role": "assistant", "content": "".join(text_parts)}
+    finish = "stop"
+    if tool_calls:
+        message["tool_calls"] = tool_calls
+        finish = "tool_calls"
     return JSONResponse({
         "id": "chatcmpl-" + uuid.uuid4().hex,
         "object": "chat.completion",
         "created": int(time.time()),
         "model": CLAUDE_MODEL,
-        "choices": [{"index": 0, "message": {"role": "assistant", "content": text},
-                     "finish_reason": "stop"}],
+        "choices": [{"index": 0, "message": message, "finish_reason": finish}],
         "usage": {"prompt_tokens": resp.usage.input_tokens,
                   "completion_tokens": resp.usage.output_tokens,
                   "total_tokens": resp.usage.input_tokens + resp.usage.output_tokens},
