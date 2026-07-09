@@ -152,6 +152,22 @@ def _ollama_tool_calls(raw) -> list[dict] | None:
     return out
 
 
+def _ollama_inbound_tool_calls(raw) -> list[dict]:
+    """Convert OpenAI-shaped assistant tool_calls (arguments as a JSON string,
+    plus id/type) back to Ollama /api/chat shape (arguments as an object)."""
+    out = []
+    for tc in raw or []:
+        fn = tc.get("function", {}) if isinstance(tc, dict) else {}
+        args = fn.get("arguments", {})
+        if isinstance(args, str):
+            try:
+                args = json.loads(args or "{}")
+            except Exception:
+                args = {}
+        out.append({"function": {"name": fn.get("name", ""), "arguments": args}})
+    return out
+
+
 def _last_user(messages: list[dict]) -> str:
     for m in reversed(messages):
         if m.get("role") == "user":
@@ -171,9 +187,10 @@ async def _ollama_chat(body: dict) -> JSONResponse:
         if role not in ("system", "user", "assistant", "tool"):
             continue
         msg = {"role": role, "content": _text_of(m.get("content", ""))}
-        # Preserve the tool-calling round-trip (Ollama /api/chat understands these).
+        # Preserve the tool-calling round-trip (Ollama /api/chat understands these,
+        # but wants arguments as an object — convert from the OpenAI string shape).
         if role == "assistant" and m.get("tool_calls"):
-            msg["tool_calls"] = m["tool_calls"]
+            msg["tool_calls"] = _ollama_inbound_tool_calls(m["tool_calls"])
         if role == "tool" and m.get("name"):
             msg["tool_name"] = m["name"]
         msgs.append(msg)
