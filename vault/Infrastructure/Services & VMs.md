@@ -111,7 +111,7 @@ services:
     volumes:
       - ./grafana-data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=changeme
+      - GF_SECURITY_ADMIN_PASSWORD=<set-a-strong-password>   # bootstrap only; rotated post-setup, stored in Vaultwarden
 
   prometheus:
     image: prom/prometheus:latest

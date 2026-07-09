@@ -1,5 +1,5 @@
 # 🖥️ Homelab — Master Map of Content
-> **Operator:** Kyle Mason (`machismo`) · **Location:** Vermilion / Greater Cleveland, OH
+> **Operator:** Kyle Mason (`machismo`) · **Location:** Greater Cleveland, OH
 > **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-06-26
 
 ---

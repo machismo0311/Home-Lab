@@ -279,7 +279,7 @@ zpool status datastore
   \item PBS version: 4.2.2
   \item Web UI: \texttt{https://192.168.10.187:8007}
   \item Datastore: \texttt{datastore} at \texttt{/datastore}
-  \item Fingerprint: \texttt{da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9}
+  \item Fingerprint: stored in Vaultwarden (not published)
   \item Storage ID in cluster: \texttt{randy-pbs} (Shared: Yes, all nodes)
 \end{itemize}
 
@@ -342,7 +342,7 @@ proxmox-backup-manager datastore create datastore /datastore
 
 \begin{infobox}[QuarkyLab]
 \textbf{Role:} Fernanda's ML research node \\
-\textbf{Service Tag:} 1S8WR22 \quad \textbf{iDRAC:} 192.168.10.20 (root/calvin) \\
+\textbf{iDRAC:} 192.168.20.20 (VLAN 20; creds in Vaultwarden) \\
 \textbf{CPU:} Dual E5-2699 v4 (matched stepping) \quad \textbf{RAM:} 512 GB LRDIMM ECC \\
 \textbf{GPU:} RTX 6000 24 GB \quad \textbf{BIOS:} 2.19.0
 \end{infobox}
@@ -363,7 +363,7 @@ update-grub && reboot
 
 \begin{infobox}[Jarvis]
 \textbf{Role:} LLM inference node (Ollama, Qwen2.5 72B) \\
-\textbf{Service Tag:} DWG7HH2 \quad \textbf{iDRAC:} 192.168.10.21 \\
+\textbf{iDRAC:} 192.168.20.21 (VLAN 20; creds in Vaultwarden) \\
 \textbf{CPU:} Dual E5-2687W v4 \quad \textbf{RAM:} 384 GB LRDIMM ECC \\
 \textbf{GPU:} RTX 8000 48 GB
 \end{infobox}
@@ -414,7 +414,7 @@ Tripp Lite SMART1500VA & EX3400, UniFi, small compute & Stock \\
 \bottomrule
 \end{tabular}
 
-PDU: APC AP7901 (ge-0/0/38 on EX3400, MAC 00:c0:b7:b4:88:4a).
+PDU: APC AP7901 (ge-0/0/38 on EX3400).
 
 % =============================================================================
 \section{Pending / To-Do}

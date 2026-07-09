@@ -172,10 +172,10 @@ set date ntp 162.159.200.123
 ```
 show ethernet-switching table
 # Ethernet switching table : 1 entries, 1 learned
-# default   8c:ec:4b:f1:86:a5   D   -   ge-0/0/0.0
+# default   XX:XX:XX:XX:XX:XX   D   -   ge-0/0/0.0
 ```
 
-Only Ares (MAC `8c:ec:4b:f1:86:a5`) was learned. The switch had no uplink to the production network. Gateway `192.168.10.1` = 100% packet loss.
+Only Ares (MAC `XX:XX:XX:XX:XX:XX`) was learned. The switch had no uplink to the production network. Gateway `192.168.10.1` = 100% packet loss.
 
 ### DAC uplink diagnosis (xe-0/2/3 → UniFi SFP 2)
 
@@ -209,8 +209,8 @@ UniFi SFP 2 port settings were correctly configured: Active, Native VLAN = Defau
 
 show ethernet-switching table
 # Ethernet switching table : 21 entries, 21 learned
-# default   08:c2:24:04:6f:94   D   -   ge-0/0/32.0   ← Ubiquiti gear
-# default   08:c2:24:1b:d8:99   D   -   ge-0/0/32.0
+# default   XX:XX:XX:XX:XX:XX   D   -   ge-0/0/32.0   ← Ubiquiti gear
+# default   XX:XX:XX:XX:XX:XX   D   -   ge-0/0/32.0
 # ... (21 total — production network fully learned)
 
 ping 192.168.10.1 count 3      → 0% loss ✅
@@ -222,10 +222,10 @@ set date ntp 162.159.200.123   → clock synced ✅
 
 ## IP Conflict at 192.168.10.2
 
-Joining production via the copper uplink revealed the switch's management IP (`.2`) was **already used by another device** on the production network (MAC `78:45:58:bf:3f:ee`). This caused:
+Joining production via the copper uplink revealed the switch's management IP (`.2`) was **already used by another device** on the production network (MAC `XX:XX:XX:XX:XX:XX`). This caused:
 
 - SSH session dropped immediately (`client_loop: send disconnect: Broken pipe`)
-- `ip neigh show 192.168.10.2` on Ares → `78:45:58:bf:3f:ee REACHABLE` (not the switch's MAC)
+- `ip neigh show 192.168.10.2` on Ares → `XX:XX:XX:XX:XX:XX REACHABLE` (not the switch's MAC)
 - `ssh mason@192.168.10.2` → `Connection refused` (other device has no sshd)
 
 ### Resolution: renumber the EX3400 irb
@@ -265,7 +265,7 @@ sudo nmcli con up "Wired connection 1"
 # ip -br addr show enp0s31f6 → 192.168.10.147/24  ✅ DHCP lease from OPNsense
 ```
 
-**Recommended:** add a DHCP reservation in OPNsense for Ares (MAC `8c:ec:4b:f1:86:a5`) for a predictable, stable address without a hand-managed static.
+**Recommended:** add a DHCP reservation in OPNsense for Ares (MAC `XX:XX:XX:XX:XX:XX`) for a predictable, stable address without a hand-managed static.
 
 ---
 
@@ -289,9 +289,9 @@ sudo nmcli con up "Wired connection 1"
 
 ## Open Items
 
-- **Identify `78:45:58:bf:3f:ee`** — the device sitting at `192.168.10.2` on production. Assign it a managed, documented address.
+- **Identify `XX:XX:XX:XX:XX:XX`** — the device sitting at `192.168.10.2` on production. Assign it a managed, documented address.
 - **DAC / 10G uplink** — swap DAC for fiber (10G SFP+ optic + LC patch) on both ends to resolve the speed mismatch permanently.
-- **DHCP reservation for Ares** in OPNsense, keyed to MAC `8c:ec:4b:f1:86:a5`.
+- **DHCP reservation for Ares** in OPNsense, keyed to MAC `XX:XX:XX:XX:XX:XX`.
 - **JunOS upgrade** — 20.2R3.9 is aging. JTAC-recommended release is 23.4R2-S7. Not urgent (switch is functional), but schedule for hygiene.
 
 ---

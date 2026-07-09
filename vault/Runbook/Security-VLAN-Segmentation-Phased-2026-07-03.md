@@ -36,10 +36,10 @@
 ### Execution log — Phase 1 (2026-07-03)
 - **Pre-flight ✅** — BMCs `.20/.21/.22` reachable; Tailscale lifelines up; Ares wired `enp0s31f6 .100` restored (was `linkdown` — see topology note).
 - **⚠️ Topology correction:** `CLAUDE.md` states Ares WiFi is WAN-side (`192.168.1.x`); observed 2026-07-03 it is on **VLAN 1** (`wlp2s0 192.168.10.199`) and the wired leg had been down. Wired leg now up (BMC/switch traffic prefers `enp0s31f6`), WiFi is backup. **TODO:** correct `CLAUDE.md` + [[Networking/Network Overview]].
-- **BMC MACs (for switch-port mapping):** QuarkyLab iDRAC `.20` = `b0:83:fe:e4:9a:60` · Jarvis iDRAC `.21` = `18:66:da:97:0f:8e` · Randy IPMI `.22` = `0c:c4:7a:67:cc:01`. (EX3400 MAC-table lookup pending switch login — key auth denied.)
+- **BMC MACs (for switch-port mapping):** QuarkyLab iDRAC `.20` = `XX:XX:XX:XX:XX:XX` · Jarvis iDRAC `.21` = `XX:XX:XX:XX:XX:XX` · Randy IPMI `.22` = `XX:XX:XX:XX:XX:XX`. (EX3400 MAC-table lookup pending switch login — key auth denied.)
 - **Switch ports (from EX3400 MAC table):** QuarkyLab iDRAC `.20` → **ge-0/0/30** · Jarvis iDRAC `.21` → **ge-0/0/44** · Randy IPMI `.22` → **ge-0/0/32** · Ares → **ge-0/0/41**. Each BMC port had exactly 1 learned MAC (direct access). ⚠️ old buildout doc's "ge-0/0/32 = UniFi uplink" is **stale** — live UniFi trunk is ge-0/0/46.
 - **1.1 Switch trunk ✅ committed (2026-07-03):** ge-0/0/30·32·41·44 → `interface-mode trunk`, `native-vlan-id 1`, `vlan members [default trusted]`. Applied via `commit confirmed 10`, verified BMCs still ping on `.10.x` (native VLAN 1 intact) + switch/Ares links up, then plain `commit`. `show vlans trusted` = 30/32/41/44/46.
-- **1.2 Ares VLAN 20 leg ✅ (2026-07-03, live/non-persistent):** created `enp0s31f6.20` = `192.168.20.199/24` (VLAN 20 tagged). Switch learns Ares MAC on `trusted` (ge-0/0/41). Direct VLAN 20 **L2 confirmed** — ARP resolves `.20.1` → OPNsense `bc:24:11:12:30:00` over `enp0s31f6.20`. ICMP to `.20.1` is dropped by OPNsense's VLAN 20 interface firewall (no allow rule yet — Phase 3); irrelevant to same-subnet Ares↔BMC. ⚠️ one transient wired-carrier drop mid-session (cable reseated → stable). **Not yet persisted** to `/etc/network/interfaces` (deliberate — persist after BMCs verified).
+- **1.2 Ares VLAN 20 leg ✅ (2026-07-03, live/non-persistent):** created `enp0s31f6.20` = `192.168.20.199/24` (VLAN 20 tagged). Switch learns Ares MAC on `trusted` (ge-0/0/41). Direct VLAN 20 **L2 confirmed** — ARP resolves `.20.1` → OPNsense `XX:XX:XX:XX:XX:XX` over `enp0s31f6.20`. ICMP to `.20.1` is dropped by OPNsense's VLAN 20 interface firewall (no allow rule yet — Phase 3); irrelevant to same-subnet Ares↔BMC. ⚠️ one transient wired-carrier drop mid-session (cable reseated → stable). **Not yet persisted** to `/etc/network/interfaces` (deliberate — persist after BMCs verified).
 - **Fallback for BMC re-IP:** if a BMC becomes unreachable on VLAN 20, recover via **Tailscale → node → Redfish** (iDRACs) / `ipmitool` (Randy). Do BMCs **one at a time**, QuarkyLab iDRAC as pilot.
 - **1.3 QuarkyLab iDRAC ✅ (pilot, 2026-07-03):** re-IP'd `.10.20 → 192.168.20.20` (VLAN 20 tagged, gw `.20.1`) via iDRAC web UI; root password rotated same visit → Vaultwarden. Verified from Ares: `.20.20` direct via `enp0s31f6.20` (3/3), `.10.20` gone, HTTPS 302, switch learns iDRAC MAC on `trusted` (ge-0/0/30). Stale `default`-VLAN MAC entry aging out (no VLAN 1 IP).
 - **1.3 Jarvis iDRAC ✅ (2026-07-03):** re-IP'd `.10.21 → 192.168.20.21` + root pw rotated (web UI). Verified from Ares: `.20.21` direct (3/3), `.10.21` gone, HTTPS 302, MAC on `trusted` (ge-0/0/44).
@@ -54,7 +54,7 @@
 
 ## 0. Objective & threat model
 
-Today **VLAN 1 is flat**: hypervisor management + corosync, out-of-band BMCs (with default creds `root/calvin` and `ADMIN`), internet-exposed web apps (Vaultwarden, Homepage, Grafana, NPM), and the admin workstation all share one broadcast domain. A single compromised web service sits at L2 next to the Proxmox `:8006` API and the iDRACs.
+Today **VLAN 1 is flat**: hypervisor management + corosync, out-of-band BMCs (with default creds `root / factory-default (creds in Vaultwarden)` and `ADMIN`), internet-exposed web apps (Vaultwarden, Homepage, Grafana, NPM), and the admin workstation all share one broadcast domain. A single compromised web service sits at L2 next to the Proxmox `:8006` API and the iDRACs.
 
 **Target state — three trust tiers, built in three phases:**
 
@@ -75,7 +75,7 @@ Today **VLAN 1 is flat**: hypervisor management + corosync, out-of-band BMCs (wi
 | Admin workstation (jump host) | Ares — VLAN 1 `192.168.10.199` (wired `enp0s31f6`) |
 | Trusted/OOB VLAN id / subnet / gw | `20` / `192.168.20.0/24` / `192.168.20.1` |
 | Servers VLAN (existing) | `30` / `192.168.30.0/24` / `192.168.30.1` |
-| QuarkyLab iDRAC — new IP | `192.168.20.20` (from `192.168.10.20`), svc tag 1S8WR22 |
+| QuarkyLab iDRAC — new IP | `192.168.20.20` (from `192.168.10.20`), svc tag (in ops vault) |
 | Jarvis iDRAC — new IP | `192.168.20.21` (from `192.168.10.21`) |
 | Randy IPMI — new IP | `192.168.20.22` (from `192.168.10.22`) |
 | BMC switch ports (dedicated NICs) | `<discover via MAC table>` — see Phase 1 pre-flight |
@@ -125,7 +125,7 @@ for i in 20 21 22; do ping -c1 -W1 192.168.20.$i && echo "  .$i on VLAN 20 UP"; 
 ```
 
 ### 1.3 Rotate BMC credentials (do NOT skip — segmentation ≠ auth)
-While in each BMC UI: replace `root/calvin` (iDRACs) and `ADMIN` (Randy IPMI) with strong unique passwords. **Store in Vaultwarden**, never in this (public) repo. Reference only, per C7 of the VLAN 30 report.
+While in each BMC UI: replace `root / factory-default (creds in Vaultwarden)` (iDRACs) and `ADMIN` (Randy IPMI) with strong unique passwords. **Store in Vaultwarden**, never in this (public) repo. Reference only, per C7 of the VLAN 30 report.
 
 ### 1.4 Remove VLAN 1 footprint (optional hardening, after VLAN 20 verified)
 Once every BMC is confirmed on VLAN 20 and reachable from Ares, drop native VLAN 1 from the BMC ports so the BMCs have **no** VLAN 1 presence:

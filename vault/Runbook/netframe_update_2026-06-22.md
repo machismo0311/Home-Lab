@@ -36,7 +36,7 @@ Cluster: **km-cluster**, Proxmox VE 9.1. pve1 (Mac Mini 2011) removed.
 
 - **UI:** `https://192.168.10.187:8007`
 - **Version:** v4.2.2
-- **Fingerprint:** `da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9`
+- **Fingerprint:** `(stored in Vaultwarden — not published)`
 
 ### DS4246 JBOD
 

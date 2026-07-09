@@ -7,7 +7,7 @@
 ## Status: 🟢 Online — km-cluster node (RTX 8000 48GB ML — installed 2026-07-01)
 
 - **Host IP (mgmt, VLAN 1):** 192.168.10.179 · **Service IP (VLAN 30):** 192.168.30.179 — dual-homed 2026-07-02 (corosync/mgmt/monitoring on VLAN 1; NFS `/data` + PBS + egress on VLAN 30). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
-- **iDRAC:** 192.168.10.20 (root/calvin)
+- **iDRAC:** 192.168.10.20 (root / factory-default (creds in Vaultwarden))
 - Member of km-cluster (PVE 9.2.3)
 - Hosts **Wazuh SIEM VM 104** (192.168.10.184)
 - **Scrutiny collector** installed (reports to hub at 192.168.10.183:8080)
@@ -34,7 +34,7 @@
 |---|---|
 | Model | Dell PowerEdge R730 |
 | Hostname | QuarkyLab |
-| Service Tag | **1S8WR22** |
+| Service Tag | **(in ops vault)** |
 | Form Factor | 2U |
 | Rack Position | U15–U16 |
 | **CPU** | 2× Intel Xeon E5-2699 v4 (44c / 88t total) |
@@ -88,9 +88,9 @@ python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_
 ## iDRAC Access
 
 ```bash
-https://192.168.10.20                                   # Web UI (root/calvin)
-racadm -r 192.168.10.20 -u root -p calvin getsysinfo
-racadm -r 192.168.10.20 -u root -p calvin getsel        # event log
+https://192.168.10.20                                   # Web UI (root / factory-default (creds in Vaultwarden))
+racadm -r 192.168.10.20 -u root -p "$IDRAC_PASS" getsysinfo
+racadm -r 192.168.10.20 -u root -p "$IDRAC_PASS" getsel        # event log
 ```
 
 ---
@@ -150,14 +150,14 @@ $C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_
 > IDRAC=192.168.10.20
 > B="https://$IDRAC/redfish/v1/Systems/System.Embedded.1/Bios"
 > # 1) stage the attribute change (goes to Bios/Settings as pending)
-> ssh quarkylab "curl -sk -u root:calvin -X PATCH $B/Settings \
+> ssh quarkylab "curl -sk -u root:$IDRAC_PASS -X PATCH $B/Settings \
 >   -H 'Content-Type: application/json' -d '{\"Attributes\":{\"ErrPrompt\":\"Disabled\"}}'"
 > # 2) create the BIOS config job — applies at next reboot
-> ssh quarkylab "curl -sk -u root:calvin -X POST \
+> ssh quarkylab "curl -sk -u root:$IDRAC_PASS -X POST \
 >   https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Jobs \
 >   -H 'Content-Type: application/json' \
 >   -d '{\"TargetSettingsURI\":\"$B/Settings\"}'"
-> # 3) after reboot verify:  curl -sk -u root:calvin $B | grep -i errprompt  →  "ErrPrompt":"Disabled"
+> # 3) after reboot verify:  curl -sk -u root:$IDRAC_PASS $B | grep -i errprompt  →  "ErrPrompt":"Disabled"
 > ```
 
 ---

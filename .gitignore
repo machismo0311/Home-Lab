@@ -1,0 +1,23 @@
+# ── Secrets / credentials (never commit real values) ──
+*.env
+.env
+!*.env.example
+*.pem
+*.key
+*_key
+id_rsa*
+id_ed25519*
+known_hosts
+
+# ── Obsidian per-machine state (editor noise, not portfolio content) ──
+**/.obsidian/workspace.json
+**/.trash/
+
+# ── LaTeX build intermediates ──
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

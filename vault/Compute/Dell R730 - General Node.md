@@ -13,7 +13,7 @@
 - Kernel pinned to **6.14.11-9-pve** (GRUB_DEFAULT; NOT proxmox-boot-tool) for the NVIDIA GPU stack — do not upgrade/change
 - **2× RTX 6000 INSTALLED & VERIFIED 2026-07-04** — Quadro RTX 6000, **24 GB each / 48 GB total** (nvidia-smi 24576 MiB ×2, driver 550.163.01, kernel 6.14.11-9-pve); QuarkyLab's old RTX 6000 + a new one. Required a nouveau blacklist on first boot (see install section). Fans managed by the **`gpu-fan-control` daemon**.
 
-> [!NOTE] iDRAC IP was originally static 10.10.198.38; changed via front panel to 192.168.10.21. iDRAC MAC 18:66:da:97:0f:8e.
+> [!NOTE] iDRAC IP was originally static 10.10.198.38; changed via front panel to 192.168.10.21. iDRAC MAC XX:XX:XX:XX:XX:XX.
 
 ---
 
@@ -23,7 +23,7 @@
 |---|---|
 | Model | Dell PowerEdge R730 |
 | Hostname | Jarvis |
-| Service Tag | DWG7HH2 |
+| Service Tag | (in ops vault) |
 | Form Factor | 2U |
 | Rack Position | U18–U20 |
 | **CPU** | 2× Intel Xeon E5-2687W v4 (12c each · 48t total) |
@@ -51,9 +51,9 @@ LLM inference node (**GPU software stack ready; awaiting cards**):
 ## iDRAC Access
 
 ```bash
-https://192.168.10.21                                   # Web UI (root/calvin)
-racadm -r 192.168.10.21 -u root -p calvin getsysinfo
-racadm -r 192.168.10.21 -u root -p calvin serveraction powercycle
+https://192.168.10.21                                   # Web UI (root / factory-default (creds in Vaultwarden))
+racadm -r 192.168.10.21 -u root -p "$IDRAC_PASS" getsysinfo
+racadm -r 192.168.10.21 -u root -p "$IDRAC_PASS" serveraction powercycle
 ```
 
 > Historical BIOS/iDRAC recovery (CPU stepping / firmware) for the R730s: see `Home-Lab/docs/r730-bios-recovery-runbook.md`.
