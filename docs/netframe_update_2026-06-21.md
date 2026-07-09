@@ -147,11 +147,11 @@ Randy is the **infrastructure backbone** — not a compute node.
 
 ## Full Cluster GPU Inventory
 
-Every node now has a GPU:
+The GPU-equipped servers (compute/storage nodes; the pve2–pve5 nodes are GPU-less):
 
 | Server | GPU | VRAM | CUDA | Use |
 |---|---|---|---|---|
-| QuarkyLab | RTX 8000 | 48GB | ✅ | Fernanda ML/DUNE |
+| QuarkyLab | RTX 8000 | 48GB | ✅ | ML / DUNE research |
 | Jarvis | 2x RTX 6000 | 48GB | ✅ | LLM inference |
 | Randy | RX 580 | 8GB | ❌ (ROCm) | Display/transcode |
 
