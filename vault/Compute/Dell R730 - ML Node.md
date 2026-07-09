@@ -7,12 +7,12 @@
 ## Status: 🟢 Online — km-cluster node (RTX 8000 48GB ML — installed 2026-07-01)
 
 - **Host IP (mgmt, VLAN 1):** 192.168.10.179 · **Service IP (VLAN 30):** 192.168.30.179 — dual-homed 2026-07-02 (corosync/mgmt/monitoring on VLAN 1; NFS `/data` + PBS + egress on VLAN 30). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
-- **iDRAC:** 192.168.10.20 (root / factory-default (creds in Vaultwarden))
+- **iDRAC:** 192.168.20.20 (VLAN 20 since 2026-07-03; root / creds in Vaultwarden — reach from Ares `enp0s31f6.20`)
 - Member of km-cluster (PVE 9.2.3)
 - Hosts **Wazuh SIEM VM 104** (192.168.10.184)
 - **Scrutiny collector** installed (reports to hub at 192.168.10.183:8080)
 - SSH: `ssh quarkylab` (via `fernanda@quarkylab` key, id_ed25519 on Ares)
-- **RTX 8000 48GB installed 2026-07-01** (per the 2026-06-30 GPU plan): the RTX 6000 was swapped out for the RTX 8000; nvidia-smi reports 46080 MiB on driver 550.163.01 / kernel 6.14.11-9-pve. Driver-free swap (both Turing TU102). The freed RTX 6000 is now staged for Jarvis.
+- **RTX 8000 48GB installed 2026-07-01** (per the 2026-06-30 GPU plan): the RTX 6000 was swapped out for the RTX 8000; nvidia-smi reports 46080 MiB on driver 550.163.01 / kernel 6.14.11-9-pve. Driver-free swap (both Turing TU102). The freed RTX 6000 was subsequently installed in Jarvis (2026-07-04).
 
 > [!WARNING] Kernel pin
 > Kernel **must** stay on `6.14.11-9-pve` — `GRUB_DEFAULT` is pinned; 6.17+ breaks NVIDIA 550. Never run kernel upgrades or change the GRUB default on QuarkyLab. NVIDIA 550.163.01 verified working post-upgrade.
@@ -42,7 +42,7 @@
 | **RAM** | 512 GB LRDIMM ECC DDR4 |
 | **GPU** | NVIDIA Quadro RTX 8000 48GB GDDR6 ECC (driver 550.163.01) — installed 2026-07-01 (swapped from RTX 6000) |
 | NICs | 4× 1G onboard |
-| Remote Mgmt | iDRAC 8 (192.168.10.20) |
+| Remote Mgmt | iDRAC 8 (192.168.20.20, VLAN 20 since 2026-07-03) |
 | Depth | ~28" — **rear panel removed** from NetFRAME CS9000 |
 
 ---
@@ -66,7 +66,7 @@
 | Driver | NVIDIA 550.163.01 (CUDA 12.x) |
 
 > [!NOTE] RTX 8000 installed 2026-07-01
-> Per the 2026-06-30 plan, QuarkyLab now runs the **RTX 8000 48GB**; its former RTX 6000 is staged for Jarvis. Both are Turing TU102 — the swap was driver-free (same 550.163.01 / 6.14.11-9-pve stack), verified with nvidia-smi (46080 MiB). See [[Compute/Dell R730 - General Node]].
+> Per the 2026-06-30 plan, QuarkyLab now runs the **RTX 8000 48GB**; its former RTX 6000 was subsequently installed in Jarvis (2026-07-04). Both are Turing TU102 — the swap was driver-free (same 550.163.01 / 6.14.11-9-pve stack), verified with nvidia-smi (46080 MiB). See [[Compute/Dell R730 - General Node]].
 
 > [!WARNING] Power Draw
 > RTX 8000 under full load = ~260W; with dual Xeons this node can draw 500W+. Runs on **UPS A** (Middle Atlantic UPS-OL2200R, the ML bus). See [[Power Distribution]].
@@ -88,9 +88,9 @@ python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_
 ## iDRAC Access
 
 ```bash
-https://192.168.10.20                                   # Web UI (root / factory-default (creds in Vaultwarden))
-racadm -r 192.168.10.20 -u root -p "$IDRAC_PASS" getsysinfo
-racadm -r 192.168.10.20 -u root -p "$IDRAC_PASS" getsel        # event log
+https://192.168.20.20                                   # Web UI, VLAN 20 (root / creds in Vaultwarden — reach from Ares enp0s31f6.20)
+racadm -r 192.168.20.20 -u root -p "$IDRAC_PASS" getsysinfo
+racadm -r 192.168.20.20 -u root -p "$IDRAC_PASS" getsel        # event log
 ```
 
 ---
@@ -144,20 +144,18 @@ $C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_
 >
 > **Fix (2026-07-02):** BIOS `MiscSettings.ErrPrompt` ("F1/F2 Prompt on Error") set to **Disabled** — POST no longer stops for non-fatal alerts. Verified after reboot: `ErrPrompt: Disabled`, kernel 6.14.11-9-pve, RTX 8000 present, Wazuh VM 104 auto-started. Intrusion is still recorded to the iDRAC SEL; it just no longer halts boot.
 
-> [!TIP] Changing BIOS attributes on this iDRAC 8 — no racadm, run Redfish *from the node*
-> `racadm` is not installed anywhere, and Ares' modern curl can't negotiate the iDRAC's old TLS (handshake fails → http 000). Drive Redfish **from the QuarkyLab host itself** (it reaches its own iDRAC at .20 fine), then reboot to apply:
+> [!TIP] Changing BIOS attributes on this iDRAC 8 — no racadm, use Redfish
+> `racadm` is not installed anywhere. iDRAC moved to **VLAN 20 (192.168.20.20)** on 2026-07-03, and the node can no longer reach its own iDRAC (routes out the VLAN 30 gw) — so drive Redfish **from Ares' wired VLAN 20 leg `enp0s31f6.20`** with legacy TLS (`--ciphers DEFAULT@SECLEVEL=0`, required for the iDRAC-8 handshake). Root pw in Vaultwarden. Then reboot to apply:
 > ```bash
-> IDRAC=192.168.10.20
+> IDRAC=192.168.20.20
+> C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u root:$IDRAC_PASS"
 > B="https://$IDRAC/redfish/v1/Systems/System.Embedded.1/Bios"
 > # 1) stage the attribute change (goes to Bios/Settings as pending)
-> ssh quarkylab "curl -sk -u root:$IDRAC_PASS -X PATCH $B/Settings \
->   -H 'Content-Type: application/json' -d '{\"Attributes\":{\"ErrPrompt\":\"Disabled\"}}'"
+> $C -X PATCH "$B/Settings" -H 'Content-Type: application/json' -d '{"Attributes":{"ErrPrompt":"Disabled"}}'
 > # 2) create the BIOS config job — applies at next reboot
-> ssh quarkylab "curl -sk -u root:$IDRAC_PASS -X POST \
->   https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Jobs \
->   -H 'Content-Type: application/json' \
->   -d '{\"TargetSettingsURI\":\"$B/Settings\"}'"
-> # 3) after reboot verify:  curl -sk -u root:$IDRAC_PASS $B | grep -i errprompt  →  "ErrPrompt":"Disabled"
+> $C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Jobs" \
+>   -H 'Content-Type: application/json' -d "{\"TargetSettingsURI\":\"$B/Settings\"}"
+> # 3) after reboot verify:  $C "$B" | grep -i errprompt  →  "ErrPrompt":"Disabled"
 > ```
 
 ---

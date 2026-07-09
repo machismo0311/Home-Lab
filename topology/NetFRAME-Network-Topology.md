@@ -38,7 +38,7 @@
 
 ## 1. Executive Summary
 
-**NetFRAME** is a single-site, 42U production-grade home lab built around a **7-node Proxmox VE 9.2.3 hyper-converged cluster** (`km-cluster`), a **Juniper-cored, VLAN-segmented switched fabric**, and a **24-bay ZFS storage node** providing NFS and Proxmox Backup Server services. It runs a full self-hosted platform: reverse-proxied web services with automated TLS, a Prometheus/Grafana/Loki observability stack, drive-health telemetry across ~50 disks, a Wazuh SIEM, an internal ACME PKI, a password vault, and a **GPU-accelerated private LLM platform** (RTX 8000 + dual RTX 6000, ~96 GB of VRAM) with a custom OpenAI-compatible router that transparently escalates to the Claude API.
+**NetFRAME** is a single-site, 42U production-grade home lab built around a **7-node Proxmox VE hyper-converged cluster** (`km-cluster`; PVE 9.2.3 on all nodes except Randy, which stayed on 9.1.1 after a kernel/ZFS-only upgrade), a **Juniper-cored, VLAN-segmented switched fabric**, and a **24-bay ZFS storage node** providing NFS and Proxmox Backup Server services. It runs a full self-hosted platform: reverse-proxied web services with automated TLS, a Prometheus/Grafana/Loki observability stack, drive-health telemetry across ~50 disks, a Wazuh SIEM, an internal ACME PKI, a password vault, and a **GPU-accelerated private LLM platform** (RTX 8000 + dual RTX 6000, ~96 GB of VRAM) with a custom OpenAI-compatible router that transparently escalates to the Claude API.
 
 At a glance:
 
@@ -339,7 +339,7 @@ Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) repla
 
 ### 7.1 Cluster & quorum
 
-**km-cluster** — Proxmox VE **9.2.3**, Corosync ring over VLAN 1 (kept on stable L2 deliberately; **not** moved to VLAN 30). Quorate **7/7**.
+**km-cluster** — Proxmox VE **9.2.3** (except **Randy on 9.1.1** — kernel/ZFS-only upgrade), Corosync ring over VLAN 1 (kept on stable L2 deliberately; **not** moved to VLAN 30). Quorate **7/7**.
 
 | Corosync ID | Node | Ring address |
 |---|---|---|
@@ -419,9 +419,9 @@ datastore (pool)
 
 ### 8.2 NetApp DS4246 (JBOD expansion)
 
-24-bay 4U SAS shelf attached via the LSI 9207-8e (IT mode). **Live observation:** the shelf's drives currently enumerate as **duplicate serial pairs** (each physical serial appears twice) — this is **dual-path SAS multipath** through the shelf's two I/O modules presenting each physical disk on two SAS paths. Present population is **4 TB** class (Seagate `ST4000NM0063` + HGST `HUS724040ALS641`), a build-out in progress toward a bulk/media pool.
+24-bay 4U SAS shelf attached via the LSI 9207-8e (IT mode). Pool **`bulk` BUILT & ONLINE 2026-07-08** — **2× 8-wide RAIDZ2**, **58.2 TB raw / ~41.3 TiB usable**, reboot-verified. Population is **4 TB** class (Seagate `ST4000NM0063` + HGST `HUS724040ALS641`). The earlier live observation of **duplicate serial pairs** (each physical serial appearing twice via **dual-path SAS multipath** through the shelf's two I/O modules) was reconciled during the build so each physical disk maps to a single vdev member.
 
-> ⚠️ **Drift vs. docs:** the CLAUDE.md/Rack notes describe the DS4246 as 2 TB-class; the live shelf is 4 TB-class and mid-buildout (`DS4246-Pool-Buildout-Plan-2026-07-07`). Configure `multipath`/dm before pooling to avoid using both paths as separate vdev members. See finding **F-3**.
+> **Note:** the CLAUDE.md/Rack notes describe the DS4246 as 2 TB-class; the live shelf is 4 TB-class. Pool built per `DS4246-Pool-Buildout-Plan-2026-07-07`. See finding **F-3**.
 
 ### 8.3 Proxmox storage backends
 
@@ -593,7 +593,7 @@ Findings F-03 (Prometheus/Loki localhost-only), F-05 (NPM `:81` Ares-only), OOB 
 |---|---|---|---|
 | **F-1** | ⚠️ Medium | **Inconsistent default gateways:** pve3/4/5 default via `192.168.1.1` (UDR, off-subnet onlink) while pve2 uses OPNsense `.10.1`. Node egress bypasses the OPNsense firewall/logging. | Repoint pve3/4/5 default to `192.168.10.1` for consistent policy/logging, or document the intent explicitly. |
 | **F-2** | 🟡 Low | **Ares wired mgmt leg (`enp0s31f6`) is link-down**; VLAN 20 OOB is currently unreachable and silently reroutes via WiFi→OPNsense. | Restore the wired leg before OOB/BMC work; verify `ip route get 192.168.20.x`. |
-| **F-3** | ⚠️ Medium | **DS4246 drift + multipath:** shelf is 4 TB-class (docs say 2 TB) and drives enumerate as dual-path duplicates. | Configure `multipath`/dm before pooling; update Rack/CLAUDE docs to match live inventory. |
+| **F-3** | ✅ Resolved | **DS4246 pool built:** shelf is 4 TB-class (docs say 2 TB); pool `bulk` BUILT & ONLINE 2026-07-08 (2× 8-wide RAIDZ2, 58.2 TB raw / ~41.3 TiB usable, reboot-verified) with multipath reconciled. | Update Rack/CLAUDE docs to match live 4 TB-class inventory. |
 | **F-4** | ✅ Resolved | PBS storage was repointed to `.30.187` and broke VLAN-1 backups; fixed 2026-07-06 back to `.10.187`. | Keep PBS storage pinned to `.10.187`; add a monitor for backup age. |
 | **F-5** | 🟡 Low | Wazuh VM 104 lacks qemu-guest-agent → unclean stop on host reboot corrupts the indexer. | Install `qemu-guest-agent`, set `--agent enabled=1`, one cold start. |
 | **F-6** | 🟡 Low | `xe-0/2/3` DAC to UniFi down (10G/1G EEPROM mismatch). | Replace with a speed-matched SFP or accept as decommissioned. |

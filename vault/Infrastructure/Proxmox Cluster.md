@@ -14,7 +14,7 @@ flowchart TB
         PVE4[pve4\nEliteDesk G3 Mini\ni5-7500T · 32GB\n.202]
         PVE5[pve5\nEliteDesk G3 Mini\ni5-7500T · 32GB\n.203]
         QUARK[QuarkyLab\nDell R730 · 2×E5-2699 v4\n512GB · RTX 8000 48GB\n.179 · ML]
-        JARVIS[Jarvis\nDell R730 · 2×E5-2687W v4\n384GB · 2× RTX 6000 planned\n.31 · LLM]
+        JARVIS[Jarvis\nDell R730 · 2×E5-2687W v4\n384GB · 2× RTX 6000 48GB installed 2026-07-04\n.31 · LLM]
         RANDY[Randy\nSuperMicro CSE-219U\n128GB · ZFS\n.187 · PBS/Jellyfin]
     end
 
@@ -27,7 +27,7 @@ flowchart TB
 
 ---
 
-## km-cluster Node Table (7 nodes — PVE 9.2.3)
+## km-cluster Node Table (7 nodes — PVE 9.2.3, except Randy on 9.1.1 kernel/ZFS-only upgrade)
 
 | Hostname | Hardware | CPU | RAM | IP | Role |
 |---|---|---|---|---|---|
@@ -35,9 +35,9 @@ flowchart TB
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 192.168.10.201 | Primary services (NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT) |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.202 | Cluster node |
 | pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.203 | Cluster node |
-| QuarkyLab | Dell R730 (svc tag (in ops vault)) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 8000 48GB (installed 2026-07-01) (Fernanda/DUNE); Wazuh VM 104. iDRAC .20 |
-| Jarvis | Dell R730 | 2× E5-2687W v4 | 384GB | 192.168.10.31 | LLM node — no GPU yet; 2× RTX 6000 planned (SW stack staged 2026-07-01). iDRAC .21 |
-| Randy | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 | 128GB | 192.168.10.187 | PBS, Jellyfin, ZFS storage. IPMI .22 |
+| QuarkyLab | Dell R730 (svc tag (in ops vault)) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 8000 48GB (installed 2026-07-01) (Fernanda/DUNE); Wazuh VM 104. iDRAC 192.168.20.20 (VLAN 20) |
+| Jarvis | Dell R730 | 2× E5-2687W v4 | 384GB | 192.168.10.31 | LLM node — 2× RTX 6000 48GB installed 2026-07-04, Ollama GPU-backed. iDRAC 192.168.20.21 (VLAN 20) |
+| Randy | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 (28c/56t) | 128GB | 192.168.10.187 | PBS, Jellyfin, ZFS storage (PVE 9.1.1). IPMI 192.168.20.22 (VLAN 20) |
 
 > **pve1** (Apple Mac Mini, 192.168.10.193) is a **standalone** Proxmox node — **not** in km-cluster. It hosts the Pi-hole LXC (192.168.10.177).
 
@@ -45,7 +45,7 @@ flowchart TB
 
 | Hardware | Notes |
 |---|---|
-| NetApp DS4246 | 24-bay SAS JBOD shelf (via Randy LSI 9207-8e, IT mode); passthrough pending |
+| NetApp DS4246 | 24-bay SAS JBOD shelf (via Randy LSI 9207-8e, IT mode); pool `bulk` BUILT & ONLINE 2026-07-08 (2× 8-wide RAIDZ2, 58.2T raw / ~41.3 TiB usable, reboot-verified) |
 
 ---
 

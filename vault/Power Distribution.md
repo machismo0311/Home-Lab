@@ -93,7 +93,7 @@ flowchart TB
 | **UPS A Total Est. (ML load)** | **~830W+** | — |
 
 > [!WARNING] CUDA Load
-> QuarkyLab's RTX 8000 48GB under full CUDA load can pull ~260W by itself. Once Jarvis gets its 2× RTX 6000 (~500W more, same UPS A bus), UPS A load climbs further — budget for both R730 GPUs plus dual Xeons each. Fernanda's ML workloads may push UPS A well above 1000W. Monitor via iDRAC and UPS display. UPS-2200R rated at 1320W continuous — watch it closely as the Jarvis GPUs come online.
+> QuarkyLab's RTX 8000 48GB under full CUDA load can pull ~260W by itself. Now that Jarvis has its 2× RTX 6000 (installed 2026-07-04, ~500W more, same UPS A bus), UPS A load has climbed further — budget for both R730 GPUs plus dual Xeons each. Fernanda's ML workloads may push UPS A well above 1000W. Monitor via iDRAC and UPS display. UPS-2200R rated at 1320W continuous — watch it closely now that the Jarvis GPUs are online.
 
 ---
 
