@@ -1,5 +1,5 @@
-# NetFRAME Infrastructure Update — June 21, 2026
-
+# NetFRAME Infrastructure Update
+**Date:** June 21, 2026  
 **Session:** Randy commissioning, GPU swap decision, DUNE agent planning
 
 ---
@@ -105,7 +105,7 @@ Randy is the **infrastructure backbone** — not a compute node.
 
 ### Overview
 - **Goal:** RAG agent over DUNE experiment codebase
-- **Purpose:** Help new scientists understand codebase during onboarding
+- **Purpose:** Help new scientists understand full codebase during onboarding
 - **Host:** QuarkyLab (after RTX 8000 swap)
 - **Claude Project:** "DUNE Agent — Fernanda" ✅ created
 
@@ -136,10 +136,23 @@ Randy is the **infrastructure backbone** — not a compute node.
 
 ---
 
+## Claude Projects Created
+
+| Project | Purpose |
+|---|---|
+| NetFRAME — LLM Infrastructure | Jarvis, Ollama, llm_router, GPU swap |
+| DUNE Agent — Fernanda | RAG pipeline, QuarkyLab ML env |
+
+---
+
 ## Full Cluster GPU Inventory
+
+The GPU-equipped servers (compute/storage nodes; the pve2–pve5 nodes are GPU-less):
 
 | Server | GPU | VRAM | CUDA | Use |
 |---|---|---|---|---|
-| QuarkyLab | RTX 8000 | 48GB | ✅ | Fernanda ML/DUNE |
+| QuarkyLab | RTX 8000 | 48GB | ✅ | ML / DUNE research |
 | Jarvis | 2x RTX 6000 | 48GB | ✅ | LLM inference |
 | Randy | RX 580 | 8GB | ❌ (ROCm) | Display/transcode |
+
+This enables distributed inference routing across all GPU nodes via `llm_router.py`.
