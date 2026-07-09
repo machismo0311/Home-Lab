@@ -39,11 +39,11 @@ The three nodes are **corosync cluster members**. Proxmox's own docs say corosyn
 
 | Node | vmbr0 NIC MAC | Switch port | Link |
 |---|---|---|---|
-| QuarkyLab | `b0:83:fe:e5:ca:c0` | **ge-0/0/24** | 1G |
-| Randy | `f4:52:14:94:94:31` | **xe-0/2/0** | 10G |
-| Jarvis | `18:66:da:9e:ef:14` | **ge-0/0/22** | 1G |
+| QuarkyLab | `XX:XX:XX:XX:XX:XX` | **ge-0/0/24** | 1G |
+| Randy | `XX:XX:XX:XX:XX:XX` | **xe-0/2/0** | 10G |
+| Jarvis | `XX:XX:XX:XX:XX:XX` | **ge-0/0/22** | 1G |
 
-- **Wazuh VM 104** (`bc:24:11:51:0d:79`) is learned on QuarkyLab's port `ge-0/0/24` — it rides that port's **native** VLAN, so keeping native VLAN 1 on the trunk keeps VM 104 on VLAN 1 unchanged.
+- **Wazuh VM 104** (`XX:XX:XX:XX:XX:XX`) is learned on QuarkyLab's port `ge-0/0/24` — it rides that port's **native** VLAN, so keeping native VLAN 1 on the trunk keeps VM 104 on VLAN 1 unchanged.
 - QuarkyLab has a **spare 10G link up on `xe-0/2/3`** (OS NIC down) — future option, not used here.
 - Existing couplings to re-point: Randy exports `/datastore/quarkylab` → `192.168.10.179`; QuarkyLab fstab mounts `192.168.10.187:/datastore/quarkylab`; QuarkyLab PBS storage `randy-pbs` → `server 192.168.10.187` (fingerprint unchanged on re-IP).
 

@@ -12,7 +12,7 @@
 | Size | 42U |
 | Internal Depth | 24" (usable) |
 | Note | Rear panel **removed** — R730s extend ~28" |
-| Location | Vermilion / Greater Cleveland, OH |
+| Location | Greater Cleveland, OH |
 
 > [!WARNING] Depth Issue
 > Dell R730s are ~28" deep, exceeding the CS9000's 24" internal depth. **Rear panel has been physically removed** to accommodate. Ensure rear clearance from wall for adequate airflow.
@@ -41,15 +41,15 @@
 │ U29–  │ ─── Open / Cable Reserve ───    │
 │  U21  │                                 │
 ├───────┼─────────────────────────────────┤
-│ U20–  │ Dell R730 #1 — ML Node          │ ◄ 28c/56t │ 384GB │ RTX 8000 48GB
-│  U18  │   (2U — rear panel removed)     │   Fernanda's CUDA workloads
+│ U20–  │ Dell R730 #1 — ML Node          │ ◄ 44c/88t │ 512GB │ RTX 8000 48GB
+│  U18  │   (2U — rear panel removed)     │   the researcher's CUDA workloads
 ├───────┼─────────────────────────────────┤
 │  U17  │ ─── Spacer ───                  │
 ├───────┼─────────────────────────────────┤
-│ U16–  │ Dell R730 #2 — General          │ ◄ 24c/48t │ 64GB │ General compute
+│ U16–  │ Dell R730 #2 — Jarvis (LLM)     │ ◄ 24c/48t │ 384GB │ 2× RTX 6000 48GB (installed 2026-07-04)
 │  U15  │   (2U — rear panel removed)     │
 ├───────┼─────────────────────────────────┤
-│ U14–  │ SuperMicro CSE-219U             │ ◄ 24c/48t │ 64GB
+│ U14–  │ SuperMicro CSE-219U — Randy     │ ◄ 28c/56t │ 128GB
 │  U13  │   (2U)                          │
 ├───────┼─────────────────────────────────┤
 │ U12–  │ NetApp DS4246 (4U JBOD)         │ ◄ 24-bay │ 6× HGST 2TB SATA

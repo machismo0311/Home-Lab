@@ -92,4 +92,4 @@ Credentials delivered to user out-of-band (not stored here).
 > Homepage `siteMonitor` checks run **server-side from the container**, so services firewalled away from LXC 106 (NPM admin :81, Prometheus localhost) can't be probed that way — point them at a reachable endpoint or drop the monitor.
 
 ### Basic-auth note
-- NPM stores access-list passwords in **plaintext** in `/data/database.sqlite` (`access_list_auth`) to regenerate the apr1 `/data/access/<id>` htpasswd. The `kyle` homepage password is recoverable there — and is **distinct** from the Grafana admin password.
+- The Homepage basic-auth user (`kyle`) and the Grafana admin password are **distinct** credentials; both are stored in Vaultwarden. (NPM keeps its access-list htpasswd material under `/data` on the NPM container — treat that path as sensitive.)

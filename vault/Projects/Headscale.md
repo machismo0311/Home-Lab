@@ -4,7 +4,7 @@
 
 ---
 
-> **Status:** Phase 1 complete — Ares connected. Fernanda migration pending.
+> **Status:** Phase 1 complete — Ares connected. the researcher migration pending.
 > **Full runbook:** `Home-Lab/headscale/HEADSCALE.md`
 
 ---
@@ -36,7 +36,7 @@ Headscale handles **authentication and key distribution only** — it does not c
 |-------|-------------|--------|
 | 1 | Deploy Headscale, connect Ares | ✅ Complete (2026-06-19) |
 | 2 | Fix Ares MagicDNS `/etc/resolv.conf` error | ⏳ Pending |
-| 3 | Migrate Kyle + Fernanda off commercial Tailscale | ⏳ Pending |
+| 3 | Migrate Kyle + the researcher off commercial Tailscale | ⏳ Pending |
 | 4 | Move CT 105 to VLAN 30, new static IP | ⏳ Pending |
 | 5 | Student onboarding (fall 2026, ~15 students) | ⏳ Pending |
 | 6 | Cancel commercial Tailscale account | ⏳ Pending |
@@ -68,5 +68,5 @@ sudo tailscale up --login-server=http://192.168.10.186:8080 --authkey=<key>
 | Issue | Status |
 |-------|--------|
 | Ares MagicDNS permission error on `/etc/resolv.conf` | Open — non-critical, connectivity unaffected |
-| Fernanda still on commercial Tailscale | Pending migration window |
+| the researcher still on commercial Tailscale | Pending migration window |
 | No TLS — server_url is plain HTTP | Planned: step-ca cert after VLAN 30 migration |

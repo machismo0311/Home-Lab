@@ -104,7 +104,7 @@ Randy is the \textbf{infrastructure backbone} — not a compute node.
     \item \textbf{Jellyfin} — media server; RX 580 handles transcoding via AMD ROCm
     \item \textbf{Prometheus + Grafana + Loki} — migrate from management G4 EliteDesk
     \item \textbf{Scrutiny} — drive health monitoring for 22+ drives
-    \item \textbf{MinIO} — S3-compatible object storage for Fernanda's datasets
+    \item \textbf{MinIO} — S3-compatible object storage for the researcher's datasets
     \item \textbf{Vaultwarden} — password manager (current node TBD)
 \end{enumerate}
 
@@ -129,7 +129,7 @@ Randy is the \textbf{infrastructure backbone} — not a compute node.
 \toprule
 \textbf{Server} & \textbf{GPU} & \textbf{VRAM} & \textbf{CUDA} & \textbf{Role} \\
 \midrule
-QuarkyLab & RTX 8000 (from Jarvis)      & 48GB       & Yes & Fernanda DUNE agent \\
+QuarkyLab & RTX 8000 (from Jarvis)      & 48GB       & Yes & DUNE research agent \\
 Jarvis    & 2$\times$ RTX 6000 (from QuarkyLab) & 48GB total & Yes & LLM inference/Ollama \\
 Randy     & RX 580                      & 8GB        & No (ROCm) & Display + transcoding \\
 \bottomrule
@@ -137,21 +137,21 @@ Randy     & RX 580                      & 8GB        & No (ROCm) & Display + tra
 
 \subsection{Rationale}
 
-\textbf{QuarkyLab gets RTX 8000:} Fernanda's DUNE RAG agent needs maximum single-GPU VRAM. 48GB holds a large code model and embedding model simultaneously without splitting. Single GPU means cleaner inference with no PCIe overhead.
+\textbf{QuarkyLab gets RTX 8000:} the researcher's DUNE RAG agent needs maximum single-GPU VRAM. 48GB holds a large code model and embedding model simultaneously without splitting. Single GPU means cleaner inference with no PCIe overhead.
 
 \textbf{Jarvis gets dual RTX 6000:} LLM inference workloads are bursty, not sustained. Ollama handles multi-GPU natively. 48GB aggregate VRAM matches the RTX 8000. PCIe overhead is acceptable for the llm\_router query routing use case.
 
-\textbf{NVLink:} Not required for either server. Fernanda's workload is inference and RAG retrieval, not distributed training. No unified VRAM pool is needed.
+\textbf{NVLink:} Not required for either server. the researcher's workload is inference and RAG retrieval, not distributed training. No unified VRAM pool is needed.
 
 %% ─────────────────────────────────────────────────────────
-\section{Fernanda's DUNE Agent Project}
+\section{the researcher's DUNE Agent Project}
 
 \subsection{Overview}
 \begin{itemize}[leftmargin=*, nosep]
     \item \textbf{Goal:} RAG agent over the DUNE experiment codebase
     \item \textbf{Purpose:} Help new scientists understand the full codebase during onboarding at SURF (South Dakota)
     \item \textbf{Host:} QuarkyLab (after RTX 8000 swap)
-    \item \textbf{Claude Project:} ``DUNE Agent — Fernanda'' (created 06/21/2026)
+    \item \textbf{Claude Project:} ``DUNE Agent'' (created 06/21/2026)
 \end{itemize}
 
 \subsection{Architecture}
@@ -183,7 +183,7 @@ Randy     & RX 580                      & 8GB        & No (ROCm) & Display + tra
 \textbf{Project} & \textbf{Scope} \\
 \midrule
 NetFRAME --- LLM Infrastructure & Jarvis, Ollama, llm\_router, GPU swap \\
-DUNE Agent --- Fernanda          & RAG pipeline, codebase ingestion, QuarkyLab ML env \\
+DUNE Agent --- the researcher          & RAG pipeline, codebase ingestion, QuarkyLab ML env \\
 \bottomrule
 \end{tabularx}
 
@@ -194,7 +194,7 @@ DUNE Agent --- Fernanda          & RAG pipeline, codebase ingestion, QuarkyLab M
 \toprule
 \textbf{Server} & \textbf{GPU} & \textbf{VRAM} & \textbf{CUDA} & \textbf{ROCm} & \textbf{Primary Use} \\
 \midrule
-QuarkyLab & RTX 8000      & 48GB       & Yes & No  & Fernanda ML / DUNE agent \\
+QuarkyLab & RTX 8000      & 48GB       & Yes & No  & ML / DUNE research \\
 Jarvis    & 2$\times$ RTX 6000 & 48GB total & Yes & No  & LLM inference (Ollama) \\
 Randy     & RX 580        & 8GB        & No  & Yes & Display + Jellyfin transcode \\
 \bottomrule

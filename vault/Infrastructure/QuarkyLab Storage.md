@@ -6,7 +6,7 @@
 
 ## Overview
 
-Storage for **QuarkyLab** (mgmt `.10.179`, ML node / Fernanda's DUNE agent + the multi-tenant student SLURM environment) is split into three tiers by purpose: fast local working sets, bulk persistent data on Randy over NFS, and backups to Randy's PBS. Set up during the 2026-07-02 maintenance window.
+Storage for **QuarkyLab** (mgmt `.10.179`, ML node / the researcher's DUNE agent + the multi-tenant student SLURM environment) is split into three tiers by purpose: fast local working sets, bulk persistent data on Randy over NFS, and backups to Randy's PBS. Set up during the 2026-07-02 maintenance window.
 
 > [!NOTE] Storage traffic runs on VLAN 30 (since 2026-07-02)
 > QuarkyLab and Randy are dual-homed on the `servers` VLAN 30. **NFS `/data` and PBS backup now use the VLAN 30 addresses** — QuarkyLab `192.168.30.179`, Randy `192.168.30.187` — while cluster/management/monitoring stay on VLAN 1 (`.10.x`). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
@@ -45,7 +45,7 @@ Local pool on 5× 1.8 TB HDDs in **raidz1** (single-disk fault tolerance), lz4 c
 |---|---|---|---|---|
 | `workspace/students` | `/workspace/students` | 3 TB | 100 GB | student01–20 homes |
 | `workspace/researchers` | `/workspace/researchers` | 1 TB | 150 GB | researcher01–06 homes |
-| `workspace/fernanda` | `/workspace/fernanda` | 4 TB | — | Fernanda's home + data |
+| `workspace/fernanda` | `/workspace/fernanda` | 4 TB | — | the researcher's home + data |
 | `workspace/scratch` | `/workspace/scratch` | 2 TB | 200 GB | disposable per-user scratch (capped so it can't starve the shared pool) |
 
 **Homes live on the pool (model A):** `usermod -d` repointed every student/researcher/fernanda home off the cramped OS disk onto these datasets (2026-07-02). `/home` now holds only admin accounts (kyle, machismo). Student jobs bind `$HOME` + `/workspace/scratch/$USER:/scratch` (see [[Compute/Dell R730 - ML Node]] / job_submit.lua).

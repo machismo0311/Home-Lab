@@ -4,7 +4,7 @@
 
 ---
 
-> [!INFO] Current cluster: pve1–pve5 (192.168.10.193/201/202/203/204). All IPs are on flat 192.168.10.0/24 — VLANs not yet active.
+> [!INFO] km-cluster is 7 nodes (pve2–pve5 + QuarkyLab .179 / Jarvis .31 / Randy .187); pve1 (Mac Mini, .193) is standalone. Mgmt/services on 192.168.10.0/24. **VLANs are active since 2026-06-25** (EX3400 trunk live) — iDRAC/IPMI now on VLAN 20, servers dual-homed on VLAN 30.
 
 ---
 
@@ -30,9 +30,10 @@ ssh root@192.168.10.201 "cscli metrics && cscli decisions list | head -20"
 # 5. Network — verify core switch
 ping -c 1 192.168.10.50 && echo "EX3400 OK"
 
-# 6. iDRAC reachability (pending R730s)
-ping -c 1 -W 2 192.168.10.20 && echo "quarkylab iDRAC reachable"
-ping -c 1 -W 2 192.168.10.21 && echo "Jarvis iDRAC reachable"
+# 6. iDRAC/IPMI reachability (VLAN 20 — ping from Ares enp0s31f6.20)
+ping -c 1 -W 2 192.168.20.20 && echo "quarkylab iDRAC reachable"
+ping -c 1 -W 2 192.168.20.21 && echo "Jarvis iDRAC reachable"
+ping -c 1 -W 2 192.168.20.22 && echo "Randy IPMI reachable"
 ```
 
 ---
@@ -71,19 +72,20 @@ ping -c 1 -W 2 192.168.10.21 && echo "Jarvis iDRAC reachable"
 
 | Node | IP | Status |
 |---|---|---|
-| QuarkyLab | 192.168.10.20 | Live ML node (RTX 8000 48GB (installed 2026-07-01)); iDRAC root/calvin |
-| Jarvis | 192.168.10.21 | Live LLM node (no GPU yet; 2× RTX 6000 staged, SW ready); iDRAC root/calvin |
+| QuarkyLab | 192.168.20.20 | Live ML node (RTX 8000 48GB (installed 2026-07-01)); iDRAC on VLAN 20 since 2026-07-03, root / creds in Vaultwarden |
+| Jarvis | 192.168.20.21 | Live LLM node (2× RTX 6000 48GB installed 2026-07-04, Ollama GPU-backed); iDRAC on VLAN 20 since 2026-07-03, root / creds in Vaultwarden |
+| Randy | 192.168.20.22 | Storage/PBS node; IPMI (ADMIN) on VLAN 20 since 2026-07-03, creds in Vaultwarden |
 
 ```bash
-# SSH to iDRAC
-ssh root@192.168.10.21   # Jarvis
-ssh root@192.168.10.20   # quarkylab
+# SSH to iDRAC (VLAN 20 — from Ares enp0s31f6.20)
+ssh root@192.168.20.21   # Jarvis
+ssh root@192.168.20.20   # quarkylab
 
 # Power control via racadm
-racadm -r 192.168.10.21 -u root -p <pass> serveraction powerup
-racadm -r 192.168.10.21 -u root -p <pass> serveraction hardreset
-racadm -r 192.168.10.21 -u root -p <pass> getsysinfo
-racadm -r 192.168.10.21 -u root -p <pass> getsel   # event log
+racadm -r 192.168.20.21 -u root -p <pass> serveraction powerup
+racadm -r 192.168.20.21 -u root -p <pass> serveraction hardreset
+racadm -r 192.168.20.21 -u root -p <pass> getsysinfo
+racadm -r 192.168.20.21 -u root -p <pass> getsel   # event log
 ```
 
 ---
@@ -179,7 +181,7 @@ systemctl restart crowdsec
 
 ## 🔒 Headscale (self-hosted VPN control plane)
 
-> Headscale runs on pve3 CT 105 (192.168.10.186). Ares uses Headscale. Fernanda's devices still on commercial Tailscale — migration pending.
+> Headscale runs on pve3 CT 105 (192.168.10.186). Ares uses Headscale. the researcher's devices still on commercial Tailscale — migration pending.
 
 ```bash
 # Health check
@@ -195,7 +197,7 @@ pct exec 105 -- journalctl -u headscale -n 30 --no-pager
 pct exec 105 -- systemctl restart headscale
 ```
 
-## 🔒 Tailscale (commercial — Fernanda's devices)
+## 🔒 Tailscale (commercial — the researcher's devices)
 
 ```bash
 # Status on any node

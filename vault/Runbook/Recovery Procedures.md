@@ -5,7 +5,7 @@
 ---
 
 > [!DANGER] Stay calm. Work methodically. Check the most likely causes first.
-> Current flat subnet: 192.168.10.0/24. VLANs not yet active.
+> Mgmt subnet: 192.168.10.0/24. **VLANs are active since 2026-06-25** (EX3400 trunk live); iDRAC/IPMI on VLAN 20, servers dual-homed on VLAN 30.
 
 ---
 
@@ -185,14 +185,14 @@ commit
 ### R730 won't POST
 
 ```bash
-# Check iDRAC event log
-racadm -r 192.168.10.21 -u root -p <pass> getsel
+# Check iDRAC event log (iDRAC on VLAN 20 — from Ares enp0s31f6.20)
+racadm -r 192.168.20.21 -u root -p <pass> getsel
 
 # Force cold reset
-racadm -r 192.168.10.21 -u root -p <pass> serveraction hardreset
+racadm -r 192.168.20.21 -u root -p <pass> serveraction hardreset
 
 # Reset iDRAC itself (wait 90s after)
-racadm -r 192.168.10.21 -u root -p <pass> racreset
+racadm -r 192.168.20.21 -u root -p <pass> racreset
 ```
 
 > [!WARNING] R730 CPU Stepping
@@ -202,10 +202,10 @@ racadm -r 192.168.10.21 -u root -p <pass> racreset
 
 ```bash
 # Step 1: Update iDRAC/LC via TFTP (no Enterprise license required)
-racadm -r 192.168.10.20 -u root -p <pass> fwupdate -g -u -a <tftp-server-ip> -d firmimg.d7
+racadm -r 192.168.20.20 -u root -p <pass> fwupdate -g -u -a <tftp-server-ip> -d firmimg.d7
 
 # Step 2: After iDRAC reboots, flash BIOS via web UI
-# https://192.168.10.20 → Maintenance → System Update
+# https://192.168.20.20 → Maintenance → System Update
 ```
 
 ---
