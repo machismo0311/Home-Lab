@@ -1,0 +1,24 @@
+# /etc/sudoers.d/jarvis-oncall   (install the matching block PER NODE; validate: visudo -c)
+#
+# Scoped NOPASSWD for the ONLY state-changing tool: restart_service. Each rule
+# permits the monitor user to restart ONLY that node's allowlisted units — the
+# exact argv the bot runs (/usr/bin/systemctl restart <unit>), nothing else.
+# Jarvis is checked locally by the bot's own root service and needs NO entry.
+
+# --- quarkylab (192.168.10.179) ---
+monitor ALL=(root) NOPASSWD: /usr/bin/systemctl restart slurmctld, /usr/bin/systemctl restart slurmd, /usr/bin/systemctl restart munge
+
+# --- randy (192.168.10.187) ---
+monitor ALL=(root) NOPASSWD: /usr/bin/systemctl restart proxmox-backup, /usr/bin/systemctl restart proxmox-backup-proxy, /usr/bin/systemctl restart jellyfin, /usr/bin/systemctl restart zfs-zed
+
+# --- pve2 (192.168.10.204) ---
+monitor ALL=(root) NOPASSWD: /usr/bin/systemctl restart pveproxy, /usr/bin/systemctl restart pvedaemon, /usr/bin/systemctl restart pvestatd
+
+# --- pve3 (192.168.10.201) ---
+monitor ALL=(root) NOPASSWD: /usr/bin/systemctl restart pveproxy, /usr/bin/systemctl restart pvedaemon, /usr/bin/systemctl restart pvestatd, /usr/bin/systemctl restart nut-server, /usr/bin/systemctl restart nut-monitor
+
+# --- pve4 (192.168.10.202) ---
+monitor ALL=(root) NOPASSWD: /usr/bin/systemctl restart pveproxy, /usr/bin/systemctl restart pvedaemon, /usr/bin/systemctl restart pvestatd
+
+# --- pve5 (192.168.10.203) ---
+monitor ALL=(root) NOPASSWD: /usr/bin/systemctl restart pveproxy, /usr/bin/systemctl restart pvedaemon, /usr/bin/systemctl restart pvestatd

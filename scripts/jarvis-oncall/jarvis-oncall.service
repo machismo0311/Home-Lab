@@ -1,0 +1,22 @@
+[Unit]
+Description=Jarvis On-Call Discord bot (km-cluster troubleshooting)
+After=network-online.target llm_router.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# The bot SSHes as the low-priv `monitor` user using its key, so it runs as a
+# user that can read that key. Reuse the netframe-monitor service account or a
+# dedicated one; must have read on /opt/netframe-monitor/monitor_key.
+User=root
+WorkingDirectory=/opt/jarvis-oncall
+EnvironmentFile=/opt/jarvis-oncall/.env
+ExecStart=/opt/jarvis-oncall/venv/bin/python /opt/jarvis-oncall/bot.py
+Restart=on-failure
+RestartSec=5
+# Let it write the audit log.
+ReadWritePaths=/var/log/jarvis-oncall
+LogsDirectory=jarvis-oncall
+
+[Install]
+WantedBy=multi-user.target
