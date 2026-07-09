@@ -51,7 +51,7 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 - **Boot:** RAID-1 mirror on 2× Seagate SAS SSDs via AVAGO 3108 MegaRAID
 - **Data pool:** ZFS `datastore` — 4× RAIDZ2 vdevs: 3× 6-wide Toshiba AL15SEB18EQ 1.6TB 10K SAS + 1× 4-wide Seagate ST2000NX0423 1.8TB SATA (all in-pool, no spares)
-- **Capacity:** 36.7TB raw / ~23TB usable | **PBS fingerprint:** `da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9`
+- **Capacity:** 36.7TB raw / ~23TB usable | **PBS fingerprint:** `(stored in Vaultwarden — not published)`
 - **PBS UI:** `https://192.168.10.187:8007`
 
 ### DS4246 — External JBOD
@@ -148,4 +148,4 @@ Home-Lab/
 
 ---
 
-*NetFRAME · Kyle Mason · Vermilion, OH · Built as a live CCNA lab and ML research platform*
+*NetFRAME · Kyle Mason · Greater Cleveland, OH · Built as a live CCNA lab and ML research platform*

@@ -75,7 +75,7 @@ flowchart TB
 | QuarkyLab (R730) | 192.168.10.179 | RTX 8000 48GB (installed 2026-07-01); Wazuh VM 104 (.184); Scrutiny collector |
 | Jarvis (R730) | 192.168.10.31 | LLM node (no GPU yet; 2× RTX 6000 staged, SW ready) |
 | Randy (SuperMicro) | 192.168.10.187 | PBS, Jellyfin, storage; Scrutiny hub+collector |
-| QuarkyLab iDRAC | 192.168.**20**.20 | svc tag 1S8WR22 — **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
+| QuarkyLab iDRAC | 192.168.**20**.20 | svc tag (in ops vault) — **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
 | Jarvis iDRAC | 192.168.**20**.21 | **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
 | Randy IPMI | 192.168.**20**.22 | ADMIN — **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
 | Juniper EX3400 | 192.168.10.50 | JunOS 23.4R2-S7.4 |

@@ -5,13 +5,13 @@
 | Field | Value |
 |---|---|
 | **Document** | NetFRAME Network Topology & Systems Reference |
-| **Owner** | Kyle Mason (`machismo0311`) — Vermilion / Greater Cleveland, OH |
+| **Owner** | Kyle Mason (`machismo0311`) — Greater Cleveland, OH |
 | **Classification** | Public / Sanitized (MACs → vendor only; serials omitted) |
 | **Version** | 1.0 |
 | **Generated** | 2026-07-08 |
 | **Method** | Live discovery (nmap, Proxmox API, SSH host facts, Headscale, ZFS/StorCLI) reconciled against the Home-Lab Obsidian vault |
 | **Scope** | Every host, VLAN, subnet, link, service, storage pool, and overlay path on the `192.168.10.0/24` estate and its segmented VLANs |
-| **Site** | Single site — residential lab, Vermilion OH |
+| **Site** | Single site — residential lab, Greater Cleveland OH |
 
 ---
 
@@ -94,7 +94,7 @@ At a glance:
 |---|---|
 | Model | NetFRAME **CS9000**, 42U, 24″ usable internal depth |
 | Rear panel | **Removed** — Dell R730s are ~28″ deep and overhang; maintain 6–8″ rear wall clearance for airflow |
-| Location | Vermilion / Greater Cleveland, OH |
+| Location | Greater Cleveland, OH |
 | Structured cabling | 2× Leviton CAT6 patch panels (U41–U42), vertical lacing both sides, horizontal managers at U37 & U7 |
 
 ### 3.2 Rack elevation (top → bottom)

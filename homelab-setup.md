@@ -2,7 +2,7 @@
 
 # Homelab Infrastructure Setup Documentation
 **Date:** June 17-18, 2026
-**Location:** Vermilion, OH — NetFRAME CS9000 42U rack
+**Location:** Greater Cleveland, OH — NetFRAME CS9000 42U rack
 **Domain:** kylemason.org
 **DNS/CDN:** Cloudflare
 **Hypervisor:** Proxmox VE 9.1.9
@@ -18,7 +18,7 @@
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 256GB NVMe + 1TB SATA | 192.168.10.201 | Primary services node |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | — | 192.168.10.202 | Services |
 | pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | — | 192.168.10.203 | Services |
-| quarkylab | Dell R730 (svc tag: 1S8WR22) | Dual E5-2699 v4 | 512GB (target) | — | iDRAC: 192.168.10.20 | Heavy compute (pending) |
+| quarkylab | Dell R730 (svc tag: (in ops vault)) | Dual E5-2699 v4 | 512GB (target) | — | iDRAC: 192.168.10.20 | Heavy compute (pending) |
 | Jarvis | Dell R730 | Dual E5 | 384GB | — | iDRAC: 192.168.10.21 | AI/ML workloads (pending) |
 | pve-supermicro | Supermicro CSE-219U | 24c/48t | 128GB | 11x 4TB HDD | TBD | TrueNAS storage (pending) |
 | NetApp DS4246 | NetApp | — | — | 24-bay SAS shelf | — | Storage expansion (pending) |
@@ -60,8 +60,8 @@
 | pve5 | 192.168.10.203 | |
 | Ares (Dell laptop) | DHCP / 192.168.10.100 (wired) | Tailscale: 100.124.118.63 |
 | Juniper EX3400 | 192.168.10.50 | SSH: `ssh mason@192.168.10.50` |
-| quarkylab iDRAC | 192.168.10.20 | R730 svc tag 1S8WR22 |
-| Jarvis iDRAC | 192.168.10.21 | R730 (MAC: 18:66:da:97:0f:8e) |
+| quarkylab iDRAC | 192.168.10.20 | R730 svc tag (in ops vault) |
+| Jarvis iDRAC | 192.168.10.21 | R730 (MAC: XX:XX:XX:XX:XX:XX) |
 | Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3, admin port 81 |
 | Vaultwarden | 192.168.10.182 | CT 102 on pve3 |
 | Grafana | 192.168.10.183 | CT 103 on pve3 |
@@ -314,7 +314,7 @@ services:
     volumes:
       - ./grafana-data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=changeme
+      - GF_SECURITY_ADMIN_PASSWORD=<set-a-strong-password>   # bootstrap only; rotated post-setup, stored in Vaultwarden
 
   prometheus:
     image: prom/prometheus:latest

@@ -158,7 +158,7 @@ ssh root@<IDRAC_IP>
 racadm getversion    # confirms BIOS 1.0.4 / iDRAC 2.02 / LC 2.02
 ```
 
-Default password: `calvin`
+Default password: the Dell factory-default iDRAC password (rotate immediately; current creds in Vaultwarden)
 
 ### 6.2 Download the Linux `.BIN` — not the Windows `.exe`
 
@@ -246,7 +246,7 @@ ssh root@<IDRAC_IP> "racadm getversion"
 
 iDRAC 2.86 uses modern TLS — the web UI now loads in a normal browser. The firmware-upload page does **not** require Enterprise.
 
-1. Browse to `https://<IDRAC_IP>`, log in (`root` / `calvin`).
+1. Browse to `https://<IDRAC_IP>`, log in (`root` / factory-default password — creds in Vaultwarden).
 2. Go to **iDRAC Settings → Update and Rollback**.
 3. Click **Browse / Choose File** and select: `BIOS_KM6P8_WN64_2.19.0.EXE`
 4. Click **Upload** → you should see **"Package successfully downloaded"**, Criticality: Urgent.
@@ -421,7 +421,7 @@ ssh root@<IDRAC_IP> "racadm lclog view -n 30"
 - **`idrac.bin` is requested as a directory.** Firmware must live at `/srv/tftp/idrac.bin/firmimg.d7`. A "host not reachable" error here is usually a path problem — confirm with `tcpdump -n udp port 69`.
 - **Memory not detected in every config with no amber LEDs = firmware, not hardware.** Stop swapping RAM and fix the BIOS.
 - **Third-party Enterprise trial licenses are device-locked.** They `LIC017` on a foreign service tag. The web-UI upload path doesn't need Enterprise anyway.
-- **Change the default credentials.** Everything here used `root`/`calvin`. Rotate it once stable.
+- **Change the default credentials.** Everything here used the Dell factory-default iDRAC login. Rotate it once stable (done — current creds in Vaultwarden).
 
 ---
 

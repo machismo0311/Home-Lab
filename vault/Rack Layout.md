@@ -12,7 +12,7 @@
 | Size | 42U |
 | Internal Depth | 24" (usable) |
 | Note | Rear panel **removed** — R730s extend ~28" |
-| Location | Vermilion / Greater Cleveland, OH |
+| Location | Greater Cleveland, OH |
 
 > [!WARNING] Depth Issue
 > Dell R730s are ~28" deep, exceeding the CS9000's 24" internal depth. **Rear panel has been physically removed** to accommodate. Ensure rear clearance from wall for adequate airflow.

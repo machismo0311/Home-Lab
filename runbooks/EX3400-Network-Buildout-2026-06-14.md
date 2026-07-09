@@ -229,8 +229,8 @@ Option B — Configure UniFi port for pve2 as trunk:
 - EX3400 access port config pending (needs physical port numbers for Proxmox hosts, iDRAC, servers)
 - Ares wired interface (`enp0s31f6`) currently DOWN — running on WiFi only
 - Pi-hole offline — local DNS not resolving; DHCP pointing to OPNsense Unbound temporarily
-- DHCP reservation for Ares in OPNsense (MAC `8c:ec:4b:f1:86:a5`) — not yet created
-- Device at 192.168.10.2 (MAC `78:45:58:bf:3f:ee`) — unknown, needs identification
+- DHCP reservation for Ares in OPNsense (MAC `XX:XX:XX:XX:XX:XX`) — not yet created
+- Device at 192.168.10.2 (MAC `XX:XX:XX:XX:XX:XX`) — unknown, needs identification
 - pve2 connection to EX3400 trunk is the blocker for VLAN activation
 
 ---
