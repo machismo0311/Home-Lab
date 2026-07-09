@@ -161,6 +161,8 @@ ssh jarvis 'cd /opt/llm_router && venv/bin/python rag_ingest.py && systemctl res
 
 **Enable the Claude fallback:** add `ANTHROPIC_API_KEY=sk-ant-...` to Jarvis `/etc/llm_router.env`, then `systemctl restart llm_router`. `claude-opus-4-8` then appears as a model; `/health` reports `claude_enabled: true`.
 
+**Process accounting (`acct`, 2026-07-09):** installed for parity with QuarkyLab — `acct.service` enabled + active, log at `/var/log/account/pacct`. Commands: `ac -p` (connect hrs/user), `ac -pd` (per-day), `sa -u` (commands + who ran them), `lastcomm <user>`. Daily snapshot via `ac-snapshot.timer` (23:55, `Persistent=true`) → `/usr/local/sbin/ac-snapshot.sh` writes `ac -pd` + `ac -p` to `/var/log/account/snapshots/YYYY-MM-DD.txt`, pruning >400 days. Jarvis is effectively root-only (no multi-tenant accounts), so this is mostly for symmetry; connect hours count long-held VPN/VS Code Remote sessions, not just interactive shell.
+
 ---
 
 ## 9. Backup & recovery
@@ -226,3 +228,4 @@ ssh jarvis 'cd /opt/llm_router && venv/bin/python rag_ingest.py && systemctl res
 - **2026-07-06** — CT 106 + 107 added to the nightly PBS LXC job; **discovered pve3 backups had been failing since the 07-02 VLAN 30 migration** (PBS at `.30.187` unreachable for bulk transfer from VLAN-1 nodes) and **fixed it** by repointing `randy-pbs` to Randy's VLAN 1 IP `.10.187`; immediate backups of 106 + 107 succeeded.
 - **2026-07-08** — confirmed 07-07/07-08 nightlies healthy; added the **10 G backup path**: new `randy-pbs-10g` storage (→ `.30.187`, nodes QuarkyLab/Jarvis/Randy) and split VM 104 (Wazuh) onto it so it backs up over the 10 G VLAN 30 link (verified 17 s). pve-node/VLAN-1 backups stay on `randy-pbs` (.10.187).
 - **2026-07-08** — **local ZFS storage added** (new drives): 5× 2 TB HDD → `tank` (raidz1, 7.2 TB, `/tank`) + free 200 GB SSD → `scratch` (`/scratch`), both by-id on the HBA330 IT-mode controller (§3.1). **Migrated the Ollama model store** off the 100 G `pve/models` LV onto the `tank/models` dataset (repointed `OLLAMA_MODELS` in ollama's systemd `override.conf`); verified `ollama list` + a cold-load inference from `/tank` (~6 s), then **reclaimed the old LV** (fstab line removed, `lvremove` — ~100 G back to the `pve` VG).
+- **2026-07-09** — installed `acct` (process accounting) + the daily `ac-snapshot.timer` for parity with QuarkyLab (§8).
