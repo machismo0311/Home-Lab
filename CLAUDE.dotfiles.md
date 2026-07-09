@@ -42,7 +42,7 @@ Unofficial Linux build scripts for Claude Desktop, producing `.deb`, `.rpm`, App
 - Shell style: tabs for indentation, `[[ ]]` conditionals, lowercase variables, no `set -e`
 
 ### `Home-Lab/`
-Homelab documentation for a 7-node Proxmox VE 9.1 cluster (km-cluster) — R730s, SuperMicro Randy, EliteDesk nodes, Juniper switching, and services. Also contains the Obsidian vault at `Home-Lab/vault/`.
+Homelab documentation for a 7-node Proxmox cluster (km-cluster) on PVE 9.2.3 (Randy on 9.1.1) — R730s, SuperMicro Randy, EliteDesk nodes, Juniper switching, and services. Also contains the Obsidian vault at `Home-Lab/vault/`.
 
 - Proxmox web UI: `https://192.168.10.193:8006` (local) or `https://100.116.237.31:8006` (Tailscale)
 - Pi-hole admin: `http://192.168.10.177/admin`

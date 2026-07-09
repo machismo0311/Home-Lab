@@ -115,8 +115,10 @@ echo "" > /etc/apt/sources.list.d/pve-enterprise.sources
 echo "" > /etc/apt/sources.list.d/ceph.sources
 echo "" > /etc/apt/sources.list.d/pbs-enterprise.sources
 
-echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
+echo "deb http://download.proxmox.com/debian/pve trixie pve-no-subscription" \
   > /etc/apt/sources.list.d/pve-no-subscription.list
+# NOTE: suite MUST be trixie (Debian 13 / PVE 9). A stale "bookworm" here pins
+# the node to PVE 8 packages and blocks 9.x point upgrades (fixed 2026-07-01).
 
 apt update && apt dist-upgrade -y
 ```

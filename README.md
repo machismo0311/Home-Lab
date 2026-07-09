@@ -3,7 +3,7 @@
 > **Kyle Mason** · USMC Veteran · EC-135/145 Instructor Pilot
 > [`kylemason.org`](https://kylemason.org) · [`machismo0311`](https://github.com/machismo0311)
 
-A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, running a 7-node Proxmox VE 9.2.3 cluster (km-cluster). Purpose-built as a live CCNA lab, LLM inference platform, ML research node, and backup infrastructure — documented here as a technical portfolio.
+A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, running a 7-node Proxmox VE cluster (km-cluster) — PVE 9.2.3 on every node except Randy (9.1.1, kernel/ZFS-only upgrade). Purpose-built as a live CCNA lab, LLM inference platform, ML research node, and backup infrastructure — documented here as a technical portfolio.
 
 ---
 
@@ -56,9 +56,8 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 
 ### DS4246 — External JBOD
 
-- 13× Toshiba 1.8TB 10K SAS + 19× Dell/Seagate 2TB 7.2K SAS
-- Connected via LSI 9207-8e HBA (IT mode) using SFF-8644→SFF-8088 cables
-- Passthrough to Randy in progress
+- 16× 4TB SAS, dual-path via LSI 9207-8e HBA (IT mode) + multipath, SFF-8644→SFF-8088 cables
+- **Pool `bulk` — built & online 2026-07-08:** 2× 8-wide RAIDZ2, 58.2TB raw / ~41.3 TiB usable, reboot-verified (auto-imports cleanly)
 
 ---
 
@@ -73,19 +72,22 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 | Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
 | step-ca | pve2 | `https://192.168.10.204:443` | Internal CA, `*.netframe.local` TLS |
 | Vaultwarden | pve3 (LXC 102) | `http://192.168.10.182` | Active ✅ (healthy, onboot=1) |
+| Open WebUI | pve3 (LXC 107) | `http://chat.netframe.local` | ChatGPT-style UI → llm_router; models `local`/`rag` |
+| Jellyfin | Randy | `:8096` | v10.11.11; media on `/datastore/media` |
 | Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | v0.31.1, GPU-backed on 2× RTX 6000 (installed 2026-07-04); qwen2.5:72b tensor-split across both |
+
+> Selected services — full container/service inventory (NPM, Grafana/Prometheus/Loki, Homepage, Scrutiny, llm_router, …) is in the vault.
 
 ---
 
 ## LLM Infrastructure
 
-Jarvis runs **Ollama** serving **Qwen2.5 72B Q4_K_M** across **2× RTX 6000** (48GB VRAM total, 24GB each) — GPUs installed & verified 2026-07-04, qwen2.5:72b pulled (tensor-splits across both cards). Stack: kernel 6.14.11-9-pve, NVIDIA 550.163.01, Ollama on a 98G `/opt/models` LV.
+Jarvis runs **Ollama** serving **Qwen2.5 72B Q4_K_M** across **2× RTX 6000** (48GB VRAM total, 24GB each) — GPUs installed & verified 2026-07-04, qwen2.5:72b pulled (tensor-splits across both cards). Stack: kernel 6.14.11-9-pve, NVIDIA 550.163.01, models on the `tank/models` ZFS dataset (7.2TB pool, since 2026-07-08).
 
-A **FastAPI `llm_router.py`** implements hybrid routing:
-- Default: local Ollama inference
-- Escalation: Claude API when logprob confidence drops below threshold
-
-This architecture was written up on [r/LocalLLM](https://reddit.com/r/LocalLLM) and gained community traction.
+A **FastAPI `llm_router.py`** (OpenAI-compatible) implements hybrid routing:
+- Default: local Ollama inference (Qwen2.5 72B)
+- Escalation: Claude API (`claude-opus-4-8`) on an explicit `escalate` flag, a `model=claude-*` request, or local failure. (Ollama exposes no logprobs, so routing is by flag/model/failure — not confidence scoring.)
+- Optional `model:"rag"` grounds answers on the Home-Lab vault with `[source]` citations.
 
 ---
 
@@ -103,7 +105,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 ## Planned / In Progress
 
 - [x] Randy commissioned — PBS live, ZFS datastore 36.7TB raw / ~23TB usable
-- [x] Full cluster upgrade — all nodes PVE 9.2.3 / kernel 7.0.12-1 (2026-06-22)
+- [x] Cluster upgrade — all cluster nodes to PVE 9.2.3 / kernel 7.0.12-1 (2026-06-22); Randy kernel/ZFS-only, stays on pve-manager 9.1.1
 - [x] NVIDIA 550 driver on QuarkyLab — kernel pinned to 6.14.11-9-pve
 - [x] Jarvis GPU software stack staged (2026-07-01) — kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS built, Ollama on /opt/models
 - [x] QuarkyLab RTX 6000 → RTX 8000 48GB swap ✅ 2026-07-01 (nvidia-smi reports 48GB, NVIDIA 550.163.01)
@@ -111,7 +113,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] Backup schedules configured — daily to randy-pbs, 7d+4w retention
 - [x] Promtail log shipping on all 8 nodes → Loki ✅ 2026-06-25
 - [x] Wazuh agent 4.9.2 on all 8 nodes → full SIEM coverage ✅ 2026-06-25
-- [ ] DS4246 → Randy via LSI 9207-8e passthrough
+- [x] DS4246 → Randy — pool `bulk` built & online 2026-07-08 (2× 8-wide RAIDZ2, ~41.3 TiB usable, reboot-verified)
 - [x] VLAN activation ✅ 2026-06-25 — EX3400 ge-0/0/46 trunk live, verified end-to-end (DHCP lease on VLAN 20). Fix: native-vlan-id at interface level (ELS)
 - [x] Jellyfin installed on Randy v10.11.11 — http://192.168.10.187:8096 ✅ (GPU transcoding pending RX 580 power cable)
 - [x] Prometheus node-exporter deployed on all 8 nodes (randy/pve2/pve3/pve4/pve5/quarkylab/jarvis/pve1) ✅
@@ -121,7 +123,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [ ] Cyberpunk monitoring dashboard — live API integration
 - [ ] IMU gesture control (nRF52 trackers → Home Assistant)
 - [x] Headscale Phase 1 — pve3/4/5/Jarvis migrated to self-hosted (2026-06-22)
-- [ ] Headscale Phase 2 — QuarkyLab + Fernanda's Mac (must migrate together)
+- [ ] Headscale Phase 2 — QuarkyLab + the researcher's Mac (must migrate together)
 
 ---
 
@@ -130,20 +132,21 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 ```
 Home-Lab/
 ├── README.md
-├── CLAUDE.md                         # Homelab context for Claude Code
-├── CLAUDE.dotfiles.md                # Dotfiles repo context
-├── docs/
-│   ├── netframe-runbook.pdf          # Full infrastructure runbook (LaTeX)
-│   ├── netframe-runbook.tex          # LaTeX source
-│   ├── randy-commissioning-runbook.md
-│   └── *.md                          # Session runbooks / incident reports
-├── dotfiles/
-│   ├── .bashrc                       # Ares admin workstation
-│   ├── .bash_aliases                 # Homelab aliases
-│   ├── .ssh/config                   # SSH host shortcuts
-│   ├── CLAUDE.netframe.md
-│   └── CLAUDE.dotfiles.md
-└── vault/                            # Obsidian knowledge base
+├── CLAUDE.md                     # Homelab context for Claude Code (canonical)
+├── CLAUDE.dotfiles.md            # Dotfiles repo context
+├── index.html                    # Personal landing page (kylemason.org)
+├── docs/                         # Runbooks, incident reports, LaTeX sources (.tex)
+│   └── storage/                  #   PDFs are recompiled from .tex before publishing
+├── runbooks/                     # Session runbooks (EX3400, VLAN, Homepage)
+├── vault/                        # Obsidian knowledge base — canonical runbooks & topic docs
+│   ├── Compute/ Infrastructure/ Networking/ Runbook/ Projects/
+│   └── CLAUDE.netframe.md        # Deployed copy of root CLAUDE.md
+├── scripts/                      # llm_router (FastAPI), jarvis-oncall bot, gpu-fan-control, SMART tooling
+├── services/                     # homepage/ + netframe-monitor/ configs & systemd units
+├── topology/                     # Sanitized network topology reference (.md/.tex/.pdf)
+├── headscale/                    # Headscale VPN docs
+├── student-guide/                # QuarkyLab researcher/student onboarding guides
+└── dotfiles/                     # .bashrc, .bash_aliases, .ssh/config (sanitized)
 ```
 
 ---
