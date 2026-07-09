@@ -1,6 +1,6 @@
 # Jarvis On-Call Discord Bot — Runbook
 
-**Node:** Jarvis (Dell PowerEdge R730, service tag DWG7HH2)
+**Node:** Jarvis (Dell PowerEdge R730, service tag (in ops vault))
 **Status:** 🟢 Deployed & live on Jarvis 2026-07-09 (systemd `jarvis-oncall`, DM-only)
 **Author:** Kyle Mason (NetFRAME homelab)
 **Source:** `Home-Lab/scripts/jarvis-oncall/` (see its `README.md`)

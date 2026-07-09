@@ -74,7 +74,7 @@ commit
 
 ## Adding a New VLAN
 
-> [!NOTE] VLANs not yet active — will be implemented at OPNsense cutover. This is the procedure for when that happens.
+> [!NOTE] VLANs are active since 2026-06-25 (EX3400 trunk live post-OPNsense-cutover). This is the procedure for adding a further VLAN.
 
 ```junos
 # Step 1: Create VLAN on EX3400

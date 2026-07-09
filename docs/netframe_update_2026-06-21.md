@@ -56,7 +56,7 @@ Randy is the **infrastructure backbone** — not a compute node.
 3. **Jellyfin** — media server, RX 580 handles ROCm transcoding
 4. **Prometheus + Grafana + Loki** — migrate from management G4
 5. **Scrutiny** — drive health monitoring for 22+ drives
-6. **MinIO** — S3 object storage for Fernanda's datasets
+6. **MinIO** — S3 object storage for the researcher's datasets
 7. **Vaultwarden** — location TBD
 
 **What Randy does NOT do:**
@@ -80,14 +80,14 @@ Randy is the **infrastructure backbone** — not a compute node.
 
 | Server | GPU | VRAM | Role |
 |---|---|---|---|
-| QuarkyLab | RTX 8000 (from Jarvis) | 48GB | Fernanda DUNE agent |
+| QuarkyLab | RTX 8000 (from Jarvis) | 48GB | DUNE research agent |
 | Jarvis | 2x RTX 6000 (from QuarkyLab) | 48GB total | LLM inference/Ollama |
 | Randy | RX 580 | 8GB | Display + transcoding |
 
 ### Rationale
 
 **QuarkyLab gets RTX 8000:**
-- Fernanda's DUNE RAG agent needs max single-GPU VRAM
+- the researcher's DUNE RAG agent needs max single-GPU VRAM
 - 48GB holds large code model + embedding model simultaneously
 - Single GPU = cleaner inference, no PCIe overhead
 
@@ -97,17 +97,17 @@ Randy is the **infrastructure backbone** — not a compute node.
 - 48GB aggregate VRAM matches RTX 8000
 - PCIe overhead acceptable for query routing use case
 
-**NVLink:** Not needed for either server. Fernanda's workload is inference/RAG, not training.
+**NVLink:** Not needed for either server. the researcher's workload is inference/RAG, not training.
 
 ---
 
-## Fernanda's DUNE Agent Project
+## the researcher's DUNE Agent Project
 
 ### Overview
 - **Goal:** RAG agent over DUNE experiment codebase
 - **Purpose:** Help new scientists understand full codebase during onboarding
 - **Host:** QuarkyLab (after RTX 8000 swap)
-- **Claude Project:** "DUNE Agent — Fernanda" ✅ created
+- **Claude Project:** "DUNE Agent" ✅ created
 
 ### Architecture
 - RAG pipeline (inference, not training)
@@ -141,17 +141,17 @@ Randy is the **infrastructure backbone** — not a compute node.
 | Project | Purpose |
 |---|---|
 | NetFRAME — LLM Infrastructure | Jarvis, Ollama, llm_router, GPU swap |
-| DUNE Agent — Fernanda | RAG pipeline, QuarkyLab ML env |
+| DUNE Agent | RAG pipeline, QuarkyLab ML env |
 
 ---
 
 ## Full Cluster GPU Inventory
 
-Every node now has a GPU:
+The GPU-equipped servers (compute/storage nodes; the pve2–pve5 nodes are GPU-less):
 
 | Server | GPU | VRAM | CUDA | Use |
 |---|---|---|---|---|
-| QuarkyLab | RTX 8000 | 48GB | ✅ | Fernanda ML/DUNE |
+| QuarkyLab | RTX 8000 | 48GB | ✅ | ML / DUNE research |
 | Jarvis | 2x RTX 6000 | 48GB | ✅ | LLM inference |
 | Randy | RX 580 | 8GB | ❌ (ROCm) | Display/transcode |
 

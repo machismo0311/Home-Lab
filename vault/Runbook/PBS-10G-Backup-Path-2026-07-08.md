@@ -38,7 +38,7 @@ pbs: randy-pbs                     # VLAN 1 — all nodes (default)
 	datastore datastore
 	server 192.168.10.187
 	content backup
-	fingerprint da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9
+	fingerprint (stored in Vaultwarden — not published)
 	prune-backups keep-all=1
 	username root@pam
 
@@ -46,7 +46,7 @@ pbs: randy-pbs-10g                 # VLAN 30 10 G — GPU/storage nodes only
 	datastore datastore
 	server 192.168.30.187
 	content backup
-	fingerprint da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9
+	fingerprint (stored in Vaultwarden — not published)
 	prune-backups keep-daily=7,keep-weekly=4
 	username root@pam
 	nodes QuarkyLab,Jarvis,Randy

@@ -1,5 +1,5 @@
 # 🖥️ Homelab — Master Map of Content
-> **Operator:** Kyle Mason (`machismo`) · **Location:** Vermilion / Greater Cleveland, OH
+> **Operator:** Kyle Mason (`machismo`) · **Location:** Greater Cleveland, OH
 > **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-06-26
 
 ---
@@ -47,8 +47,8 @@ mindmap
 | U33–U31 | HP EliteDesk G3 Mini ×2 (3U shelf) | pve4 + pve5 (32GB each) |
 | U30 | Mac mini (pve1) + RPi 4 (1U shelf) | Pi-hole / cluster mgmt |
 | U29–U21 | *Open / cable mgmt* | — |
-| U20–U18 | Dell R730 — Jarvis | LLM node (no GPU yet; 2× RTX 6000 staged) |
-| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 8000 48GB, installed 2026-07-01 (Fernanda / DUNE) |
+| U20–U18 | Dell R730 — Jarvis | LLM node (2× RTX 6000 48GB total, installed 2026-07-04) |
+| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 8000 48GB, installed 2026-07-01 (the researcher / DUNE) |
 | U14–U13 | SuperMicro CSE-219U — Randy | PBS, Jellyfin, ZFS storage |
 | U12–U7 | NetApp DS4246 (4U) | JBOD storage shelf |
 | U6 | Furman RP-8 | Power conditioning |
@@ -70,9 +70,9 @@ mindmap
 | pve4 (EliteDesk G3) | 192.168.10.202 | 32GB |
 | pve5 (EliteDesk G3) | 192.168.10.203 | 32GB |
 | QuarkyLab (R730) | 192.168.10.179 | ML node, RTX 8000 48GB; Wazuh VM 104 (.184) |
-| Jarvis (R730) | 192.168.10.31 | LLM node (no GPU yet; 2× RTX 6000 staged, SW ready) |
+| Jarvis (R730) | 192.168.10.31 | LLM node (2× RTX 6000 48GB total, installed 2026-07-04, Ollama GPU-backed) |
 | Randy (SuperMicro) | 192.168.10.187 | PBS, Jellyfin, ZFS storage |
-| QuarkyLab iDRAC / Jarvis iDRAC / Randy IPMI | .20 / .21 / .22 | |
+| QuarkyLab iDRAC / Jarvis iDRAC / Randy IPMI | 192.168.20.20 / .20.21 / .20.22 (VLAN 20 since 2026-07-03) | |
 | Juniper EX3400 | 192.168.10.50 | JunOS 23.4R2-S7.4, VLAN trunk |
 | Nginx Proxy Manager | 192.168.10.181 | LXC 101 on pve3 |
 | Vaultwarden | 192.168.10.182 | LXC 102 on pve3 |
@@ -92,8 +92,8 @@ mindmap
 - [[Networking/Network Overview]] — Topology, VLANs, routing
 
 ### Compute
-- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC: 192.168.10.20, RTX 8000 48GB installed 2026-07-01)
-- [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC: 192.168.10.21, LLM, 2× RTX 6000 planned)
+- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC: 192.168.20.20, RTX 8000 48GB installed 2026-07-01)
+- [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC: 192.168.20.21, LLM, 2× RTX 6000 48GB installed 2026-07-04)
 - [[Compute/Small Node Cluster]] — pve1 (standalone) + pve2–pve5
 
 ### Storage & Virtualization
@@ -145,10 +145,10 @@ mindmap
 - [x] Homepage dashboard live (homepage.kylemason.org); UPS monitoring (NUT→PeaNUT→Grafana→Discord)
 - [x] Jarvis GPU software stack staged (2026-07-01) — kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS, Ollama → /opt/models
 - [x] QuarkyLab RTX 6000 → RTX 8000 48GB swap — installed 2026-07-01
-- [ ] Jarvis 2× RTX 6000 install (cards in hand; pending Dell N08NH power cables + R730 GPU riser)
+- [x] Jarvis 2× RTX 6000 install — installed & verified 2026-07-04 (48GB total, Ollama GPU-backed)
 - [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
 - [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error
-- [ ] Headscale Phase 3: migrate Kyle + Fernanda devices off commercial Tailscale
+- [ ] Headscale Phase 3: migrate Kyle + the researcher devices off commercial Tailscale
 - [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs
 - [ ] VoIP project (deferred — post core infra)
 - [ ] CCNA study cadence established (VetTec 2.0 pathway)

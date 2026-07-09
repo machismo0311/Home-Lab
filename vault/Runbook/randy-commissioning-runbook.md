@@ -177,7 +177,7 @@ proxmox-backup-manager cert info | grep Fingerprint
 
 **PBS fingerprint:**
 ```
-da:61:6a:4c:49:e8:87:03:08:1d:d7:31:ab:23:58:20:47:58:e8:77:4a:52:3d:39:0c:19:52:e0:67:ee:d9:c9
+(stored in Vaultwarden — not published)
 ```
 
 ### Step 8 — Add randy-pbs to cluster storage

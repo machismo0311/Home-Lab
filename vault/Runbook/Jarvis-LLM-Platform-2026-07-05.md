@@ -1,6 +1,6 @@
 # Jarvis LLM Inference Platform — Build & Operations Runbook
 
-**Node:** Jarvis (Dell PowerEdge R730, service tag DWG7HH2)
+**Node:** Jarvis (Dell PowerEdge R730, service tag (in ops vault))
 **Status:** 🟢 In production
 **Built:** 2026-07-04 → 2026-07-05
 **Author:** Kyle Mason (NetFRAME homelab)
