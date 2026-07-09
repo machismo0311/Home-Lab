@@ -59,7 +59,7 @@ Headscale runs as LXC container **105** on **pve3**.
 | pve4 | HP EliteDesk G3 Mini | General compute | 192.168.10.202 |
 | pve5 | HP EliteDesk G3 Mini | Fernanda ML node | 192.168.10.203 |
 | QuarkyLab | Dell R730 | ML inference, RTX 8000 48GB (installed 2026-07-01) | 192.168.10.x |
-| Jarvis | Dell R730 | LLM inference, 2× RTX 6000 planned | 192.168.10.x |
+| Jarvis | Dell R730 | LLM inference, 2× RTX 6000 (48GB total, installed 2026-07-04) | 192.168.10.x |
 | Randy | SuperMicro CSE-219U | TrueNAS / storage | 192.168.10.x |
 
 ### Container Inventory on pve3
@@ -81,7 +81,7 @@ Headscale runs as LXC container **105** on **pve3**.
 | Tailscale IPv4 range | 100.64.0.0/10 |
 | Tailscale IPv6 range | fd7a:115c:a1e0::/48 |
 | MagicDNS base domain | netframe.local |
-| DNS pushed to clients | 192.168.10.170 (Pi-hole) |
+| DNS pushed to clients | 192.168.10.177 (Pi-hole) |
 
 > ⚠️ **Planned:** Move to VLAN 30 (servers) before student onboarding in fall 2026.
 
@@ -165,7 +165,7 @@ Edit `/etc/headscale/config.yaml`:
 | `listen_addr` | `127.0.0.1:8080` | `0.0.0.0:8080` |
 | `grpc_listen_addr` | `127.0.0.1:50443` | `0.0.0.0:50443` |
 | `base_domain` | `example.com` | `netframe.local` |
-| `nameservers.global` | Cloudflare IPs | `192.168.10.170` (Pi-hole) |
+| `nameservers.global` | Cloudflare IPs | `192.168.10.177` (Pi-hole) |
 
 Also removed deprecated keys when upgrading to v0.29.1:
 - `dns.use_username_in_magic_dns`
@@ -488,7 +488,7 @@ dns:
   base_domain: netframe.local
   nameservers:
     global:
-      - 192.168.10.170   # Pi-hole
+      - 192.168.10.177   # Pi-hole
 ```
 
 ---
