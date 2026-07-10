@@ -6,7 +6,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[expansion=false,protrusion=false]{microtype}
-\usepackage{titlesec}
+\usepackage[explicit]{titlesec}
 \usepackage{fancyhdr}
 \usepackage{hyperref}
 \usepackage{listings}
@@ -18,6 +18,7 @@
 \usepackage{parskip}
 \usepackage{multirow}
 \usepackage{tabularx}
+\usepackage{amssymb}   % \square, \checkmark
 
 \tcbuselibrary{listings,skins,breakable}
 
@@ -52,11 +53,12 @@
 \lstset{style=shell}
 
 % ── Section Styling ───────────────────────────────────────────────────────────
-\titleformat{\section}
-  {\large\bfseries\color{white}\colorbox{sectionblue}}
-  {\colorbox{sectionblue}{\thesection}}{0.5em}{}
-\titleformat{\subsection}{\normalsize\bfseries\color{nfcyan}}{\thesubsection}{0.5em}{}
-\titleformat{\subsubsection}{\normalsize\bfseries\color{nfyellow}}{\thesubsubsection}{0.5em}{}
+\titleformat{\section}[block]
+  {\large\bfseries\color{white}}
+  {}{0pt}
+  {\colorbox{sectionblue}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{\thesection\quad #1}}}
+\titleformat{\subsection}{\normalsize\bfseries\color{nfcyan}}{\thesubsection}{0.5em}{#1}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{nfyellow}}{\thesubsubsection}{0.5em}{#1}
 
 % ── Header/Footer ─────────────────────────────────────────────────────────────
 \pagestyle{fancy}
@@ -107,7 +109,7 @@
     \begin{tabular}{rl}
       \color{nfcyan}Author:    & Kyle Mason \\
       \color{nfcyan}GitHub:    & machismo0311/Home-Lab \\
-      \color{nfcyan}Revised:   & June 22, 2026 \\
+      \color{nfcyan}Revised:   & 2026-07-10 \\
       \color{nfcyan}Cluster:   & km-cluster (7 nodes) \\
       \color{nfcyan}Site:      & kylemason.org \\
     \end{tabular}
@@ -115,7 +117,7 @@
   \rule{0.8\textwidth}{0.4pt}\\[0.5cm]
   {\small\color{cmtgray}
     USMC Aviation Veteran $\cdot$ EC-135/145 Instructor Pilot \\
-    Senior FOQA Officer, Metro Aviation \\
+    Aviation Safety / FOQA Officer \\
     Network Engineering Candidate, VetTec 2.0 / CCNA
   }
 \end{center}
@@ -133,7 +135,8 @@
 NetFRAME is a professional-grade homelab built inside a NetFRAME CS9000 42U rack,
 purpose-built as a live CCNA lab, LLM inference platform, ML research node,
 and backup infrastructure. The cluster is named \textbf{km-cluster} and runs
-Proxmox VE 9.1 across seven nodes as of June 2026.
+Proxmox VE 9.2.3 across seven nodes as of July 2026 (Randy stayed on 9.1.1 —
+a kernel/ZFS-only upgrade).
 
 \subsection{Cluster Nodes}
 
@@ -143,10 +146,10 @@ Proxmox VE 9.1 across seven nodes as of June 2026.
 \midrule
 \endhead
 Randy     & Storage / PBS  & 192.168.10.187 & 2x E5-2690 v4 & 128 GB & SuperMicro CSE-219U \\
-QuarkyLab & ML / the researcher  & 192.168.10.30  & 2x E5-2699 v4 & 512 GB & R730, RTX 6000 24GB \\
-Jarvis    & LLM Inference  & 192.168.10.31  & 2x E5-2687W v4& 384 GB & R730, RTX 8000 48GB \\
-pve2      & OPNsense host  & 192.168.10.204 & i7-8700       & 48 GB  & HP EliteDesk G4 SFF \\
-pve3      & Cluster node   & 192.168.10.201 & i7-8700       & 32 GB  & HP EliteDesk G4 SFF \\
+QuarkyLab & ML / research  & 192.168.10.179 & 2x E5-2699 v4 & 512 GB & R730, RTX 8000 48GB \\
+Jarvis    & LLM Inference  & 192.168.10.31  & 2x E5-2687W v4& 384 GB & R730, 2x RTX 6000 (48GB) \\
+pve2      & OPNsense host  & 192.168.10.204 & i7-8700       & 32 GB  & HP EliteDesk G4 SFF \\
+pve3      & Cluster node   & 192.168.10.201 & i7-8700       & 48 GB  & HP EliteDesk G4 SFF \\
 pve4      & Cluster node   & 192.168.10.202 & i5-7500T      & 32 GB  & HP EliteDesk G3 Mini \\
 pve5      & Cluster node   & 192.168.10.203 & i5-7500T      & 32 GB  & HP EliteDesk G3 Mini \\
 \bottomrule
@@ -160,9 +163,9 @@ pve5      & Cluster node   & 192.168.10.203 & i5-7500T      & 32 GB  & HP EliteD
 \midrule
 EX3400 (switch) & 192.168.10.50 \\
 OPNsense LAN    & 192.168.10.1  \\
-Randy IPMI      & 192.168.10.22 \\
-QuarkyLab iDRAC & 192.168.10.20 \\
-Jarvis iDRAC    & 192.168.10.21 \\
+Randy IPMI      & 192.168.20.22 (VLAN 20) \\
+QuarkyLab iDRAC & 192.168.20.20 (VLAN 20) \\
+Jarvis iDRAC    & 192.168.20.21 (VLAN 20) \\
 Pi-hole / DNS   & 192.168.10.177 \\
 Ares (admin)    & 192.168.10.100 (wired) / .199 (WiFi) \\
 \bottomrule
@@ -202,10 +205,9 @@ Ares (admin)    & 192.168.10.100 (wired) / .199 (WiFi) \\
 \toprule
 \textbf{Node} & \textbf{NIC Port} & \textbf{EX3400 Port} \\
 \midrule
-Randy (nic3)     & Port 1 & xe-0/2/0 — Up 10G \\
-Randy (nic2)     & Port 2 & xe-0/2/2 — awaiting 4th DAC \\
-QuarkyLab        & ConnectX & xe-0/2/x \\
-Jarvis           & ConnectX & xe-0/2/x \\
+Randy (nic3)      & ConnectX-3 & xe-0/2/0 — Up 10G (VLAN 30) \\
+Jarvis (enp132s0) & ConnectX-3 & xe-0/2/2 — Up 10G (VLAN 30) \\
+QuarkyLab         & onboard 1G & ge-0/0/24 — trunk (native 1 + VLAN 30) \\
 \bottomrule
 \end{tabular}
 
@@ -220,11 +222,11 @@ Serial console access: \texttt{qm terminal 100} from pve2.
 \label{sec:randy}
 % =============================================================================
 
-\begin{infobox}[Randy — Commissioned June 22, 2026]
+\begin{infobox}[Randy — Commissioned 2026-06-22]
 \textbf{Role:} Primary storage node, Proxmox Backup Server \\
-\textbf{IP:} 192.168.10.187 \quad \textbf{IPMI:} 192.168.10.22 \\
-\textbf{OS:} Proxmox VE 9.1 (kernel 6.17.2-1-pve) \\
-\textbf{CPU:} Dual Intel E5-2690 v4 (2x14c/28t = 48 logical) \\
+\textbf{IP:} 192.168.10.187 \quad \textbf{IPMI:} 192.168.20.22 (VLAN 20) \\
+\textbf{OS:} Proxmox VE 9.1.1 (kernel 7.0.12-1-pve) \\
+\textbf{CPU:} Dual Intel E5-2690 v4 (28 cores / 56 threads) \\
 \textbf{RAM:} 128 GB ECC DDR4
 \end{infobox}
 
@@ -235,8 +237,8 @@ Serial console access: \texttt{qm terminal 100} from pve2.
 \textbf{Device} & \textbf{Type} & \textbf{Purpose} \\
 \midrule
 /dev/sda (RAID-1) & 185.8 GB SAS SSD x2 & Proxmox OS boot mirror \\
-/dev/sdb--sdu     & 18x 1.6TB Toshiba AL15SEB18EQ 10K SAS & ZFS datastore pool \\
-sdc, sdg          & 2x 1.8TB Seagate ST2000NX0423 SATA & Spare / unallocated \\
+18x Toshiba AL15SEB18EQ & 1.636TB 10K SAS & datastore — 3x 6-wide RAIDZ2 \\
+4x Seagate ST2000NX0423 & 1.819TB SATA & datastore — 1x 4-wide RAIDZ2 \\
 \bottomrule
 \end{tabular}
 
@@ -244,7 +246,7 @@ sdc, sdg          & 2x 1.8TB Seagate ST2000NX0423 SATA & Spare / unallocated \\
 
 \begin{itemize}
   \item Boot mirror: RAID-1 on slots 0:0 and 0:1 (Seagate ST200FM0053 SSDs)
-  \item Data drives: JBOD mode enabled, all 20 data drives passed through to OS
+  \item Data drives: JBOD mode enabled, all 22 data drives passed through to OS
   \item StorCLI installed at: \texttt{/opt/MegaRAID/storcli/storcli64}
   \item Symlink: \texttt{/usr/sbin/storcli64}
 \end{itemize}
@@ -267,10 +269,11 @@ storcli64 /c0/eall/sall set jbod
 zpool status datastore
 # pool: datastore
 # state: ONLINE
-#   raidz2-0: sdb sdd sde sdf sdh sdi
-#   raidz2-1: sdj sdk sdl sdm sdn sdo
-#   raidz2-2: sdp sdq sdr sds sdt sdu
-# 29.4TB raw / 19.5TB usable
+#   raidz2-0: 6x Toshiba 1.636TB
+#   raidz2-1: 6x Toshiba 1.636TB
+#   raidz2-2: 6x Toshiba 1.636TB
+#   raidz2-3: 4x Seagate ST2000NX0423 1.819TB
+# 36.7TB raw / ~23TB usable (all drives in-pool; no spares)
 \end{lstlisting}
 
 \subsection{Proxmox Backup Server}
@@ -286,9 +289,9 @@ zpool status datastore
 \subsection{Networking}
 
 \begin{itemize}
-  \item \textbf{nic3} (Mellanox ConnectX-3 port 1): 10G UP $\rightarrow$ xe-0/2/0 on EX3400
-  \item \textbf{nic2} (ConnectX-3 port 2): DOWN — awaiting 4th DAC cable $\rightarrow$ xe-0/2/2
-  \item \textbf{nic0, nic1} (onboard Intel): DOWN / unused
+  \item \textbf{nic3} (Mellanox ConnectX-3): 10G UP $\rightarrow$ xe-0/2/0 on EX3400
+  \item \textbf{Dual-homed (2026-07-02):} mgmt/corosync on VLAN 1 (192.168.10.187); NFS/PBS/egress on VLAN 30 (192.168.30.187)
+  \item \textbf{nic0, nic1} (onboard Intel): unused
   \item vmbr0 bridges nic3 for management
 \end{itemize}
 
@@ -309,8 +312,8 @@ echo "# disabled" > /etc/apt/sources.list.d/pve-enterprise.list
 echo "# disabled" > /etc/apt/sources.list.d/ceph.list
 echo "" > /etc/apt/sources.list.d/pve-enterprise.sources
 echo "" > /etc/apt/sources.list.d/ceph.sources
-echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
-  > /etc/apt/sources.list.d/pve-no-subscription.list
+echo "deb http://download.proxmox.com/debian/pve trixie pve-no-subscription" \
+  > /etc/apt/sources.list.d/pve-no-subscription.list   # trixie (Debian 13/PVE 9); NOT bookworm
 apt update && apt dist-upgrade -y
 
 # 4. Join cluster
@@ -325,7 +328,8 @@ storcli64 /c0/eall/sall set jbod
 zpool create -f -o ashift=12 datastore \
   raidz2 sdb sdd sde sdf sdh sdi \
   raidz2 sdj sdk sdl sdm sdn sdo \
-  raidz2 sdp sdq sdr sds sdt sdu
+  raidz2 sdp sdq sdr sds sdt sdu \
+  raidz2 <4x Seagate ST2000NX0423>   # 4th vdev, added in the 2026-06-25 expansion
 
 # 7. Install PBS
 echo "deb http://download.proxmox.com/debian/pbs trixie pbs-no-subscription" \
@@ -344,17 +348,18 @@ proxmox-backup-manager datastore create datastore /datastore
 \textbf{Role:} the researcher's ML research node \\
 \textbf{iDRAC:} 192.168.20.20 (VLAN 20; creds in Vaultwarden) \\
 \textbf{CPU:} Dual E5-2699 v4 (matched stepping) \quad \textbf{RAM:} 512 GB LRDIMM ECC \\
-\textbf{GPU:} RTX 6000 24 GB \quad \textbf{BIOS:} 2.19.0
+\textbf{GPU:} RTX 8000 48 GB (installed 2026-07-01) \quad \textbf{BIOS:} 2.19.0
 \end{infobox}
 
-\textbf{Pending:} NVIDIA driver install requires kernel pinned to 6.14.11-9-pve before install
-(current kernel 6.17 has DRM API incompatibility with nvidia-550 driver).
+\textbf{GPU stack (verified 2026-07-01):} NVIDIA 550.163.01 on kernel 6.14.11-9-pve,
+pinned via \texttt{GRUB\_DEFAULT} (6.17+ breaks the nvidia-550 DRM API). \texttt{nvidia-smi}
+reports 48 GB (driver-free Turing swap from the earlier RTX 6000).
 
-\begin{lstlisting}[language=bash, caption={Pin kernel before NVIDIA driver install}]
+\begin{lstlisting}[language=bash, caption={Kernel pin for the NVIDIA 550 stack (QuarkyLab)}]
 apt install pve-kernel-6.14.11-9-pve
-# Set as default in /etc/default/grub, then:
+# Pin as default in /etc/default/grub (GRUB_DEFAULT), then:
 update-grub && reboot
-# Then install nvidia-550 driver
+# NVIDIA 550.163.01 driver already installed & verified -- do NOT upgrade the kernel
 \end{lstlisting}
 
 % =============================================================================
@@ -365,12 +370,14 @@ update-grub && reboot
 \textbf{Role:} LLM inference node (Ollama, Qwen2.5 72B) \\
 \textbf{iDRAC:} 192.168.20.21 (VLAN 20; creds in Vaultwarden) \\
 \textbf{CPU:} Dual E5-2687W v4 \quad \textbf{RAM:} 384 GB LRDIMM ECC \\
-\textbf{GPU:} RTX 8000 48 GB
+\textbf{GPU:} 2x RTX 6000 — 24GB each / 48GB total (installed 2026-07-04)
 \end{infobox}
 
-Ollama serves Qwen2.5 72B Q4\_K\_M. FastAPI \texttt{llm\_router.py} implements hybrid
-routing — local Ollama by default, escalates to Claude API when logprob confidence
-falls below threshold.
+Ollama serves Qwen2.5 72B Q4\_K\_M, GPU-backed across both cards (models on the
+\texttt{tank/models} ZFS dataset). FastAPI \texttt{llm\_router.py} implements hybrid
+routing — local Ollama by default, escalating to the Claude API on an explicit
+\texttt{escalate} flag, a \texttt{model=claude-*} request, or local failure (Ollama
+exposes no logprobs, so routing is by flag/model/failure, not confidence).
 
 % =============================================================================
 \section{Services}
@@ -383,9 +390,9 @@ falls below threshold.
 \textbf{Service} & \textbf{Host} & \textbf{VM/CT ID} & \textbf{IP} & \textbf{Notes} \\
 \midrule
 OPNsense   & pve2      & VM 100  & 192.168.10.1    & Router/firewall \\
-Pi-hole    & pve3      & LXC     & 192.168.10.177  & DNS filter \\
+Pi-hole    & pve1      & LXC 103 & 192.168.10.177  & DNS (Mac Mini, standalone) \\
 Headscale  & pve3      & LXC 105 & 192.168.10.186  & VPN, v0.29.1 \\
-Wazuh      & pve2      & VM 104  & —               & SIEM \\
+Wazuh      & QuarkyLab & VM 104  & 192.168.10.184  & SIEM \\
 step-ca    & pve2      & —       & —               & Internal CA \\
 PBS        & Randy     & —       & 192.168.10.187:8007 & Backup server \\
 \bottomrule
@@ -393,9 +400,9 @@ PBS        & Randy     & —       & 192.168.10.187:8007 & Backup server \\
 
 \subsection{Headscale}
 
-Headscale v0.29.1 running as LXC 105 on pve3. Ares connected as first node
-(Tailscale IP 100.64.0.1). Remaining devices still on commercial Tailscale
-pending migration.
+Headscale v0.29.1 running as LXC 105 on pve3. Phase 1 (2026-06-22) migrated
+Ares (100.64.0.1), Randy (.2), pve5 (.3), pve4 (.4), pve3 (.5) and Jarvis (.6)
+to self-hosted. Phase 2 (QuarkyLab + the researcher's Mac) is pending.
 
 \subsection{Internal CA (step-ca)}
 
@@ -421,17 +428,16 @@ PDU: APC AP7901 (ge-0/0/38 on EX3400).
 % =============================================================================
 
 \begin{itemize}[leftmargin=*]
-  \item[\color{nfred}$\square$] Order 4th DAC cable for Randy nic2 $\rightarrow$ xe-0/2/2
-  \item[\color{nfred}$\square$] Pin QuarkyLab kernel to 6.14.11-9-pve, install NVIDIA 550 driver
-  \item[\color{nfred}$\square$] Configure backup schedules on all nodes pointing to randy-pbs
-  \item[\color{nfred}$\square$] Activate VLANs (pve2 trunk connection to EX3400 pending)
-  \item[\color{nfred}$\square$] Migrate the researcher devices from commercial Tailscale to Headscale
-  \item[\color{nfred}$\square$] DS4246 connection to Randy via LSI 9207-8e HBA
+  \item[\color{nfgreen}$\checkmark$] VLAN activation — EX3400 trunk live, verified end-to-end (2026-06-25)
+  \item[\color{nfgreen}$\checkmark$] QuarkyLab RTX 8000 + Jarvis 2x RTX 6000 installed \& GPU-backed (2026-07)
+  \item[\color{nfgreen}$\checkmark$] Backup schedules to randy-pbs (daily, 7d+4w retention)
+  \item[\color{nfgreen}$\checkmark$] DS4246 — pool \texttt{bulk} built \& online (2x 8-wide RAIDZ2, ~41.3 TiB, 2026-07-08)
+  \item[\color{nfgreen}$\checkmark$] Jellyfin on Randy (v10.11.11); RX 580 ROCm transcoding pending power cable
+  \item[\color{nfgreen}$\checkmark$] UPS monitoring live (NUT $\rightarrow$ PeaNUT $\rightarrow$ Homepage/Grafana)
+  \item[\color{nfred}$\square$] Headscale Phase 2 — QuarkyLab + the researcher's Mac
   \item[\color{nfred}$\square$] FreePBX VoIP (5x Cisco CP-8841 phones acquired)
-  \item[\color{nfred}$\square$] Jellyfin on Randy with RX 580 ROCm transcoding
-  \item[\color{nfred}$\square$] UPS NMC IP assignment (requires USB console access)
-  \item[\color{nfred}$\square$] Cyberpunk monitoring dashboard live API integration
-  \item[\color{nfred}$\square$] RKE2 / Kubernetes planning (Cilium, MetalLB, NVIDIA GPU Operator)
+  \item[\color{nfred}$\square$] Cyberpunk monitoring dashboard — live API integration
+  \item[\color{nfred}$\square$] RKE2 / Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
 \end{itemize}
 
 % =============================================================================
@@ -461,8 +467,8 @@ ssh mason@192.168.10.50
 # Always exit to > operational mode before show commands
 # Paste one line at a time
 
-show interfaces xe-0/2/0 brief   # Randy 10G port 1
-show interfaces xe-0/2/2 brief   # Randy 10G port 2
+show interfaces xe-0/2/0 brief   # Randy 10G
+show interfaces xe-0/2/2 brief   # Jarvis 10G (ConnectX)
 show ethernet-switching table     # MAC table
 show lldp neighbors               # Connected devices
 \end{lstlisting}
