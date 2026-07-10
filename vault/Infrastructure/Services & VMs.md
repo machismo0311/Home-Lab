@@ -158,7 +158,7 @@ scrape_configs:
 After adding targets: `docker compose restart prometheus`
 
 #### Alerting (2026-07-10) — Grafana → Discord
-Grafana v13 Unified Alerting → native Discord (no Alertmanager). Channels: `discord-alerts` (infra, label `notify=infra`) and `discord-ups` (UPS, root). 8 rules live: InstanceDown, PiholePrimaryDown/SecondaryDown, ZfsPoolDegraded, DiskAlmostFull, LowMemory, UPS battery/runtime. Added **blackbox_exporter** (`:9115`, `dns_ok` DNS probe of `.177`/`.178` → `probe_success`) and a **ZFS pool textfile collector** on Randy/QuarkyLab/Jarvis (`node_zfs_pool_health`). **Config-as-code:** private repo `machismo0311/netframe-monitoring-stack`. Full detail: [[Runbook/Monitoring-Alerting-2026-07-10]].
+Grafana v13 Unified Alerting → native Discord (no Alertmanager). Channels: `discord-alerts` (infra, label `notify=infra`) and `discord-ups` (UPS, root). 10 rules live: InstanceDown, PiholePrimaryDown/SecondaryDown, ZfsPoolDegraded, GpuTempHigh, GpuMemoryHigh, DiskAlmostFull, LowMemory, UPS battery/runtime. Added **blackbox_exporter** (`:9115`, `dns_ok` DNS probe of `.177`/`.178` → `probe_success`), a **ZFS pool textfile collector** on Randy/QuarkyLab/Jarvis (`node_zfs_pool_health`), and an **nvidia-smi GPU textfile collector** on QuarkyLab/Jarvis (`nvidia_gpu_*`). **Config-as-code:** private repo `machismo0311/netframe-monitoring-stack`. Full detail: [[Runbook/Monitoring-Alerting-2026-07-10]].
 
 ---
 

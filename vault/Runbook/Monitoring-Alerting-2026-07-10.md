@@ -21,6 +21,8 @@ Added real alerting on top of the existing (metrics-only) Prom/Grafana/Loki stac
 | PiholePrimaryDown | `.177` DNS fails 2m | crit | discord-alerts |
 | PiholeSecondaryDown | `.178` DNS fails 2m | warn | discord-alerts |
 | ZfsPoolDegraded | pool not ONLINE 5m | crit | discord-alerts |
+| GpuTempHigh | GPU >87°C 5m | warn | discord-alerts |
+| GpuMemoryHigh | GPU mem >90% 10m | warn | discord-alerts |
 | DiskAlmostFull | root FS >90% 10m | warn | discord-alerts |
 | LowMemory | avail <8% 10m | warn | discord-alerts |
 | UPS battery low | charge <50% 2m | — | discord-ups |
@@ -38,7 +40,9 @@ Verified end-to-end: test alerts delivered to both channels; all rules `health=o
 ## Add a new alert (via API)
 `POST /api/v1/provisioning/alert-rules` (folderUID `infra-alerts`, ruleGroup `infra`, label `notify=infra`), 3-stage data: query A (Prometheus expr, instant) → reduce B (last) → threshold C. See existing rules in the config repo for the exact JSON shape.
 
+## GPU collector (Phase 3, 2026-07-10)
+`nvidia-smi → node_exporter textfile` on QuarkyLab + Jarvis: `/usr/local/sbin/nvidia-gpu-textfile.sh` + `nvidia-gpu-textfile.timer` (1 min) → `nvidia_gpu_{utilization_percent,memory_used_bytes,memory_total_bytes,temperature_celsius,power_watts}{gpu,name}`. Chose nvidia-smi-textfile over DCGM/container (fewer moving parts; GPUs run native, not passed to VMs). Alerts: GpuTempHigh >87°C, GpuMemoryHigh >90% (memory pressure = SLURM-vs-inference/transcode contention signal).
+
 ## Still open
-- Phase 3: `dcgm-exporter` on QuarkyLab/Jarvis (GPU util/temp/contention).
 - Move CT 103 hardcoded secrets → `.env`.
 - Optional: provisioning volume mount on Grafana so alerting is file-provisioned (currently API-created, persisted in `grafana-data`).
