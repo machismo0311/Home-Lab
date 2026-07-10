@@ -1,0 +1,43 @@
+name: CI
+
+# Lint/syntax checks for the Python services (llm_router, jarvis-oncall) and bash scripts.
+# CI only — deployment to physical infra stays manual (SSH/systemd), per infra-safety policy.
+
+on:
+  push:
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python lint + syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff lint
+        run: ruff check scripts/
+      - name: Syntax check (py_compile)
+        run: find scripts -name '*.py' -print0 | xargs -0 python -m py_compile
+
+  shellcheck:
+    name: ShellCheck (bash)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck (error severity blocks)
+        run: |
+          shellcheck --version
+          find scripts -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
