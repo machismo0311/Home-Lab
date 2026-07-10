@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# NetFRAME Home-Lab — pre-commit secret & recon scanner
+# Blocks commits that ADD credentials, private keys, or infrastructure-recon
+# data (default BMC creds, TLS/SSH fingerprints, MAC addresses, known Dell
+# service tags, home-city PII). Scans only staged additions, not history.
+#
+# Install:  ./scripts/install-hooks.sh   (sets core.hooksPath -> .githooks)
+# Bypass :  git commit --no-verify        (use only when you're certain)
+set -uo pipefail
+
+RED=$'\033[31m'; YEL=$'\033[33m'; GRN=$'\033[32m'; DIM=$'\033[2m'; RST=$'\033[0m'
+fail=0
+
+# "Label::extended-regex" — matched case-insensitively against each added line.
+patterns=(
+  "Private key block::-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----"
+  "Anthropic API key::sk-ant-[A-Za-z0-9_-]{8}"
+  "OpenAI-style API key::sk-[A-Za-z0-9]{20}"
+  "AWS access key id::AKIA[0-9A-Z]{16}"
+  "Slack/GitHub token::(xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9]{20,})"
+  "Default iDRAC password (calvin)::\bcalvin\b"
+  "Known-leaked Dell service tag::\b(1S8WR22|DWG7HH2)\b"
+  "TLS/SSH fingerprint (colon-hex)::([0-9a-fA-F]{2}:){15,}[0-9a-fA-F]{2}"
+  "MAC address::\b([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\b"
+  "Hardcoded password/secret::(password|passwd|secret|api[_-]?key|token)[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9./+_-]{6,}"
+  "Home-city PII::Vermilion"
+  "Third-party identifier::(ferpsihas|fus22-009897)"
+)
+
+# Lines matching this are treated as safe (placeholders / redactions).
+allow="(<[^>]*>|\\\$[A-Za-z_{]|XX:XX:XX|AA:BB:CC:DD:EE|REDACTED|Vaultwarden|\.example|placeholder|your-|set-a-strong|not published|in ops vault)"
+
+while IFS= read -r -d '' file; do
+  case "$file" in
+    .githooks/*)   continue ;;   # never self-flag the pattern list
+    *.env.example) continue ;;   # example env files are placeholders by design
+  esac
+  added=$(git diff --cached -U0 --no-color -- "$file" | grep '^+' | grep -v '^+++' || true)
+  [ -z "$added" ] && continue
+  while IFS= read -r line; do
+    text=${line#+}
+    echo "$text" | grep -qiE -e "$allow" && continue
+    for p in "${patterns[@]}"; do
+      label=${p%%::*}; rx=${p#*::}
+      if echo "$text" | grep -qiE -e "$rx"; then
+        printf '%s✗ %s%s  %s%s%s\n' "$RED" "$label" "$RST" "$DIM" "$file" "$RST"
+        printf '   %s%s%s\n' "$DIM" "$(echo "$text" | sed 's/^[[:space:]]*//' | cut -c1-100)" "$RST"
+        fail=1
+      fi
+    done
+  done <<< "$added"
+done < <(git diff --cached --name-only -z --diff-filter=AM)
+
+if [ "$fail" -ne 0 ]; then
+  echo
+  echo "${RED}✗ pre-commit blocked: possible secret/recon data in staged changes.${RST}"
+  echo "  Redact with a placeholder: ${YEL}<...>${RST}, ${YEL}\$VAR${RST}, ${YEL}XX:XX:XX:XX:XX:XX${RST}, or 'see Vaultwarden'."
+  echo "  False positive? bypass once with: ${YEL}git commit --no-verify${RST}"
+  exit 1
+fi
+echo "${GRN}✓ pre-commit: no secrets detected in staged changes.${RST}"
+exit 0
