@@ -19,7 +19,8 @@
 | Homepage | LXC+Docker | 🟢 Active | pve3 CT 106 | 192.168.10.148 | https://homepage.kylemason.org |
 | PeaNUT (UPS) | LXC+Docker | 🟢 Active | pve3 CT 106 | 192.168.10.148:8081 | NUT→Homepage UPS widgets |
 | Headscale | LXC | 🟢 Active | pve3 CT 105 | 192.168.10.186 | http://192.168.10.186:8080 (v0.29.1) |
-| Pi-hole | LXC | 🟢 Active | pve1 (Mac Mini) | 192.168.10.177 | http://192.168.10.177/admin (v6) |
+| Pi-hole (primary) | LXC | 🟢 Active | pve1 (Mac Mini) | 192.168.10.177 | http://192.168.10.177/admin (v6) |
+| Pi-hole (secondary) | LXC | 🟢 Active | pve5 CT 108 | 192.168.10.178 | http://192.168.10.178/admin (v6) — `netframe-pihole2`, nebula-sync mirror of .177 (2026-07-10) |
 | NUT (UPS) | Native | 🟢 Active | pve3 host | 192.168.10.201:3493 | Tripp Lite (USB) + Middle Atlantic (SNMP) |
 | step-ca | Native | 🟢 Active | pve2 | 192.168.10.204:443 | *.netframe.local TLS |
 | CrowdSec | Native | 🟢 Active | pve3 host | — | https://app.crowdsec.net |
@@ -207,13 +208,14 @@ Console: https://app.crowdsec.net
 
 ---
 
-## Pi-hole (pve1 — standalone Mac Mini)
+## Pi-hole (DNS — primary + secondary HA)
 
-| Role | IP | Admin |
-|------|----|-------|
-| Primary | 192.168.10.177 | http://192.168.10.177/admin (v6) |
+| Role | IP | Host | Admin |
+|------|----|------|-------|
+| Primary | 192.168.10.177 | pve1 LXC (standalone Mac Mini) | http://192.168.10.177/admin (v6) |
+| Secondary | 192.168.10.178 | pve5 CT 108 `netframe-pihole2` | http://192.168.10.178/admin (v6) |
 
-> The RPi 4 backup Pi-hole (formerly 192.168.1.170) is **decommissioned**. DHCP is served by OPNsense; clients resolve via 192.168.10.177.
+> **DNS HA (2026-07-10):** OPNsense DHCP hands out **both** `.177` and `.178` as DNS on **all 7 VLAN scopes**, so clients fail over automatically. The secondary is a full mirror of the primary via **nebula-sync** (systemd `nebula-sync.timer` every 15 min on CT 108 — replicates gravity/adlists/local-DNS/allow-deny). Both admin passwords unified (in Vaultwarden). CT 108 is in the nightly `randy-pbs` LXC backup. The old RPi 4 backup Pi-hole (formerly `192.168.1.170`) is decommissioned. Full detail: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]].
 
 ---
 

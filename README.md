@@ -67,7 +67,8 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 |---|---|---|---|
 | Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS 36.7TB raw / ~23TB usable — daily backups 02:00/03:00 |
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.7 |
-| Pi-hole | pve1 (LXC, Mac Mini) | `192.168.10.177` | DNS filter — standalone node, NOT pve3 |
+| Pi-hole (primary) | pve1 (LXC, Mac Mini) | `192.168.10.177` | DNS filter — standalone node, NOT pve3 |
+| Pi-hole (secondary) | pve5 (CT 108) | `192.168.10.178` | DNS HA — mirror of .177 via nebula-sync; OPNsense DHCP hands out both (2026-07-10) |
 | Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
 | Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
 | step-ca | pve2 | `https://192.168.10.204:443` | Internal CA, `*.netframe.local` TLS |

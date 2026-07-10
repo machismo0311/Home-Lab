@@ -62,7 +62,8 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | EX3400-48P | 192.168.10.50 | Core switch, JunOS 23.4R2-S7.4 |
 | OPNsense | 192.168.10.1 (VM 100, pve2) | Router/firewall/DHCP, v25.7 |
 | Headscale | 192.168.10.186 (LXC 105, pve3) | VPN, v0.29.1 — Ares (.1), Randy (.2), pve5 (.3), pve4 (.4), pve3 (.5), Jarvis (.6) |
-| Pi-hole | 192.168.10.177 (pve1 LXC 103) | DNS — on Mac Mini standalone node, NOT pve3 |
+| Pi-hole (primary) | 192.168.10.177 (pve1 LXC 103) | DNS — on Mac Mini standalone node, NOT pve3 |
+| Pi-hole (secondary) | 192.168.10.178 (pve5 CT 108 `netframe-pihole2`) | DNS HA — full mirror of .177 via nebula-sync; added 2026-07-10 |
 | APC AP7901 PDU | EX3400 ge-0/0/38 | Managed PDU |
 | Ares | 192.168.10.199 | Admin workstation |
 | QuarkyLab iDRAC | 192.168.20.20 | **VLAN 20** (2026-07-03); pw rotated → Vaultwarden |
@@ -94,7 +95,8 @@ Randy in km-cluster. StorCLI at `/usr/sbin/storcli64`. JBOD mode enabled on AVAG
 | Proxmox Backup Server | Randy | https://192.168.10.187:8007 | v4.2.2, ZFS 36.7T (~23T usable, 19.5G used) — LXCs 02:00 daily, VMs 03:00 daily, 7d+4w retention |
 | OPNsense | VM 100, pve2 | 192.168.10.1 | v25.7, onboot=1 |
 | Headscale | LXC 105, pve3 | 192.168.10.186 | v0.29.1, onboot=1 |
-| Pi-hole | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
+| Pi-hole (primary) | pve1 LXC 103 | 192.168.10.177 | DNS — Mac Mini standalone, NOT pve3 |
+| Pi-hole (secondary) | pve5 CT 108 | 192.168.10.178 | DNS HA — `netframe-pihole2`, full mirror of .177 via nebula-sync (systemd timer /15min); in nightly randy-pbs LXC backup. OPNsense DHCP hands out BOTH .177+.178 on all 7 VLAN scopes. Created 2026-07-10 |
 | Homepage | pve3 LXC 106 (.148) | https://homepage.kylemason.org | Live widgets (Proxmox/Pi-hole/Jellyfin/Scrutiny/UPS); Power & UPS group via PeaNUT container (:8081→8080, NUT bridge); NPM proxy host id 4 + Lets Encrypt (CF DNS-01) + basic auth (kyle); :3000 firewalled to NPM; tokens/creds in /opt/homepage/config + compose (not git). See Homepage-Setup-2026-06-26.md & Power Distribution.md |
 | Open WebUI | LXC 107, pve3 (.185) | http://chat.netframe.local | Chat UI (ChatGPT-style) → llm_router `:8000` via OpenAI endpoint; models `local`/`rag`. Native pip (Debian 12 CT, /opt/open-webui venv, systemd), NPM proxy host id 6, Pi-hole DNS →.181, onboot=1. Created 2026-07-05. First visit creates the admin account. In the nightly PBS LXC job since 2026-07-06. |
 | nginx-proxy (NPM) | LXC 101, pve3 (.181) | Admin http://192.168.10.181:81 | onboot=1; :81 restricted to Ares (.199) via DOCKER-USER fw (F-05) ✅ |
@@ -136,6 +138,8 @@ Cyberpunk React wall dashboard (v3, netframe-dashboard-v3.jsx) on Dell P2722H.
 
 ## Important Safety Notes
 - ALWAYS check prior conversation before touching pve2 network config (June 15 outage)
+- **DNS is HA (2026-07-10):** primary Pi-hole `.177` (pve1) + secondary `.178` (pve5 CT 108 `netframe-pihole2`); OPNsense DHCP hands out BOTH on all 7 VLAN scopes → automatic client failover. Secondary is a nebula-sync full mirror (systemd timer /15min on CT 108: gravity/adlists/local-DNS/allow-deny). Both Pi-hole admin passwords unified (in Vaultwarden). CT 108 in the nightly randy-pbs LXC backup. DHCP backend = legacy ISC `dhcpd` (not Kea); resolver = Unbound on `.1` (Pi-hole upstream).
+- **OPNsense DR (Tier A, 2026-07-10):** serial console verified — `qm terminal 100` from pve2 (exit Ctrl-O) — emergency access works. Nightly age-encrypted `config.xml` backup → private repo `machismo0311/opnsense-config-backup` (Ares cron 03:17, DR-tested decrypt). Cold-restore = `RESTORE.md` in that repo. age private key in Vaultwarden + Ares `~/.config/opnsense-backup/age-key.txt`. `os-qemu-guest-agent` staged for next OPNsense reboot (`qm set 100 --agent enabled=1`). See Runbook/DNS-HA-OPNsense-Resilience-2026-07-10.md.
 - QuarkyLab kernel MUST stay on 6.14.11-9-pve — GRUB_DEFAULT is pinned; 6.17+ breaks NVIDIA 550; never run kernel upgrades or change GRUB default on QuarkyLab
 - Jarvis is ALSO now pinned to 6.14.11-9-pve (GRUB_DEFAULT; NOT proxmox-boot-tool) for its NVIDIA 550.163.01 GPU stack — do not change GRUB default or upgrade the kernel on Jarvis either
 - R730 GPU fan control (QuarkyLab & Jarvis): iDRAC has **no GPU-temp visibility**, so natively it offers only the loud fixed third-party ramp or a quiet baseline that won't ramp for GPU heat. **Measured 2026-07-04:** with `ThirdPartyPCIFanResponse=Enabled` (Jarvis's default on install) the RTX cards forced **~14,800 RPM at idle** (jet engine); disabling it drops to ~4,080 RPM but then fans do **not** ramp for GPU load (single compute-bound card = 81 °C fans-flat; real 72B dual-GPU load = only 63 °C — bandwidth-bound, so the small-model single-card case is worst). **QuarkyLab** already has it Disabled (why it's quiet); toggling it there does nothing at runtime since it was never loud. **Jarvis runs the `gpu-fan-control` daemon** (source in `Home-Lab/scripts/`, installed `/usr/local/sbin/gpu-fan-control.sh` + systemd unit) — a closed-loop nvidia-smi→`ipmitool` manual fan curve (15% idle → up to 100%) with **failsafe-to-auto** on any crash/stop, self-asserting third-party=Disabled at startup. Bare manual `ipmitool raw 0x30 0x30` is only safe inside that failsafed daemon. NOTE: iDRAC SCP queue was stuck (LC068, pending BIOS job) so the setting is asserted in-band, not persisted as an iDRAC attribute. Full detail: Compute/Dell R730 - General Node.md (Fan/Thermal) + ML Node (investigation).

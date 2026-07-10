@@ -84,7 +84,8 @@ flowchart TB
 | Grafana/Prometheus/Loki | 192.168.10.183 | LXC 103 on pve3 |
 | Headscale | 192.168.10.186 | LXC 105 on pve3 |
 | Homepage | 192.168.10.148 | LXC 106 on pve3 |
-| Pi-hole | 192.168.10.177 | LXC on pve1 (Mac Mini) |
+| Pi-hole (primary) | 192.168.10.177 | LXC on pve1 (Mac Mini) |
+| Pi-hole (secondary) | 192.168.10.178 | CT 108 `netframe-pihole2` on pve5; nebula-sync mirror of .177 (2026-07-10) |
 | Ares (laptop, wired) | 192.168.10.100 | enp0s31f6 |
 
 > The RPi 4 backup Pi-hole (formerly `192.168.1.170`) is **decommissioned**.
@@ -95,8 +96,11 @@ flowchart TB
 
 | Service | IP | Notes |
 |---------|-----|-------|
-| Pi-hole | 192.168.10.177 | LXC on pve1 (Mac Mini); v6 |
+| Pi-hole (primary) | 192.168.10.177 | LXC on pve1 (Mac Mini); v6 |
+| Pi-hole (secondary) | 192.168.10.178 | CT 108 `netframe-pihole2` on pve5; v6; nebula-sync mirror of .177 |
 | Tailscale magic DNS | 100.100.100.100 | set `--accept-dns=false` on nodes; Tailscale overwrites `/etc/resolv.conf` |
+
+> **DNS HA (2026-07-10):** OPNsense DHCP hands out **both** `.177` and `.178` (in that order) on **all 7 VLAN scopes** (lan + opt1–opt6), so clients fail over automatically if the primary dies. Resolver chain: client → Pi-hole (.177/.178) → Unbound on `.1` → internet. See [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]].
 
 ---
 

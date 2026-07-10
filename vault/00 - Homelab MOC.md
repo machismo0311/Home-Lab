@@ -79,7 +79,8 @@ mindmap
 | Grafana/Prometheus/Loki | 192.168.10.183 | LXC 103 on pve3 |
 | Headscale | 192.168.10.186 | LXC 105 on pve3 |
 | Homepage | 192.168.10.148 | LXC 106 on pve3 |
-| Pi-hole | 192.168.10.177 | LXC on pve1 |
+| Pi-hole (primary) | 192.168.10.177 | LXC on pve1 |
+| Pi-hole (secondary) | 192.168.10.178 | CT 108 on pve5 (nebula-sync mirror, 2026-07-10) |
 | Ares (laptop) | 192.168.10.100 wired | TS: 100.124.118.63 |
 
 ---

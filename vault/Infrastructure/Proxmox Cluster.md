@@ -34,7 +34,7 @@ flowchart TB
 | pve2 | HP EliteDesk 800 G4 SFF | i7-8700 | 32GB | 192.168.10.204 | OPNsense VM 100 (live router), step-ca |
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 192.168.10.201 | Primary services (NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT) |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.202 | Cluster node |
-| pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.203 | Cluster node |
+| pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.203 | Cluster node; **secondary Pi-hole** CT 108 (`netframe-pihole2`, .178) |
 | QuarkyLab | Dell R730 (svc tag (in ops vault)) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 8000 48GB (installed 2026-07-01) (the researcher/DUNE); Wazuh VM 104. iDRAC 192.168.20.20 (VLAN 20) |
 | Jarvis | Dell R730 | 2× E5-2687W v4 | 384GB | 192.168.10.31 | LLM node — 2× RTX 6000 48GB installed 2026-07-04, Ollama GPU-backed. iDRAC 192.168.20.21 (VLAN 20) |
 | Randy | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 (28c/56t) | 128GB | 192.168.10.187 | PBS, Jellyfin, ZFS storage (PVE 9.1.1). IPMI 192.168.20.22 (VLAN 20) |
@@ -123,18 +123,13 @@ pveam download local debian-12-standard_12.12-1_amd64.tar.zst
 
 - **VM ID:** 100 on pve2, v25.7, onboot=1
 - **Live** LAN router/firewall/DHCP for 192.168.10.0/24 (gateway 192.168.10.1). The UniFi Dream Router is now WAN-only upstream.
-- Serial console access: `qm terminal 100` from pve2
+- Serial console access: `qm terminal 100` from pve2 (exit **Ctrl-O**) — **verified working 2026-07-10** (emergency console).
 - Wildcard cert: `*.kylemason.org` via Let's Encrypt DNS-01 (Cloudflare)
 - ⚠️ Ares WiFi is on the WAN side (192.168.1.x) — keep a wired cable (enp0s31f6, .100) plugged in during any pve2/OPNsense maintenance.
+- DHCP backend = legacy ISC `dhcpd` (not Kea); DNS resolver = **Unbound** on `.1` (Pi-hole's upstream). DHCP hands out both Pi-holes (`.177`+`.178`) as DNS on all scopes.
+- **Resilience (Tier A, 2026-07-10):** nightly age-encrypted `config.xml` backup → private repo `machismo0311/opnsense-config-backup` (Ares cron 03:17, DR-tested; age key in Vaultwarden). Cold-restore = `RESTORE.md` in that repo. `os-qemu-guest-agent` staged for next reboot. See [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]].
 
-Pre-cutover VLANs to configure:
-
-| VLAN | Purpose |
-|------|---------|
-| 10 | Trusted (PCs, phones) |
-| 20 | IoT (smart home, tablets) |
-| 30 | Servers/Lab (Proxmox nodes) |
-| 40 | Guest Wi-Fi |
+> **Live VLANs are 1/20/30/40/50/60/70** — see [[Networking/Network Overview]] for the authoritative table. (The old "pre-cutover" 10/20/30/40 draft scheme is **obsolete** — do not use.)
 
 ---
 
