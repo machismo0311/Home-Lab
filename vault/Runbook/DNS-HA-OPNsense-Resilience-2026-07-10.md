@@ -41,7 +41,7 @@ Chose Tier A (cheap, low-blast-radius) over full CARP HA (needs solving the sing
 - Repo: **`machismo0311/opnsense-config-backup`** (private). Offsite = GitHub.
 - `backup.sh` on **Ares**, daily cron **03:17**: pull `config.xml` via read-only-intent API key → skip if unchanged (plaintext sha) → **age-encrypt** → commit `opnsense-config-latest.xml.age` + dated `history/` copy → push. Only real changes create commits.
 - **Decrypt round-trip tested** — valid XML, sha matches live config.
-- Secrets (NOT in repo, `~/.config/opnsense-backup/` on Ares, 600): `api.env` (OPNsense key/secret — currently a full-access `root` key; tighten later), `age-key.txt` (**age private/decrypt key — also in Vaultwarden**). Encrypt recipient (public) `age1huwunavthrqxp56e73kn9xljc0aw2a5ax6wpta9fpz6jgvgakf6szmgcws` is in `backup.sh`.
+- Secrets (NOT in repo, `~/.config/opnsense-backup/` on Ares, 600): `api.env` (OPNsense key/secret — **least-privilege `svc-backup` user**: privileges `Diagnostics: Backup / Restore` + `Diagnostics: Configuration History`; rotated off root 2026-07-10, old root key deleted/verified dead), `age-key.txt` (**age private/decrypt key — also in Vaultwarden**). Encrypt recipient (public) `age1huwunavthrqxp56e73kn9xljc0aw2a5ax6wpta9fpz6jgvgakf6szmgcws` is in `backup.sh`.
 - ⚠️ **Losing the age private key = backups unrecoverable.** Keep the Vaultwarden copy + one independent copy.
 
 **Cold-restore runbook:** `RESTORE.md` in that repo. Covers Case A (VM dead, pve2 alive → rebuild on pve2, no cable moves) and Case B (pve2 dead → rebuild on pve3, **physically move the WAN/modem + LAN trunk cables** — there is no WAN redundancy). Includes the interface-reassign step that was the June-14 failure mode (WAN↔LAN swapped).
