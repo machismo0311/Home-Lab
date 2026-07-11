@@ -47,3 +47,40 @@ Per `scripts/slurm/README.md`: don't run RKE2 GPU scheduling on a card SLURM/Oll
 - ✅ Pi-hole local DNS (2026-07-10): `rke2.netframe.local → .54`, `status.netframe.local → .71` — added on primary `.177`, synced to `.178`; verified resolving on both.
 - ⏳ First-visit admin setup on Uptime Kuma (`http://192.168.10.71`).
 - **Phase 4:** GPU Operator when a card frees (see §GPU).
+
+## Phase 5 — Randy bare-metal storage worker (2026-07-11, DONE)
+First worker node: **Randy joined as a bare-metal RKE2 agent directly on the Proxmox storage host** (not a VM — deliberate, so kubelet sits alongside the host ZFS/PBS/NFS/Jellyfin it must reserve against). `v1.35.6+rke2r1`, matches CP. `randy` → **Ready** in 44 s. Node stays schedulable-but-tainted for storage-adjacent workloads.
+
+**Install:** `curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent INSTALL_RKE2_VERSION=v1.35.6+rke2r1 sh -` then `systemctl enable --now rke2-agent`.
+
+**Config** `/etc/rancher/rke2/config.yaml` (root, **0600** — holds join token):
+```yaml
+server: https://192.168.10.54:9345      # supervisor port — NOT 6443 (see gotcha)
+token: <cp node-token>                   # from cp1 /var/lib/rancher/rke2/server/node-token
+node-name: randy
+node-ip: 192.168.10.187                   # register on VLAN 1 (same L2 as CP/VIP/corosync)
+node-label:
+  - "node.netframe.io/role=storage"
+node-taint:
+  - "node.netframe.io/role=storage:NoSchedule"
+kubelet-arg:
+  - "system-reserved=cpu=6000m,memory=24Gi,ephemeral-storage=2Gi"
+  - "kube-reserved=cpu=2000m,memory=4Gi,ephemeral-storage=2Gi"
+  - "eviction-hard=memory.available<2Gi"
+  - "enforce-node-allocatable=pods"
+```
+
+**Kubelet reservations — sized to measured hardware, not defaults.** Randy = **2× E5-2690 v3 (24c/48t, `nproc=48`)**, 125.8 GiB RAM, ZFS ARC hard-capped **12.57 GiB** (`zfs_arc_max`), PBS jobs 02:00/03:00 + GC 03:00 + verify Sun 04:00, 16 nfsd threads, Jellyfin (idle, budgeted for transcode). `system-reserved` (6 CPU / 24 Gi) covers peak concurrent ZFS-scrub + PBS + NFS + transcode; `kube-reserved` (2 CPU / 4 Gi) for kubelet+containerd+Cilium. **Result: Allocatable = 40 CPU / ~95.8 GiB** (verified). When the +64 GB → 192 GB RAM lands, Allocatable mem just grows ~64 Gi; reservations unchanged unless `zfs_arc_max` is raised.
+- **Not hard caps:** `enforce-node-allocatable=pods` (default) → reservations are *scheduling guardrails* that shrink Allocatable so the scheduler leaves host headroom; they do **not** cgroup-throttle ZFS/PBS/NFS (host services still burst freely into idle capacity). Enforcing `system-reserved` cgroups was deliberately avoided — it could throttle a PBS backup or ZFS scrub.
+
+**Taint** `node.netframe.io/role=storage:NoSchedule` keeps general workloads off the storage backbone; infra DaemonSets (Cilium, kube-proxy, ingress-nginx, MetalLB speaker) tolerate it and run. Applied live via `kubectl taint` (kubelet only honors `node-taint` at *first* registration, so an already-joined node needs `kubectl taint`; config keeps it for future re-registration).
+
+**⚠️ Gotchas hit:**
+- **Agents register on the supervisor port `:9345`, NOT the apiserver `:6443`.** Pointing `server:` at `:6443` throws `Failed to validate connection … failed to get CA certs: Unauthorized` (apiserver rejecting the RKE2 bootstrap token). Verify: `curl -sk https://192.168.10.54:9345/cacerts` → 200.
+- **Self-set `node-role.kubernetes.io/*` labels are blocked** by the NodeRestriction admission controller → used custom prefix `node.netframe.io/role=storage`.
+
+**Post-join health (Cilium on a live PVE cluster member — verified intact):** corosync quorum **7/7 Quorate**, `datastore`+`bulk` **ONLINE**, nfs-server active (5 exports), PBS proxy+api active, egress still `via 192.168.30.1 dev vmbr0.30` (VLAN 30 untouched), VLAN 1 `.187` present.
+
+**Rollback:** `/usr/local/bin/rke2-agent-uninstall.sh` on Randy — removes agent, containerd, and CNI cleanly.
+
+**Guardrails honored:** PBS/ZFS/Jellyfin never restarted or reconfigured; pve2/OPNsense untouched; VLAN 30 storage path unchanged.
