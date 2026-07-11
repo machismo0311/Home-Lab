@@ -46,7 +46,7 @@ Chose Tier A (cheap, low-blast-radius) over full CARP HA (needs solving the sing
 
 **Cold-restore runbook:** `RESTORE.md` in that repo. Covers Case A (VM dead, pve2 alive → rebuild on pve2, no cable moves) and Case B (pve2 dead → rebuild on pve3, **physically move the WAN/modem + LAN trunk cables** — there is no WAN redundancy). Includes the interface-reassign step that was the June-14 failure mode (WAN↔LAN swapped).
 
-**Guest agent — STAGED (not done).** Needs a VM 100 reboot to activate, and serial console already covers emergency access, so no forced outage. On the next natural OPNsense reboot: install `os-qemu-guest-agent` plugin (OPNsense GUI) + `qm set 100 --agent enabled=1` (pve2).
+**Guest agent — DONE 2026-07-11 (installed + running + verified).** `qm set 100 --agent enabled=1` (pve2) + graceful ACPI reboot to add the channel. **Gotcha:** the `os-qemu-guest-agent` plugin was NOT actually installed at the pkg level despite the GUI showing a trash-can/installed icon (`pkg info` had no match, no `qemu-ga` binary) — so it had to be installed properly: from the OPNsense console shell (`qm terminal 100` → menu opt 8) `pkg install -y os-qemu-guest-agent` (pulls `qemu-guest-agent-10.0.2`), then `service qemu-guest-agent start` + `sysrc qemu_guest_agent_enable=YES`. Verified `qm agent 100 ping` rc=0. Auto-starts on future reboots. NOTE: OPNsense SSH is disabled (port 22 closed) — console/`qm terminal` is the only OPNsense shell path; ACPI graceful shutdown works regardless (validated during this reboot). ⚠️ OPNsense root password was entered over the console during this session — rotate if concerned.
 
 ---
 

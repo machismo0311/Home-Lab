@@ -9,7 +9,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 >
 > **✅ Done:** DNS HA (secondary Pi-hole + failover) · OPNsense DR (console + encrypted config backup, key rotated+scoped) · Monitoring→Discord alerting (10 rules, config-as-code) · CI/CD (4 repos + gates) · **RKE2 k8s Phases 1–3** (HA control plane + NFS storage + first workload) · QuarkyLab disk relocation (reboot-validated, 82%→16%) · Wazuh guest-agent · CT103 secrets→.env · pve5 gateway · Pi-hole password · security segmentation Phases 1–3 (per updated tracker).
 >
-> **⏳ Gated / not-yet-triggered:** restic→B2 offsite (waiting on `bulk/fernanda` data) · OPNsense guest-agent (next OPNsense reboot) · restore Ares wired leg (physical).
+> **⏳ Gated / not-yet-triggered:** restic→B2 offsite (waiting on `bulk/fernanda` data) · restore Ares wired leg (physical).
 >
 > **◷ Deferred by design:** OPNsense CARP HA (mitigated by fast-restore) · RKE2 Phase 4 GPU scheduling (until a card frees) · peanut-ups auth→password_file (minor).
 
@@ -75,7 +75,8 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 ### What's actually left (nothing major + actionable remains)
 The original "next 5" (OPNsense key rotate/scope, QuarkyLab disk, Wazuh agent, pve5 gateway, CT103 secrets) are **all ✅ done 2026-07-10/11**. Remaining, none urgent:
 1. **restic→B2 offsite** — execute the moment `bulk/fernanda` has real data (**§2 P1**, gated).
-2. **OPNsense guest-agent** — apply on its next reboot (**§7 P2**, staged).
-3. **Restore Ares wired leg** `enp0s31f6` (**§6 P2**, physical — plug the cable).
-4. **peanut-ups auth → `password_file`** in `prometheus.yml` (**§4**, minor hardening).
+2. **Restore Ares wired leg** `enp0s31f6` (**§6 P2**, physical — plug the cable). *(reconnected during the 2026-07-11 OPNsense reboot; verify it stays up.)*
+3. **peanut-ups auth → `password_file`** in `prometheus.yml` (**§4**, minor hardening).
+4. **Rotate OPNsense root password** — entered over the console 2026-07-11 (now in-session); rotate if concerned.
+   *(OPNsense guest-agent ✅ done 2026-07-11 — installed+running+verified.)*
 5. Deferred-by-design (revisit only if needed): OPNsense CARP HA · RKE2 Phase 4 GPU · security Phases beyond current tracker.
