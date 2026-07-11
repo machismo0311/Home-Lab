@@ -1,6 +1,23 @@
-# QuarkyLab — Relocate containerd image store to ZFS pool (PLANNED OUTAGE)
+# QuarkyLab — Relocate containerd image store to ZFS pool
 
-**Status:** 📌 PINNED — awaiting a planned maintenance window (notify all QuarkyLab users first).
+**Status:** ✅ **EXECUTED 2026-07-11 (Option A, ZFS dataset) — relocated, verified, reboot-hardened.**
+Rollback `/var/lib/containerd.old` **KEPT** (soak); `/` stays 82% until it's deleted (see "Reclaim — pending" below).
+**Raised:** 2026-07-10 (disk WARN: `/` at 82%).
+
+---
+
+## ✅ Execution log (2026-07-11)
+Ran **Option A**. Node was idle (0 system containers, GPU 0%, no SLURM, no interactive users; kieron's *rootless* stack independent + untouched). Steps 1–5 as written. Results:
+- rsync moved **62.5 GB / 341,680 files** → `workspace/containerd` (dataset, `xattr=sa`, mountpoint `/var/lib/containerd`, `mounted yes`).
+- **Smoke tests PASS:** pure overlayfs container runs (`overlay-OK`); `--gpus all` → RTX 8000 detected; **real `quarkylab-ml:latest` → `torch 2.5.1+cu121 cuda_available=True`**. overlayfs-on-ZFS works → no Option B fallback needed.
+- ⚠️ **Runbook smoke-test bug fixed:** step-6's `docker run ... nvidia/cuda ... nvidia-smi` **needs `--gpus all`** or it errors `nvidia-smi: not found` (that's a *missing-flag* error, NOT an overlay failure — the container still started).
+- **Reboot-safety hardening added** (containerd had no ordering vs the ZFS mount): drop-in `/etc/systemd/system/containerd.service.d/10-zfs-mount.conf` with `After=/Wants=zfs-mount.service` + `RequiresMountsFor=/var/lib/containerd`. Verified `After=` now includes `zfs-mount.service` + auto-generated `var-lib-containerd.mount`. **This is a required step — add it to Option A above for next time.**
+
+### Reclaim — PENDING (soak)
+`/var/lib/containerd.old` (60 G on OS root) is kept as rollback → `/` still **82%** (but no longer *grows*, since containerd now lives on the pool). Do the reclaim after the store proves durable (ideally across the next planned reboot — verifies the mount-ordering drop-in): `rm -rf /var/lib/containerd.old` → `/` drops to **~14%**. `quarkylab-ml:latest` is a **locally-built** image, so `.old` is its only rollback copy until then — do not rush the delete.
+
+---
+
 **Raised:** 2026-07-10 (disk WARN: `/` at 82%).
 **Node:** QuarkyLab (`192.168.10.179` mgmt / `192.168.30.179` VLAN30).
 **Est. window:** ~15–20 min (mostly the ~60 GB copy). No GPU/driver changes.
@@ -44,6 +61,16 @@ TB to grow into. Expected result: `/` drops from ~73 G → ~13 G used (**82% →
    ```bash
    ssh quarkylab 'df -h / ; sudo du -xsh /var/lib/containerd ; sudo docker images'
    ```
+
+## ✅ Scope clarification (verified 2026-07-11) — rootless docker is UNAFFECTED
+This move targets the **system** docker/containerd only (`/var/lib/docker` + `/var/lib/containerd`,
+where the 63 GB `quarkylab-ml:latest` lives on the OS root). Researcher **kieron** runs a
+**rootless** docker daemon (`arid` stack: `arid-app`/`arid-ollama`/`arid-qdrant`) whose data-root is
+`/workspace/researchers/kieron/.local/share/docker` — **already on the pool, its own user-level
+containerd**. Stopping the system daemons does **not** stop his stack; it keeps running through the move.
+(At verification time his stack was idle — no interactive login since Jul 8, GPU 0%, only compose
+health-poll traffic — and his 3 containers are `restart: no`, so *if* they ever stop he must
+`docker compose up` them himself; not triggered by this operation.)
 
 ## ⚠️ overlayfs-on-ZFS caveat — DECIDE FIRST
 

@@ -50,7 +50,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 
 ## 7. Storage & Compute
 - ✅ ZFS pools ONLINE (Randy `bulk`+`datastore`, QuarkyLab `workspace`, Jarvis `tank`+`scratch`); pool-degraded alerting added.
-- ⏳ **P1 — QuarkyLab OS root at ~82%** (containerd store) — planned-outage relocation to ZFS pending (see [[project-quarkylab-containerd-relocate]]).
+- ◐ **QuarkyLab OS root** — containerd store **relocated to ZFS pool 2026-07-11** (verified w/ real ML image + GPU; reboot-hardened). `/` still 82% until the kept `.old` rollback is deleted after a soak → then drops to ~14%. See [[Runbook/QuarkyLab-Containerd-Relocate-to-ZFS-2026-07-10]].
 - ✅ **Wazuh VM 104 guest-agent installed** (2026-07-10): `qm agent 104 ping` responds; QuarkyLab reboots now gracefully shut it down (agent channel was already live → no restart/power-cycle needed; SIEM undisturbed). Reboot landmine defused.
 - ⏳ **P2 — OPNsense (VM 100) qemu-guest-agent** — staged for next reboot.
 - ✅ Randy Scrutiny false-positives silenced; boot/HBA config documented.
@@ -66,7 +66,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 
 ### Suggested next 5 (by risk×effort)
 1. Rotate/scope the OPNsense root API key + move CT 103 secrets out of compose (**§4 P1**).
-2. QuarkyLab root-disk relocation (**§7 P1**) — it's climbing.
+2. QuarkyLab root-disk: relocation ✅ done 2026-07-11; finish the reclaim by deleting `.old` after a soak/reboot-verify.
 3. Wazuh guest-agent (**§7 P2**) — one reboot away from a broken SIEM.
 4. Restore Ares wired leg (**§6 P2**). *(pve5 gateway ✅ 2026-07-10.)*
 5. Execute restic→B2 the moment `bulk/fernanda` has data (**§2 P1**).
