@@ -12,7 +12,7 @@ Added real alerting on top of the existing (metrics-only) Prom/Grafana/Loki stac
 - **Two Discord channels:**
   - `discord-alerts` ← infra alerts (routed by label `notify=infra`)
   - `discord-ups` ← UPS alerts (root receiver; pre-existing, verified delivering)
-- Grafana admin creds + Discord webhook: **in the CT 103 compose (hardcoded) + Vaultwarden.** ⚠️ hardcoded-secret cleanup pending (move to `.env`).
+- Grafana admin + InfluxDB creds: **moved to `600` `/opt/grafana/.env` (2026-07-10)**, compose uses `${VAR}` (repo `ct103/.env.example`). Discord webhook lives in Grafana's DB + Vaultwarden. Still inline: peanut-ups basic-auth in `prometheus.yml` (Prometheus can't env-interpolate scrape secrets — keep file `600`/use `password_file`).
 
 ## Alert rules (8)
 | Rule | Fires | Sev | Channel |
@@ -44,5 +44,5 @@ Verified end-to-end: test alerts delivered to both channels; all rules `health=o
 `nvidia-smi → node_exporter textfile` on QuarkyLab + Jarvis: `/usr/local/sbin/nvidia-gpu-textfile.sh` + `nvidia-gpu-textfile.timer` (1 min) → `nvidia_gpu_{utilization_percent,memory_used_bytes,memory_total_bytes,temperature_celsius,power_watts}{gpu,name}`. Chose nvidia-smi-textfile over DCGM/container (fewer moving parts; GPUs run native, not passed to VMs). Alerts: GpuTempHigh >87°C, GpuMemoryHigh >90% (memory pressure = SLURM-vs-inference/transcode contention signal).
 
 ## Still open
-- Move CT 103 hardcoded secrets → `.env`.
+- (done 2026-07-10) CT 103 compose secrets → `.env`; peanut basic-auth in prometheus.yml still inline.
 - Optional: provisioning volume mount on Grafana so alerting is file-provisioned (currently API-created, persisted in `grafana-data`).
