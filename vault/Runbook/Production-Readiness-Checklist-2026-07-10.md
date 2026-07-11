@@ -44,7 +44,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 
 ## 6. Network
 - ✅ VLANs live (1/20/30/40/50/60/70); servers on VLAN 30 (dual-homed); 10G paths up.
-- ⏳ **P2 — pve5 has a bogus `gateway 192.168.1.1`** in `/etc/network/interfaces` (should be `.10.1`; works over L2, latent).
+- ✅ **pve5 gateway fixed** (2026-07-10): bogus `192.168.1.1` (pre-renumber `onlink` leftover) → `192.168.10.1`, runtime + config, no disruption.
 - ⏳ **P2 — Ares wired mgmt leg `enp0s31f6` is down** (on WiFi) — restore before any pve2/OPNsense work.
 - ⏳ **P3** — decide fate of pve2 `nic2`/`vmbr2` (disabled loop-hazard cable).
 
@@ -68,5 +68,5 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 1. Rotate/scope the OPNsense root API key + move CT 103 secrets out of compose (**§4 P1**).
 2. QuarkyLab root-disk relocation (**§7 P1**) — it's climbing.
 3. Wazuh guest-agent (**§7 P2**) — one reboot away from a broken SIEM.
-4. Fix pve5 gateway + restore Ares wired leg (**§6 P2**).
+4. Restore Ares wired leg (**§6 P2**). *(pve5 gateway ✅ 2026-07-10.)*
 5. Execute restic→B2 the moment `bulk/fernanda` has data (**§2 P1**).
