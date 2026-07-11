@@ -54,7 +54,7 @@ Chose Tier A (cheap, low-blast-radius) over full CARP HA (needs solving the sing
 - OPNsense DHCP backend = **legacy ISC `dhcpd`** (not Kea) — no granular API; edited via GUI.
 - **Unbound** runs on `.1` as the recursive resolver (Pi-hole's upstream). Chain: client → Pi-hole (`.177`/`.178`) → Unbound (`.1`) → internet.
 - pve5 gateway **fixed 2026-07-10**: was a bogus `192.168.1.1` (a pre-renumber leftover, routing via `onlink` to OPNsense's LAN MAC) → now the proper `192.168.10.1` (runtime + config, no disruption).
-- Pi-hole admin password is short (8 char) — worth lengthening later.
+- Pi-hole admin password **lengthened to 24 chars 2026-07-10** (both Pi-holes + nebula-sync env updated; in Vaultwarden).
 
 ---
 

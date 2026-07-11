@@ -31,7 +31,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 - ✅ Wazuh SIEM, step-ca internal CA, Vaultwarden, pre-commit secret-scan hook, pentest remediation.
 - ✅ **Rotated + scoped the OPNsense API key** (2026-07-10): config backup moved off the exposed root key to a least-privilege `svc-backup` user (`Backup / Restore` + `Configuration History`); old root key deleted, verified dead (401). *(Still worth doing: rotate other passwords surfaced in session transcripts if concerned.)*
 - ◐ **Hardcoded secrets → env**: CT 103 compose (Grafana admin + InfluxDB) **moved to `600` `.env` 2026-07-10** ✅. Remaining: peanut-ups basic-auth still inline in `prometheus.yml` (Prometheus can't env-interpolate scrape secrets — keep `600` or use `password_file`).
-- ⏳ **P2** — lengthen the shared Pi-hole admin password (8 chars).
+- ✅ **Pi-hole admin password lengthened** (2026-07-10): 8 → 24 chars on both Pi-holes; nebula-sync env updated + sync verified; old (transcript-exposed) password dead. In Vaultwarden.
 - ⏳ **P2** — Security-segmentation **Phases 2–3** (services VLAN 30 enforcement, mgmt-plane) — not started.
 - ⏳ **P2** — OPNsense firewall: deny non-Ares→VLAN 20 + no BMC egress (Phase 1.5, still pending).
 
