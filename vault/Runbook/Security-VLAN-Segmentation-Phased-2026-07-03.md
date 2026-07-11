@@ -294,7 +294,7 @@ ssh vaultwarden 'getent hosts github.com'
 
 **Done via automation API** (highest-value denies, cleanly): 4 `block in log quick` rules — **IoT/Guest/Lab → Local_Nets** and **LAN → VLAN20 (BMC)**. They mirror the existing silent blocks exactly (same drop) but **log**, and because automation rules evaluate first they supersede the old silent manual blocks (which become dead). Verified in `/tmp/rules.debug` (IoT example): `pass Pi_holes:53` @228 → `block **log** Local_Nets` @232 → dead manual block @247. So DNS still passes, lateral is logged+dropped, isolation intact.
 
-**Not done via API (do in GUI if wanted):** TRUSTED(opt1) and SERVERS(opt2) blocks — these interfaces have *allow* rules that must stay ahead of the block (trusted→mgmt/servers; servers→Pi-hole DNS), so an automation block would preempt them. To log those: **Firewall → Rules → [TRUSTED]/[SERVERS]** → edit each `block` rule → tick **Log** → Save/Apply. In-place, no ordering risk.
+**Done in GUI (in-place "Log" tick):** TRUSTED(opt1), SERVERS(opt2 ×2), VoIP(opt4) blocks — these interfaces have *allow* rules that must stay ahead of the block (trusted→mgmt/servers; servers→Pi-hole DNS; voip→servers), so an automation block would preempt them. Logged in place instead: **Firewall → Rules → [iface]** → edit each `block` rule → tick **Log**. **Verified 2026-07-11: ALL 8 VLAN denies now log** (4 via automation LOG rules, 4 via manual in-place Log flag).
 
 **Deliberately skipped (proportionate, not gold-plating):** IoT/Guest egress port-restriction (breaks smart-home devices); VoIP→FreePBX tightening (FreePBX not deployed); TRUSTED/SERVERS egress limits (breaks server workloads).
 
