@@ -30,8 +30,17 @@ Stood up a **3-node HA control plane**. CPU-only (GPU scheduling deferred — se
 ## GPU (deferred — Phase 4)
 Per `scripts/slurm/README.md`: don't run RKE2 GPU scheduling on a card SLURM/Ollama actively owns (both claim exclusive → silent job loss). QuarkyLab's 1× RTX 8000 = SLURM; Jarvis's 2× RTX 6000 = Ollama (72B tensor-split). **No free card today** → NVIDIA GPU Operator waits until a card is freed. When it goes in, retire the standalone nvidia-smi collector for the Operator's DCGM DaemonSet.
 
+## Phase 2 — compute + storage (2026-07-10, DONE)
+**Compute (workers):** chose to **run workloads on the CP nodes** (RKE2 servers are schedulable — no taints) rather than dedicated workers on QuarkyLab/Jarvis. Rationale: worker VMs on the GPU servers cost CPU contention with SLURM/Ollama + SLURM over-subscription risk + blast-radius coupling — and the reason to use those nodes (GPU) is deferred. Verified: a 3-replica deploy spread across cp1/cp2/cp3. Add dedicated workers later when workloads grow (cap cores + CPU-pin + reserve in `slurm.conf` if on GPU nodes).
+
+**Storage (Randy NFS → dynamic PVCs):**
+- Randy: dataset `datastore/k8s` (`/datastore/k8s`, 22.9T, `chmod 777`), NFS-exported to `.51/.52/.53` (`rw,sync,no_subtree_check,no_root_squash`). nfsd already listened on VLAN-1 `.10.187`.
+- Cluster: `nfs-subdir-external-provisioner` (helm, ns `nfs-provisioner`) → **default StorageClass `nfs-client`** (`nfs.server=192.168.10.187`, `nfs.path=/datastore/k8s`, `archiveOnDelete=true`).
+- ⚠️ k8s nodes need **`nfs-common`** installed (minimal cloud image lacks `mount.nfs` → `exit status 32`). Done on all 3.
+- **Verified:** PVC Bound + pod wrote `PERSISTED-OK`, read back from Randy's ZFS. helm `helm` in Ares `~/.local/bin`.
+
 ## Housekeeping / next
 - ⏳ Copy the Ares kubeconfig (**cluster-admin**) to Vaultwarden.
 - ⏳ Add Pi-hole local DNS `rke2.netframe.local → 192.168.10.54` (already in cert SANs).
-- **Phase 2:** CPU worker node(s) + Randy NFS storage class (`nfs-subdir` provisioner). *Note operational cost of placing workers on QuarkyLab/Jarvis — CPU contention with SLURM/Ollama; size/cap accordingly or run light workloads on the CP nodes / EliteDesks instead.*
 - **Phase 3:** first CPU workload (orchestration-worthy only; house rule stays LXC-first).
+- **Phase 4:** GPU Operator when a card frees (see §GPU).
