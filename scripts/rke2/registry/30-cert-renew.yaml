@@ -1,0 +1,107 @@
+# Auto-renew the registry TLS cert from step-ca, passwordless.
+# `step ca renew` authenticates with the CURRENT cert via mTLS -> no provisioner
+# password is stored anywhere. Runs every 8h (cert lives 24h => 3 tries per lifetime).
+# Requires (out-of-band, NOT in git):
+#   - secret/registry-tls        (seeded once from step-ca -- see README)
+#   - configmap/netframe-root-ca (from `step ca root`)  -- see README
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: registry-cert-renewer
+  namespace: registry
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: registry-cert-renewer
+  namespace: registry
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: registry-cert-renewer
+  namespace: registry
+subjects:
+  - kind: ServiceAccount
+    name: registry-cert-renewer
+    namespace: registry
+roleRef:
+  kind: Role
+  name: registry-cert-renewer
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: registry-cert-renew
+  namespace: registry
+spec:
+  schedule: "0 */8 * * *"          # every 8h (cert lives 24h -> 3 renewals per cert lifetime)
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 180
+      template:
+        spec:
+          serviceAccountName: registry-cert-renewer
+          restartPolicy: OnFailure
+          # CA leaf cert is for 'ca.netframe.local' (no IP SAN) -> map the name to pve2/step-ca
+          hostAliases:
+            - ip: "192.168.10.204"
+              hostnames: ["ca.netframe.local"]
+          securityContext:
+            fsGroup: 0
+          volumes:
+            - name: work
+              emptyDir: {}
+            - name: current
+              secret:
+                secretName: registry-tls
+            - name: ca
+              configMap:
+                name: netframe-root-ca
+          initContainers:
+            - name: renew
+              image: smallstep/step-cli:latest
+              command: ["sh", "-c"]
+              args:
+                - |
+                  set -e
+                  cp /cur/tls.crt /work/tls.crt
+                  cp /cur/tls.key /work/tls.key
+                  echo "OLD $(step certificate inspect /work/tls.crt --short 2>/dev/null | grep -i valid)"
+                  step ca renew --force \
+                    --ca-url https://ca.netframe.local \
+                    --root /ca/root.crt \
+                    /work/tls.crt /work/tls.key
+                  chmod 0644 /work/tls.crt /work/tls.key
+                  echo "NEW $(step certificate inspect /work/tls.crt --short 2>/dev/null | grep -i valid)"
+              volumeMounts:
+                - { name: work, mountPath: /work }
+                - { name: current, mountPath: /cur, readOnly: true }
+                - { name: ca, mountPath: /ca, readOnly: true }
+          containers:
+            - name: apply
+              image: alpine/kubectl:latest
+              command: ["sh", "-c"]
+              args:
+                - |
+                  set -e
+                  kubectl create secret tls registry-tls -n registry \
+                    --cert=/work/tls.crt --key=/work/tls.key \
+                    --dry-run=client -o yaml | kubectl apply -f -
+                  kubectl -n registry rollout restart deploy/registry
+                  echo "SECRET_UPDATED_AND_REGISTRY_ROLLED"
+              volumeMounts:
+                - { name: work, mountPath: /work, readOnly: true }
