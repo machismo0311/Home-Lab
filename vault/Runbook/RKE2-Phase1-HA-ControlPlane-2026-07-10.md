@@ -43,7 +43,7 @@ Per `scripts/slurm/README.md`: don't run RKE2 GPU scheduling on a card SLURM/Oll
 **Uptime Kuma** as the platform-validating pilot (self-contained status/uptime monitor; complements Prometheus with synthetic checks). ns `uptime-kuma`: Deployment (1 replica, `Recreate`, requests 100m/128Mi, limits 500m/512Mi, readiness probe) + 2Gi PVC (`nfs-client` → Randy ZFS) + Service `LoadBalancer` → MetalLB **`192.168.10.71`**. Exercised every layer end-to-end (Deployment/PVC/LB/self-heal), verified HTTP 302. First visit to `http://192.168.10.71` creates the admin account. Swap for a real workload anytime. (Note: SQLite-on-NFS is fine for single-replica.)
 
 ## Housekeeping / next
-- ⏳ Copy the Ares kubeconfig (**cluster-admin**) to Vaultwarden.
-- ⏳ Add Pi-hole local DNS: `rke2.netframe.local → .54` (in cert SANs) and optionally `status.netframe.local → .71`.
+- ⏳ Copy the Ares kubeconfig (**cluster-admin**, `~/.kube/config-rke2`) to Vaultwarden.
+- ✅ Pi-hole local DNS (2026-07-10): `rke2.netframe.local → .54`, `status.netframe.local → .71` — added on primary `.177`, synced to `.178`; verified resolving on both.
 - ⏳ First-visit admin setup on Uptime Kuma (`http://192.168.10.71`).
 - **Phase 4:** GPU Operator when a card frees (see §GPU).
