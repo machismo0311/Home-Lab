@@ -85,3 +85,17 @@ kubelet-arg:
 **Rollback:** `/usr/local/bin/rke2-agent-uninstall.sh` on Randy — removes agent, containerd, and CNI cleanly.
 
 **Guardrails honored:** PBS/ZFS/Jellyfin never restarted or reconfigured; pve2/OPNsense untouched; VLAN 30 storage path unchanged.
+
+## Phase 6 — first storage-node workload: private registry (2026-07-11, DONE)
+First real workload pinned to Randy: a **private OCI registry (`registry:2.8.3`)** in ns `registry`, backed by a **node-local PV on Randy's `datastore` ZFS** (not NFS). Deployment (1 replica, `Recreate`, 100m/128Mi req, `/v2/` readiness+liveness) + ClusterIP svc `registry.registry.svc:5000` (`10.43.53.230`). Verified real: skopeo pushed `busybox:1.36` in → catalog `{"repositories":["busybox"]}`; blobs landed physically at `/datastore/k8s-local/registry/docker/registry/v2/` (3 files, backing dataset `datastore`). Manifest: scratchpad `registry-on-randy-localpv.yaml`.
+
+**⚠️ nfs-client can't serve a pod *on Randy*.** The `datastore/k8s` export is only to CP nodes `.51/.52/.53`; a Randy-pinned pod NFS-mounting `192.168.10.187:/datastore/k8s` is a **loopback self-mount → `mount.nfs: access denied`** (exit 32), pod stuck `ContainerCreating`. Two fixes: (a) add `192.168.10.187` to the export (keeps dynamic `nfs-client`, but NFS-loopback deadlock caveat), or (b) **use a node-local PV to a ZFS dir — chosen** (direct disk, no loopback, no export change). Pattern for storage-node-local pods:
+```yaml
+# PV: local, storageClassName "", nodeAffinity kubernetes.io/hostname In [randy],
+#     local.path: /datastore/k8s-local/<app>   (dir on the datastore ZFS pool)
+# PVC: storageClassName "", volumeName: <that PV>   (static bind, no provisioner)
+# Pod/Deploy: toleration node.netframe.io/role=storage:NoSchedule (PV affinity pins to randy)
+```
+Rule of thumb: **workloads on CP nodes → `nfs-client` PVC (remote NFS, fine); workloads on Randy → node-local PV (avoid NFS-loopback).** Backing dir created once on Randy (`mkdir -p /datastore/k8s-local/<app>`).
+
+**Not yet exposed:** HTTP/insecure, ClusterIP-only. To pull cluster-wide, add it as an insecure registry in containerd (`/etc/rancher/rke2/registries.yaml` on each node) or front with TLS (MetalLB `.71-.75` + NPM). **Guardrails:** NFS export/ZFS datasets/PBS untouched; used a plain dir on the existing pool (no `zfs create`); host quorum/pools/PBS re-verified healthy after deploy.
