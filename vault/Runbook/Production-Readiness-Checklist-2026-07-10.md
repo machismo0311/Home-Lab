@@ -2,7 +2,16 @@
 
 **Tags:** #checklist #production #reliability #security #ops
 The punch list. ✅ done · ◐ partial · ⏳ open (P1 highest). Grounded in verified state, not a template.
-Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitoring-Alerting-2026-07-10]] · [[Runbook/CI-CD-2026-07-10]] · [[Runbook/Security-VLAN-Segmentation-Phased-2026-07-03]]
+Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitoring-Alerting-2026-07-10]] · [[Runbook/CI-CD-2026-07-10]] · [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]] · [[Runbook/QuarkyLab-Containerd-Relocate-to-ZFS-2026-07-10]] · [[Runbook/Security-VLAN-Segmentation-Phased-2026-07-03]]
+
+> ## Status summary (updated 2026-07-11)
+> **All P1s and every actionable P2 are DONE.** Nothing open is both major *and* actionable now — the rest is gated on external conditions, physical, or deferred by design.
+>
+> **✅ Done:** DNS HA (secondary Pi-hole + failover) · OPNsense DR (console + encrypted config backup, key rotated+scoped) · Monitoring→Discord alerting (10 rules, config-as-code) · CI/CD (4 repos + gates) · **RKE2 k8s Phases 1–3** (HA control plane + NFS storage + first workload) · QuarkyLab disk relocation (reboot-validated, 82%→16%) · Wazuh guest-agent · CT103 secrets→.env · pve5 gateway · Pi-hole password · security segmentation Phases 1–3 (per updated tracker).
+>
+> **⏳ Gated / not-yet-triggered:** restic→B2 offsite (waiting on `bulk/fernanda` data) · OPNsense guest-agent (next OPNsense reboot) · restore Ares wired leg (physical).
+>
+> **◷ Deferred by design:** OPNsense CARP HA (mitigated by fast-restore) · RKE2 Phase 4 GPU scheduling (until a card frees) · peanut-ups auth→password_file (minor).
 
 ---
 
@@ -32,8 +41,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 - ✅ **Rotated + scoped the OPNsense API key** (2026-07-10): config backup moved off the exposed root key to a least-privilege `svc-backup` user (`Backup / Restore` + `Configuration History`); old root key deleted, verified dead (401). *(Still worth doing: rotate other passwords surfaced in session transcripts if concerned.)*
 - ◐ **Hardcoded secrets → env**: CT 103 compose (Grafana admin + InfluxDB) **moved to `600` `.env` 2026-07-10** ✅. Remaining: peanut-ups basic-auth still inline in `prometheus.yml` (Prometheus can't env-interpolate scrape secrets — keep `600` or use `password_file`).
 - ✅ **Pi-hole admin password lengthened** (2026-07-10): 8 → 24 chars on both Pi-holes; nebula-sync env updated + sync verified; old (transcript-exposed) password dead. In Vaultwarden.
-- ⏳ **P2** — Security-segmentation **Phases 2–3** (services VLAN 30 enforcement, mgmt-plane) — not started.
-- ⏳ **P2** — OPNsense firewall: deny non-Ares→VLAN 20 + no BMC egress (Phase 1.5, still pending).
+- ✅ **Security-segmentation Phases 1–3 COMPLETE** per the segmentation tracker (2026-07-10: P1 BMCs→VLAN20; P2 Vaultwarden+OpenWebUI→VLAN30, Grafana/Homepage kept on VLAN1; P3 VLAN30→VLAN1 mgmt clamp). *Completed by a parallel workstream — not independently re-verified this session; see [[Runbook/Security-VLAN-Segmentation-Phased-2026-07-03]].*
 
 ## 5. CI/CD & Change Management
 - ✅ GitHub Actions lint/syntax on all 4 code/config repos (green); manual-deploy policy documented.
@@ -64,9 +72,10 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 
 ---
 
-### Suggested next 5 (by risk×effort)
-1. Rotate/scope the OPNsense root API key + move CT 103 secrets out of compose (**§4 P1**).
-2. QuarkyLab root-disk ✅ fully done 2026-07-11 (relocated + reboot-validated + reclaimed, 82%→16%).
-3. Wazuh guest-agent (**§7 P2**) — one reboot away from a broken SIEM.
-4. Restore Ares wired leg (**§6 P2**). *(pve5 gateway ✅ 2026-07-10.)*
-5. Execute restic→B2 the moment `bulk/fernanda` has data (**§2 P1**).
+### What's actually left (nothing major + actionable remains)
+The original "next 5" (OPNsense key rotate/scope, QuarkyLab disk, Wazuh agent, pve5 gateway, CT103 secrets) are **all ✅ done 2026-07-10/11**. Remaining, none urgent:
+1. **restic→B2 offsite** — execute the moment `bulk/fernanda` has real data (**§2 P1**, gated).
+2. **OPNsense guest-agent** — apply on its next reboot (**§7 P2**, staged).
+3. **Restore Ares wired leg** `enp0s31f6` (**§6 P2**, physical — plug the cable).
+4. **peanut-ups auth → `password_file`** in `prometheus.yml` (**§4**, minor hardening).
+5. Deferred-by-design (revisit only if needed): OPNsense CARP HA · RKE2 Phase 4 GPU · security Phases beyond current tracker.
