@@ -361,7 +361,7 @@ Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) repla
 | pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 31 GB | — | 7.0.12-1-pve | |
 | **QuarkyLab** | Dell R730 | 2× E5-2699 v4 | 503 GB LRDIMM | **RTX 8000 48 GB** | **6.14.11-9-pve** (pinned) | ML / DUNE agent; Wazuh VM 104 |
 | **Jarvis** | Dell R730 | 2× E5-2687W v4 | 377 GB LRDIMM | **2× RTX 6000 (48 GB)** | **6.14.11-9-pve** (pinned) | LLM inference; 10G ConnectX |
-| **Randy** | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 | 125 GB ECC | RX 580 8 GB (transcode) | 7.0.12-1-pve | PBS / ZFS / Jellyfin; Mellanox 10G |
+| **Randy** | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v3 (24c/48t) | 125 GB ECC | RX 580 8 GB (transcode) | 7.0.12-1-pve | PBS / ZFS / Jellyfin; Mellanox 10G |
 | pve1 | Mac Mini (2011) | — | — | — | — | **Standalone** (not in cluster); Pi-hole host |
 
 > **Kernel pinning:** QuarkyLab and Jarvis are pinned to **6.14.11-9-pve** via `GRUB_DEFAULT` — 6.17+ breaks the NVIDIA 550.163.01 stack. **Never** run kernel upgrades or change GRUB default on either GPU node.
@@ -598,7 +598,7 @@ Findings F-03 (Prometheus/Loki localhost-only), F-05 (NPM `:81` Ares-only), OOB 
 | **F-5** | 🟡 Low | Wazuh VM 104 lacks qemu-guest-agent → unclean stop on host reboot corrupts the indexer. | Install `qemu-guest-agent`, set `--agent enabled=1`, one cold start. |
 | **F-6** | 🟡 Low | `xe-0/2/3` DAC to UniFi down (10G/1G EEPROM mismatch). | Replace with a speed-matched SFP or accept as decommissioned. |
 | **F-7** | 🟢 Info | VLANs 40/50/60/70 defined but lightly/not populated (VoIP/FreePBX deferred). | Populate or prune to keep the VLAN map honest. |
-| **F-8** | 🟡 Low | **Amazon Echo (Alexa) on the flat management VLAN 1** (`192.168.10.112`, MAC `(OUI only)`, first seen 2026-06-14; identified via Pi-hole DNS fingerprint — `mmechocaptiveportal.com`, `msh.amazon.com`, `api.amazonalexa.com`). Its intermittent `:1080` SOCKS5 listener advertises *no-auth* (`05 00`) but **does not relay** — CONNECT requests go unanswered and all relay tests (internal, external, SOCKS4) fail. Verified at the protocol level: a **benign Echo firmware artifact, not an open proxy.** The real exposure is a closed-firmware cloud-tethered IoT device sharing L2 with infrastructure. | Move to **IoT VLAN 40** (egress-only; deny VLAN 1/20/30). **Scheduled — the Echo will be relocated to the IoT network soon.** The SOCKS port itself needs no action. |
+| **F-8** | 🟡 Low | **Amazon Echo (Alexa) on the flat management VLAN 1** (`192.168.10.112`, MAC `(OUI only)`, first seen 2026-06-14; identified via Pi-hole DNS fingerprint — `mmechocaptiveportal.com`, `msh.amazon.com`, `api.amazonalexa.com`). Its intermittent `:1080` SOCKS5 listener advertises *no-auth* (`05 00`) but **does not relay** — CONNECT requests go unanswered and all relay tests (internal, external, SOCKS4) fail. Verified at the protocol level: a **benign Echo firmware artifact, not an open proxy.** The real exposure is a closed-firmware cloud-tethered IoT device sharing L2 with infrastructure. ⚠️ **Identity unresolved:** pentest F-07 records `.112` as an owner-confirmed **Fire Tablet**, not an Echo — reconcile before closing. | Move to **IoT VLAN 40** (egress-only; deny VLAN 1/20/30) per `runbooks/F-07-IoT-VLAN40-Cutover-2026-07-09.md`. Infra blocker cleared 2026-06-25; **still on VLAN 1 as of 2026-07-09** — device reprovision + IoT firewall pending. The SOCKS port itself needs no action. |
 
 ---
 
@@ -639,7 +639,7 @@ Findings F-03 (Prometheus/Loki localhost-only), F-05 (NPM `:81` Ares-only), OOB 
 | .31 Jarvis | 22, 111, 3128, **8000**, 9100 | SSH · Proxmox · **llm_router** · node-exporter |
 | .50 EX3400 | 22, 830 | SSH + NETCONF |
 | .100/.199 Ares | 21, 22, 111, 139, 445, 2049, 9090 | FTP · Samba · NFS · Cockpit (workstation) |
-| .112 (Amazon Echo) | 1080, 8888 | Alexa speaker; intermittent **non-relaying** SOCKS5 handshake (F-8) → IoT VLAN 40 soon |
+| .112 (Amazon — Echo/Fire Tablet?) | 1080, 8888 | Alexa device; intermittent **non-relaying** SOCKS5 handshake (F-8; ⚠️ identity unresolved — pentest F-07 says Fire Tablet) → IoT VLAN 40 per runbook, pending |
 | .148 Homepage | 22, 8081 | SSH · PeaNUT |
 | .172 (printer) | 80, 443, 515, 631, 9100 | Network printer (LPD/IPP/JetDirect) |
 | .177 Pi-hole | 22, 53, 80, 443 | dnsmasq pi-hole v2.92.2 + admin |

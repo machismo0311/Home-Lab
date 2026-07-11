@@ -12,8 +12,8 @@
 | Component | Detail |
 |---|---|
 | Chassis | SuperMicro CSE-219U 2U 24-bay |
-| CPU | Dual Intel Xeon E5-2690 v4 (2× 14c/28t = 28 cores / 56 threads) |
-| RAM | 128 GB ECC DDR4 |
+| CPU | Dual Intel Xeon E5-2690 v3 (2× 12c/24t = 24 cores / 48 threads) — corrected 2026-07-11 (measured `nproc=48`; original build sheet mislabeled these as v4/28c) |
+| RAM | 128 GB ECC DDR4 — **+64 GB on hand to install → 192 GB planned** (as of 2026-07-11) |
 | RAID Controller | AVAGO 3108 MegaRAID (SAS-12G) |
 | NIC | Mellanox ConnectX-3 MCX312A dual-port 10GbE |
 | IPMI | 192.168.10.22 |
@@ -24,8 +24,8 @@
 | Device | Model | Count | Size | Interface | Purpose |
 |---|---|---|---|---|---|
 | Boot SSDs | Seagate ST200FM0053 | 2 | 185.8 GB | SAS | RAID-1 boot mirror |
-| Data drives | Toshiba AL15SEB18EQ | 18 | 1.636 TB | SAS 10K | ZFS datastore pool |
-| Spare drives | Seagate ST2000NX0423 | 2 | 1.818 TB | SATA | Unallocated |
+| Data drives | Toshiba AL15SEB18EQ | 18 | 1.636 TB | SAS 10K | ZFS `datastore` pool — 3× 6-wide RAIDZ2 |
+| Data drives | Seagate ST2000NX0423 | 4 | 1.818 TB | SATA | ZFS `datastore` pool — 1× 4-wide RAIDZ2 (all in-pool, no spares) — corrected 2026-07-11 (was mislabeled "2 / Unallocated") |
 
 ---
 

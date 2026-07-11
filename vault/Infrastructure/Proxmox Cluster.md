@@ -37,7 +37,7 @@ flowchart TB
 | pve5 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | 192.168.10.203 | Cluster node; **secondary Pi-hole** CT 108 (`netframe-pihole2`, .178) |
 | QuarkyLab | Dell R730 (svc tag (in ops vault)) | 2× E5-2699 v4 | 512GB | 192.168.10.179 | ML node — RTX 8000 48GB (installed 2026-07-01) (the researcher/DUNE); Wazuh VM 104. iDRAC 192.168.20.20 (VLAN 20) |
 | Jarvis | Dell R730 | 2× E5-2687W v4 | 384GB | 192.168.10.31 | LLM node — 2× RTX 6000 48GB installed 2026-07-04, Ollama GPU-backed. iDRAC 192.168.20.21 (VLAN 20) |
-| Randy | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v4 (28c/56t) | 128GB | 192.168.10.187 | PBS, Jellyfin, ZFS storage (PVE 9.1.1). IPMI 192.168.20.22 (VLAN 20) |
+| Randy | SuperMicro CSE-219U / X10DRU-i+ | 2× E5-2690 v3 (24c/48t) | 128GB | 192.168.10.187 | PBS, Jellyfin, ZFS storage (PVE 9.1.1). IPMI 192.168.20.22 (VLAN 20) |
 
 > **pve1** (Apple Mac Mini, 192.168.10.193) is a **standalone** Proxmox node — **not** in km-cluster. It hosts the Pi-hole LXC (192.168.10.177).
 
