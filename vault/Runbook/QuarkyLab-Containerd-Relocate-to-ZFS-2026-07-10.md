@@ -1,7 +1,6 @@
 # QuarkyLab — Relocate containerd image store to ZFS pool
 
-**Status:** ✅ **EXECUTED 2026-07-11 (Option A, ZFS dataset) — relocated, verified, reboot-hardened.**
-Rollback `/var/lib/containerd.old` **KEPT** (soak); `/` stays 82% until it's deleted (see "Reclaim — pending" below).
+**Status:** ✅ **COMPLETE 2026-07-11 (Option A) — relocated, reboot-validated, reclaimed.** `/` **82% → 16%** (73 G → 14 G). `.old` deleted after a full cold-reboot proved the ZFS mount + NVIDIA pin hold.
 **Raised:** 2026-07-10 (disk WARN: `/` at 82%).
 
 ---
@@ -13,8 +12,15 @@ Ran **Option A**. Node was idle (0 system containers, GPU 0%, no SLURM, no inter
 - ⚠️ **Runbook smoke-test bug fixed:** step-6's `docker run ... nvidia/cuda ... nvidia-smi` **needs `--gpus all`** or it errors `nvidia-smi: not found` (that's a *missing-flag* error, NOT an overlay failure — the container still started).
 - **Reboot-safety hardening added** (containerd had no ordering vs the ZFS mount): drop-in `/etc/systemd/system/containerd.service.d/10-zfs-mount.conf` with `After=/Wants=zfs-mount.service` + `RequiresMountsFor=/var/lib/containerd`. Verified `After=` now includes `zfs-mount.service` + auto-generated `var-lib-containerd.mount`. **This is a required step — add it to Option A above for next time.**
 
-### Reclaim — PENDING (soak)
-`/var/lib/containerd.old` (60 G on OS root) is kept as rollback → `/` still **82%** (but no longer *grows*, since containerd now lives on the pool). Do the reclaim after the store proves durable (ideally across the next planned reboot — verifies the mount-ordering drop-in): `rm -rf /var/lib/containerd.old` → `/` drops to **~14%**. `quarkylab-ml:latest` is a **locally-built** image, so `.old` is its only rollback copy until then — do not rush the delete.
+### Reclaim — DONE (2026-07-11, reboot-validated)
+Rather than a passive soak, did a **controlled reboot** to validate durability, then reclaimed:
+1. Pre-flight verified GRUB pinned to `6.14.11-9-pve` (NVIDIA) + VM 104 `onboot=1,agent=1`.
+2. **Graceful VM 104 shutdown via agent** (`qm shutdown 104` rc=0) — validated today's guest-agent fix.
+3. `systemctl reboot` (R730 POST ~4 min).
+4. **Post-boot ALL GREEN:** kernel `6.14.11-9-pve`; GPU `550.163.01`/RTX 8000; **containerd auto-mounted from `workspace/containerd` on boot** (drop-in held) → 63 G image intact; `quarkylab-ml` → `torch cuda True`; VM 104 auto-started `running`.
+5. `rm -rf /var/lib/containerd.old` → **`/` 82% → 16%** (14 G used, 76 G free). Image intact on pool.
+
+(kieron's rootless dockerd came back via linger; his `arid` containers are down — `restart:no` — he must `docker compose up`.)
 
 ---
 
