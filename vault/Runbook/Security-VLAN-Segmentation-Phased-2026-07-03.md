@@ -277,3 +277,14 @@ ssh vaultwarden 'getent hosts github.com'
 - ✅ Keep Pi-hole, Headscale, and corosync where they are; open narrow firewall holes instead of moving infra.
 - ✅ Verify from a *non-trusted* host that the mgmt plane is actually unreachable — an untested firewall is a false sense of security.
 - ❌ Don't move corosync or any pve host mgmt IP. ❌ Don't clamp VLAN 1 (Phase 3) before BMCs+services have left it. ❌ Don't drive a switch/BMC cutover over the exact path you're re-IP'ing without a second lifeline. ❌ Don't commit secrets to this public vault.
+
+---
+
+## DNS-gap fix for isolated VLANs (2026-07-11)
+**Found during review:** IOT(40)/VoIP(50)/GUEST(60)/LAB(70) all `block → Local_Nets` (which includes VLAN 10 where Pi-hole `.177/.178` live), but DHCP hands those VLANs `.177/.178` as DNS → **those VLANs had no working DNS** (latent; sparsely populated). Their gateway Unbound (`.X.1`) is also inside `Local_Nets` so that was blocked too. TRUSTED/SERVERS were fine (explicit DNS allows).
+
+**Fix:** added a narrow pinhole — host alias `Pi_holes = 192.168.10.177,192.168.10.178` + 4 **automation** filter rules (`Firewall → Automation → Filter`), one per VLAN: `pass in quick <VLAN net> → Pi_holes proto tcp/udp port 53`. Applied via the firewall API.
+
+**Verified at pf level** (`/tmp/rules.debug`): the automation `pass` rules land at lines 228–231, *before* the manual `block → Local_Nets` at 243–250 — so `:53 → Pi-holes` passes (DNS works + keeps Pi-hole ad-blocking/HA) while all other local traffic still hits the block (isolation preserved). Key insight: **OPNsense automation-filter rules evaluate before per-interface manual rules.**
+
+**Rollback:** delete the 4 automation rules + the `Pi_holes` alias (or restore the pre-change `config.xml` snapshot). Rules are additive `pass` — removing them only reverts to the prior (DNS-broken) state, breaks nothing else.
