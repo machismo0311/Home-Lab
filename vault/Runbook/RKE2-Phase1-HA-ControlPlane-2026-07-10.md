@@ -10,6 +10,7 @@ Stood up a **3-node HA control plane**. CPU-only (GPU scheduling deferred — se
 |---|---|
 | Nodes | `rke2-cp1` .51 (pve3/VMID 201), `rke2-cp2` .52 (pve4/202), `rke2-cp3` .53 (pve5/203) |
 | VM spec | Debian 12 cloud-init, 2 vCPU / 4 GB / 40 GB local-lvm, VLAN 1 (vmbr0), `onboot=1`, ciuser `rke2` (Ares key) |
+| Worker | `randy` .187 — **bare-metal agent on the PVE storage host** (not a VM); 2× E5-2690 v3 (48t) / 125 GiB; tainted `node.netframe.io/role=storage:NoSchedule`; kubelet-reserved → Allocatable **40 CPU / ~95.8 GiB** (added Phase 5, 2026-07-11 — see §Phase 5) |
 | RKE2 | v1.35.6+rke2r1; **3 etcd members** (survives 1 node/host loss) |
 | CNI | Cilium (`cni: cilium` in config) |
 | **API VIP** | **`192.168.10.54:6443`** via kube-vip DaemonSet (ARP, leader-elected across CP nodes) |
