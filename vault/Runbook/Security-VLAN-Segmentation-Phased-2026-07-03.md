@@ -288,3 +288,14 @@ ssh vaultwarden 'getent hosts github.com'
 **Verified at pf level** (`/tmp/rules.debug`): the automation `pass` rules land at lines 228–231, *before* the manual `block → Local_Nets` at 243–250 — so `:53 → Pi-holes` passes (DNS works + keeps Pi-hole ad-blocking/HA) while all other local traffic still hits the block (isolation preserved). Key insight: **OPNsense automation-filter rules evaluate before per-interface manual rules.**
 
 **Rollback:** delete the 4 automation rules + the `Pi_holes` alias (or restore the pre-change `config.xml` snapshot). Rules are additive `pass` — removing them only reverts to the prior (DNS-broken) state, breaks nothing else.
+
+## Hardening: log denied traffic (2026-07-11)
+**Gap:** none of the 8 manual `block` rules logged → lateral-movement / policy-violation attempts were invisible (no Wazuh/firewall-log signal). IPv6 checked — not configured on VLANs, default-denied, nothing to do.
+
+**Done via automation API** (highest-value denies, cleanly): 4 `block in log quick` rules — **IoT/Guest/Lab → Local_Nets** and **LAN → VLAN20 (BMC)**. They mirror the existing silent blocks exactly (same drop) but **log**, and because automation rules evaluate first they supersede the old silent manual blocks (which become dead). Verified in `/tmp/rules.debug` (IoT example): `pass Pi_holes:53` @228 → `block **log** Local_Nets` @232 → dead manual block @247. So DNS still passes, lateral is logged+dropped, isolation intact.
+
+**Not done via API (do in GUI if wanted):** TRUSTED(opt1) and SERVERS(opt2) blocks — these interfaces have *allow* rules that must stay ahead of the block (trusted→mgmt/servers; servers→Pi-hole DNS), so an automation block would preempt them. To log those: **Firewall → Rules → [TRUSTED]/[SERVERS]** → edit each `block` rule → tick **Log** → Save/Apply. In-place, no ordering risk.
+
+**Deliberately skipped (proportionate, not gold-plating):** IoT/Guest egress port-restriction (breaks smart-home devices); VoIP→FreePBX tightening (FreePBX not deployed); TRUSTED/SERVERS egress limits (breaks server workloads).
+
+**Rollback:** delete the 4 automation block-log rules (drop reverts to the silent manual blocks — same isolation, just no logging).
