@@ -51,7 +51,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 ## 7. Storage & Compute
 - ✅ ZFS pools ONLINE (Randy `bulk`+`datastore`, QuarkyLab `workspace`, Jarvis `tank`+`scratch`); pool-degraded alerting added.
 - ⏳ **P1 — QuarkyLab OS root at ~82%** (containerd store) — planned-outage relocation to ZFS pending (see [[project-quarkylab-containerd-relocate]]).
-- ⏳ **P2 — Wazuh VM 104 has no qemu-guest-agent** → a QuarkyLab reboot hard-stops it (indexer unhealthy). Install agent + one cold start.
+- ✅ **Wazuh VM 104 guest-agent installed** (2026-07-10): `qm agent 104 ping` responds; QuarkyLab reboots now gracefully shut it down (agent channel was already live → no restart/power-cycle needed; SIEM undisturbed). Reboot landmine defused.
 - ⏳ **P2 — OPNsense (VM 100) qemu-guest-agent** — staged for next reboot.
 - ✅ Randy Scrutiny false-positives silenced; boot/HBA config documented.
 
