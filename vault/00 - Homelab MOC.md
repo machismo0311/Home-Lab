@@ -1,6 +1,6 @@
 # 🖥️ Homelab — Master Map of Content
 > **Operator:** Kyle Mason (`machismo`) · **Location:** Greater Cleveland, OH
-> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-06-26
+> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-07-11
 
 ---
 
@@ -22,6 +22,8 @@ mindmap
     Services
       [[Infrastructure/Proxmox Cluster]]
       [[Infrastructure/Services & VMs]]
+    Kubernetes
+      [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]]
     Projects
       [[Projects/VoIP - FreePBX]]
       [[Projects/IMU Gesture Control]]
@@ -81,6 +83,8 @@ mindmap
 | Homepage | 192.168.10.148 | LXC 106 on pve3 |
 | Pi-hole (primary) | 192.168.10.177 | LXC on pve1 |
 | Pi-hole (secondary) | 192.168.10.178 | CT 108 on pve5 (nebula-sync mirror, 2026-07-10) |
+| RKE2 API VIP | 192.168.10.54 | kube-vip; CP = rke2-cp1/2/3 (.51/.52/.53 = VMs 201-203 on pve3/4/5); Randy = bare-metal worker |
+| RKE2 MetalLB LBs | 192.168.10.71–.75 | .71 Uptime Kuma (status.netframe.local), .72 registry (registry.netframe.local, TLS) |
 | Ares (laptop) | 192.168.10.100 wired | TS: 100.124.118.63 |
 
 ---
@@ -104,6 +108,9 @@ mindmap
 
 ### VPN
 - [[Projects/Headscale]] — Self-hosted Tailscale control plane (pve3 CT 105)
+
+### Kubernetes
+- [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]] — RKE2 cluster (3-node HA CP, Cilium, MetalLB, Randy storage worker, private registry w/ step-ca TLS + auto-renew); manifests in `scripts/rke2/`
 
 ### Switching
 - [[Networking/Juniper EX3400-48P]] — Core switch config & Junos notes
@@ -147,6 +154,9 @@ mindmap
 - [x] Jarvis GPU software stack staged (2026-07-01) — kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS, Ollama → /opt/models
 - [x] QuarkyLab RTX 6000 → RTX 8000 48GB swap — installed 2026-07-01
 - [x] Jarvis 2× RTX 6000 install — installed & verified 2026-07-04 (48GB total, Ollama GPU-backed)
+- [x] Security VLAN segmentation — all 3 phases (BMCs→VLAN 20 2026-07-03; services→VLAN 30; VLAN 30→VLAN 1 mgmt clamp 2026-07-10)
+- [x] DNS HA — secondary Pi-hole (.178, pve5 CT 108, nebula-sync mirror of .177) + DHCP failover on all VLANs (2026-07-10)
+- [x] RKE2 Kubernetes — Phases 1-7 (3-node HA CP, Cilium, MetalLB, Randy bare-metal storage worker, private registry w/ step-ca TLS + auto-renew); GPU Operator deferred (2026-07-10/11)
 - [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
 - [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error
 - [ ] Headscale Phase 3: migrate Kyle + the researcher devices off commercial Tailscale

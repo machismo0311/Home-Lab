@@ -29,6 +29,9 @@
 | Jellyfin | Native | 🟢 Active | Randy | 192.168.10.187:8096 | v10.11.11 |
 | Ollama / llm_router | Native | 🟢 Active | Jarvis | `:8000` (llm.netframe.local) | Ollama v0.31.1 GPU-backed (2× RTX 6000, qwen2.5:72b); llm_router.service OpenAI-compatible (local + RAG + Claude fallback) ACTIVE 2026-07-04 |
 | Open WebUI | LXC 107 | 🟢 Active | pve3 (.185) | http://chat.netframe.local | ChatGPT-style UI → llm_router (models local/rag); native pip, systemd, NPM id 6. Created 2026-07-05 |
+| RKE2 Kubernetes | 3× VM (HA CP) | 🟢 Active | pve3/4/5 (VMs 201-203) | 192.168.10.54 (VIP) | v1.35.6+rke2r1; Cilium + MetalLB (.71-.75); Randy = bare-metal storage worker; kubectl from Ares (~/.kube/config-rke2). Phases 1-7 (2026-07-10/11); GPU Operator deferred |
+| Container registry | k8s (on Randy) | 🟢 Active | Randy (RKE2 worker) | 192.168.10.72 | https://registry.netframe.local (MetalLB LB); registry:2, step-ca TLS + 8h auto-renew CronJob, node-local ZFS PV. See `scripts/rke2/registry/` |
+| Uptime Kuma | k8s | 🟢 Active | RKE2 CP nodes | 192.168.10.71 | http://status.netframe.local (MetalLB LB); RKE2 Phase 3 pilot |
 | Home Assistant | — | 🔴 Planned | TBD | — | — |
 | FreePBX | VM | ⏸️ Deferred | TBD | — | — |
 
