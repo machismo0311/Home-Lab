@@ -1,14 +1,21 @@
 # NETFRAME virtual lab — a containerlab topology that boots real routers,
 # applies IOS-style config, and is validated end-to-end in CI.
 #
-#   h1 ── r1 ════ r2 ── h2
-#   10.10.1.0/24  10.0.0.0/30  10.10.2.0/24
+#   h1 ── r1 ════════════ r2 ── h2       primary : r1 ⇄ r2  (cost 10)
+#         │ ╲            ╱ │
+#         │  ╲   r3    ╱   │             backup  : r1 ⇄ r3 ⇄ r2 (cost 20)
+#         │   ╲__│__╱      │
+#   10.10.1.0/24        10.10.2.0/24
 #
-# r1/r2 run FRRouting with OSPF area 0; the hosts prove inter-router
-# reachability. `netlab/tests/test_reachability.sh` asserts data-plane pings
-# AND control-plane OSPF state. Run locally with:
+# r1/r2/r3 run FRRouting with OSPF area 0. There are TWO paths between the host
+# subnets; OSPF prefers the direct r1↔r2 link and falls back through r3 when it
+# dies. Two test suites assert this:
+#   tests/test_reachability.sh  — steady-state data + control plane
+#   tests/test_failover.sh      — kill the primary link, prove OSPF reroutes
+# Run locally with:
 #   cd netlab && sudo containerlab deploy -t netframe-lab.clab.yml
 #   sudo bash tests/test_reachability.sh
+#   sudo bash tests/test_failover.sh
 #   sudo containerlab destroy -t netframe-lab.clab.yml --cleanup
 
 name: netframe
@@ -34,6 +41,17 @@ topology:
       exec:
         - sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 
+    # r3 is a transit-only router — no host hangs off it. It exists purely to
+    # provide the redundant r1↔r3↔r2 path used when the primary link fails.
+    r3:
+      kind: linux
+      image: quay.io/frrouting/frr:10.6.1
+      binds:
+        - configs/r3/frr.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+      exec:
+        - sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+
     h1:
       kind: linux
       image: ghcr.io/hellt/network-multitool:latest
@@ -51,6 +69,11 @@ topology:
         - ip route replace default via 10.10.2.1
 
   links:
-    - endpoints: ["h1:eth1", "r1:eth1"]
-    - endpoints: ["r1:eth2", "r2:eth2"]
-    - endpoints: ["h2:eth1", "r2:eth1"]
+    # host access links
+    - endpoints: ["h1:eth1", "r1:eth1"]     # 10.10.1.0/24
+    - endpoints: ["h2:eth1", "r2:eth1"]     # 10.10.2.0/24
+    # primary transit — the direct link OSPF prefers
+    - endpoints: ["r1:eth2", "r2:eth2"]     # 10.0.0.0/30
+    # backup path through r3 (two hops, higher total cost)
+    - endpoints: ["r1:eth3", "r3:eth1"]     # 10.0.1.0/30
+    - endpoints: ["r2:eth3", "r3:eth2"]     # 10.0.2.0/30
