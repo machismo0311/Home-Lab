@@ -24,6 +24,19 @@ MR7400 (FirstNet)          pve2                         OPNsense VM 100
 
 ---
 
+## Expected performance & cutover
+- **Model:** "MR7400" is the **Netgear Nighthawk M7 Pro** — Qualcomm **X75** modem (matches firmware `NTGX75`), **5G Sub-6** (no mmWave), 2.5 GbE port, 2× TS-9 external-antenna ports.
+- **Cutover (default dpinger — no custom gateway tuning in config):**
+  - Hard failure (link drops / modem dies): **~5–10 s** to reroute onto WAN2.
+  - Soft brownout (L2 up, no internet): **~10–30 s** (dpinger accumulates loss to the `1.1.1.1` monitor).
+  - Hardwired + always-on = **hot standby** (cellular session + DHCP lease already up) → **no dial-up delay**; cutover is pure detection time.
+  - In-flight TCP on WAN1 drops + re-establishes on WAN2 (state-kill + sticky). Tunable to **~3–5 s** by tightening dpinger, at the cost of jitter-flapping + wasted cellular data — defaults preferred.
+- **Speed penalty (100% the cellular link — wiring/2.5GbE/pve2 add none):**
+  - 5G Sub-6, decent signal: real-world **~100–400 Mbps ↓ / ~10–50 ↑ / ~20–40 ms**.
+  - LTE-only pocket: **~20–75 Mbps ↓ / ~30–60 ms**.
+  - vs primary (public IP, fast cable/fiber) it's a real drop but **ample** for SSH / web UIs / DNS / monitoring / tailnet relay. Avoid bulk transfers (FirstNet data limits/deprioritization).
+  - **Signal-dependent** — if install spot is weak (rack/basement), use the TS-9 external antennas.
+
 ## Verified facts (read-only recon, 2026-07-12)
 
 ### pve2 NICs
