@@ -70,10 +70,12 @@ is the piece that lets both coexist without conflicting.
 - **Now (bare metal + SLURM):** SLURM schedules batch jobs directly onto
   QuarkyLab's GPU via `cgroup.conf`'s `ConstrainDevices`. No container
   runtime involved.
-- **Planned (RKE2 + NVIDIA GPU Operator):** listed in `README.md` under
-  "Planned / In Progress" — this is for containerized workloads (e.g. a
+- **RKE2 deployed CPU-only (Phases 1-7, 2026-07-10/11); NVIDIA GPU Operator still deferred:**
+  RKE2 is live (HA control plane, Cilium, MetalLB — see
+  `vault/Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10.md`) but with **no GPU
+  scheduling**. The GPU Operator is for containerized workloads (e.g. a
   packaged version of the DUNE agent, or services that need to scale
-  across nodes) that don't fit SLURM's batch-job model.
+  across nodes) that don't fit SLURM's batch-job model — deferred until a card frees.
 - **The bridge — DCGM Exporter:** rather than picking one scheduler
   permanently, DCGM Exporter runs independently of both and exposes GPU
   telemetry (utilization, memory, temperature, ECC errors) as Prometheus
@@ -87,14 +89,18 @@ is the piece that lets both coexist without conflicting.
     nvcr.io/nvidia/k8s/dgcm-exporter:latest
   ```
 
-  When RKE2 + the GPU Operator eventually go in, the GPU Operator ships
-  its own DCGM Exporter as a DaemonSet — at that point retire the
+  When the GPU Operator eventually goes in (RKE2 itself is already deployed,
+  CPU-only), it ships its own DCGM Exporter as a DaemonSet — at that point retire the
   standalone container above and let the operator manage it, since running
   both simultaneously will double-count metrics and can fight over device
   plugin registration.
 
 **Sequencing:** don't stand up RKE2 GPU scheduling on QuarkyLab while SLURM
 is actively managing student jobs on the same card — both will try to
-claim exclusive access to the device and one will lose jobs silently. Keep
-them on separate hardware, or run RKE2 without GPU workloads until the
-RTX 8000 swap gives QuarkyLab a second card to split between them.
+claim exclusive access to the device and one will lose jobs silently.
+QuarkyLab has a **single** RTX 8000 48GB — the 2026-07-01 swap replaced the
+RTX 6000 one-for-one (more VRAM, still one card; it did **not** add a second
+GPU). So this stays an either/or: **RKE2 is deployed CPU-only and its GPU
+scheduling remains deferred** while SLURM / ad-hoc ML own the card. Split
+between the two schedulers only if QuarkyLab ever gets a second GPU, or move
+the containerized workloads to separate hardware.

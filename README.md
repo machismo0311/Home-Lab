@@ -120,7 +120,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] Prometheus node-exporter deployed on all 8 nodes (randy/pve2/pve3/pve4/pve5/quarkylab/jarvis/pve1) ✅
 - [x] Scrutiny — drive health UI live at http://192.168.10.183:8080 (~50 drives, collectors on Randy + QuarkyLab, 6h) ✅
 - [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
-- [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
+- [x] RKE2 Kubernetes ✅ Phases 1-7 (2026-07-10/11) — HA control plane (VMs 201-203, VIP .54), Cilium, MetalLB (.71-.75), Randy NFS StorageClass + bare-metal storage worker, private registry (MetalLB .72 = registry.netframe.local, step-ca TLS + auto-renew). **NVIDIA GPU Operator still deferred** (SLURM/Ollama own the cards). See `vault/Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10.md`
 - [ ] Cyberpunk monitoring dashboard — live API integration
 - [ ] IMU gesture control (nRF52 trackers → Home Assistant)
 - [x] Headscale Phase 1 — pve3/4/5/Jarvis migrated to self-hosted (2026-06-22)
