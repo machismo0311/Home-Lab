@@ -1,6 +1,6 @@
 # 🖥️ Homelab — Master Map of Content
 > **Operator:** Kyle Mason (`machismo`) · **Location:** Greater Cleveland, OH
-> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-07-11
+> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-07-12
 
 ---
 
@@ -24,6 +24,8 @@ mindmap
       [[Infrastructure/Services & VMs]]
     Kubernetes
       [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]]
+    High Availability
+      [[High Availability/High Availability MOC]]
     Projects
       [[Projects/VoIP - FreePBX]]
       [[Projects/IMU Gesture Control]]
@@ -112,6 +114,9 @@ mindmap
 ### Kubernetes
 - [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]] — RKE2 cluster (3-node HA CP, Cilium, MetalLB, Randy storage worker, private registry w/ step-ca TLS + auto-renew); manifests in `scripts/rke2/`
 
+### High Availability
+- [[High Availability/High Availability MOC]] — Cluster resilience map: completed HA (DNS, RKE2 control plane, quorum, monitoring) + prioritized projects (compute HA, storage redundancy, switch Virtual Chassis, OPNsense CARP pair, WAN failover)
+
 ### Switching
 - [[Networking/Juniper EX3400-48P]] — Core switch config & Junos notes
 - [[Networking/UniFi USW-24-250W]] — UniFi switch config
@@ -163,3 +168,4 @@ mindmap
 - [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs
 - [ ] VoIP project (deferred — post core infra)
 - [ ] CCNA study cadence established
+- [ ] High Availability roadmap — WAN failover (FirstNet 5G) + OPNsense CARP pair, then compute HA (ha-manager + Ceph/ZFS replication), storage redundancy, and switch Virtual Chassis (see [[High Availability/High Availability MOC]])
