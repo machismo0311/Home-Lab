@@ -5,6 +5,12 @@
 
 A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, running a 7-node Proxmox VE cluster (km-cluster) — PVE 9.2.3 on every node except Randy (9.1.1, kernel/ZFS-only upgrade). Purpose-built as a live CCNA lab, LLM inference platform, ML research node, and backup infrastructure — documented here as a technical portfolio.
 
+**Why this exists:** I'm a U.S. Marine Corps aviator (EC-135/145 Instructor Pilot, FOQA Officer) transitioning into network & infrastructure engineering, currently pursuing my **CCNA**. This lab is where I apply the discipline of mission-critical aviation — checklists, root-cause analysis, and zero-defect execution — to production-style infrastructure:
+
+- **FOQA flight-data analysis → observability:** metrics, dashboards, and anomaly detection (Prometheus / Grafana / Loki, Wazuh SIEM)
+- **Instructor-pilot checklists → runbooks & change control:** every buildout and incident is written up as a repeatable procedure, with formal RCAs
+- **Mission-critical systems → reliability engineering:** HA DNS, redundant firewalling, tested backups, and blast-radius analysis
+
 ---
 
 ## Cluster Nodes
@@ -30,6 +36,41 @@ A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, runnin
 - **UniFi Switch 24 PRO (PoE+)** — consumer fabric (IoT, VoIP, guest)
 - **OPNsense 25.7** — VM 100 on pve2, handles routing/firewall/DHCP for all VLANs
 - **10G fabric** — Mellanox ConnectX-3 DAC links from Randy/QuarkyLab/Jarvis to EX3400 xe- ports
+
+### Topology
+
+```mermaid
+flowchart TB
+    WAN["🌍 WAN / ISP"] --> UDR["UniFi Dream Router<br/>WAN edge · 192.168.1.x WiFi"]
+    UDR --> OPN["OPNsense VM 100 (pve2)<br/>192.168.10.1<br/>LAN router / firewall / DHCP"]
+    OPN <-->|trunk| EX3400
+
+    subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
+        EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4"]
+        USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
+        EX2300["Juniper EX2300-48P<br/>U38"]
+        EX3400 <-->|ge-0/0/46 trunk| USW
+        EX3400 <-->|1G trunk| EX2300
+    end
+
+    subgraph PVE["km-cluster — Proxmox nodes"]
+        PVE2["pve2 · .204<br/>OPNsense host"]
+        PVE3["pve3 · .201<br/>NPM·Vault·Grafana·Homepage·Headscale"]
+        PVE4["pve4 · .202"]
+        PVE5["pve5 · .203"]
+        QUARK["QuarkyLab · .179<br/>RTX 8000 48GB · Wazuh VM 104 ·184"]
+        JARVIS["Jarvis · .31<br/>LLM node · 2× RTX 6000 48GB installed 2026-07-04"]
+        RANDY["Randy · .187<br/>PBS · Jellyfin · storage"]
+    end
+
+    PVE1["pve1 · .193<br/>Mac Mini — standalone<br/>Pi-hole .177"]
+
+    EX3400 --> PVE2 & PVE3 & PVE4 & PVE5 & QUARK & JARVIS & RANDY & PVE1
+
+    style UDR fill:#cc4400,color:#fff
+    style OPN fill:#163016,color:#eee
+    style EX3400 fill:#1a1a2e,color:#eee
+```
 
 ### VLANs
 
