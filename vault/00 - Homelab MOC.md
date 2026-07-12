@@ -93,7 +93,7 @@ mindmap
 
 ## 🔗 Key Links
 
-- [[Architecture Overview]] — Top-down system architecture, design principles, and layer map (**start here**)
+- [[Architecture Overview]]: top-down system architecture, design principles, and layer map (**start here**)
 
 ### Infrastructure
 - [[Rack Layout]] — Physical layout, depth notes, thermal zones
@@ -117,7 +117,7 @@ mindmap
 - [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]] — RKE2 cluster (3-node HA CP, Cilium, MetalLB, Randy storage worker, private registry w/ step-ca TLS + auto-renew); manifests in `scripts/rke2/`
 
 ### High Availability
-- [[High Availability/High Availability MOC]] — Cluster resilience map: completed HA (DNS, RKE2 control plane, quorum, monitoring) + prioritized projects (compute HA, storage redundancy, switch Virtual Chassis, OPNsense CARP pair, WAN failover)
+- [[High Availability/High Availability MOC]]: cluster resilience map covering completed HA (DNS, RKE2 control plane, quorum, monitoring) and prioritized projects (compute HA, storage redundancy, switch Virtual Chassis, OPNsense CARP pair, WAN failover)
 
 ### Switching
 - [[Networking/Juniper EX3400-48P]] — Core switch config & Junos notes
@@ -170,4 +170,4 @@ mindmap
 - [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs
 - [ ] VoIP project (deferred — post core infra)
 - [ ] CCNA study cadence established
-- [ ] High Availability roadmap — WAN failover (FirstNet 5G) + OPNsense CARP pair, then compute HA (ha-manager + Ceph/ZFS replication), storage redundancy, and switch Virtual Chassis (see [[High Availability/High Availability MOC]])
+- [ ] High Availability roadmap: WAN failover (FirstNet 5G) + OPNsense CARP pair, then compute HA (ha-manager + Ceph/ZFS replication), storage redundancy, and switch Virtual Chassis (see [[High Availability/High Availability MOC]])
