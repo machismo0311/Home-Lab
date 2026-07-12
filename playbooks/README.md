@@ -102,6 +102,30 @@ Put the returned id/secret in `group_vars/all/vault.yml` as `vault_pbs_token_id`
 / `vault_pbs_token_secret` (see `vault.yml.example`). Until then the `pbs`
 check records `status: error` and the report's `overall` is `fail` by design.
 
+## Scheduling
+
+Runs daily from **Ares** (the control node) via a **user cron job**, mirroring
+the `opnsense-config-backup` pattern (Ares has no passwordless sudo, and the
+sibling backup automation already uses user cron, not a system unit).
+
+`scheduling/run-backup-verify.sh` is the versioned wrapper (it adds the vault
+password file only when it exists, and appends to a run log). The crontab entry
+itself is Ares-local state — reproduce it with:
+
+```cron
+0 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-backup-verify.sh >> /home/machismo/.config/netframe-backup-verify/run.log 2>&1
+```
+
+06:00 is after the nightly backups (LXC 02:00 / VM 03:00) and the 03:17
+opnsense backup, so the newest snapshot is well inside the 25h window. The
+wrapper exits 0 when the *run* succeeds; the pass/fail verdict lives in the
+report's `overall` field (and the `generated` freshness stamp), not the exit
+code. Inspect with `tail ~/.config/netframe-backup-verify/run.log`.
+
+> If you later want a systemd system timer instead (needs root on Ares), the
+> equivalent is a `Type=oneshot` service with `User=machismo` calling the same
+> wrapper, plus a daily `OnCalendar=*-*-* 06:00:00` `Persistent=true` timer.
+
 ## Secrets
 
 Single `ansible-vault` file: `group_vars/all/vault.yml` (only the PBS token so
@@ -120,8 +144,7 @@ ansible-playbook backup-verify.yml --vault-password-file ~/.ansible-vault-pass
 
 ## Still open
 
-1. **Scheduling** — daily run not yet wired. Decide control node (Ares vs. a
-   cluster node) and mechanism (cron vs. systemd timer), then add units.
+1. ~~Scheduling~~ — **done:** daily 06:00 user cron on Ares (see Scheduling).
 2. **Live-verify the `pbs` path** — once the token exists, confirm the API
    JSON parsing (per-datastore `backup-time`) against real data. `zfs`,
    `scrutiny`, and `ds4246` are already live-verified against Randy.
