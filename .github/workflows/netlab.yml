@@ -27,11 +27,21 @@ jobs:
       - name: Run network tests
         run: sudo bash netlab/tests/test_reachability.sh
 
-      - name: Show router state (on failure)
+      - name: Diagnostics (on failure)
         if: failure()
         run: |
-          sudo docker exec clab-netframe-r1 vtysh -c 'show ip ospf neighbor' || true
-          sudo docker exec clab-netframe-r1 vtysh -c 'show ip route' || true
+          for n in r1 r2; do
+            echo "### $n ip_forward + routes"
+            sudo docker exec clab-netframe-$n cat /proc/sys/net/ipv4/ip_forward || true
+            sudo docker exec clab-netframe-$n vtysh -c 'show ip route' || true
+          done
+          for h in h1 h2; do
+            echo "### $h addr/route"
+            sudo docker exec clab-netframe-$h ip -br addr || true
+            sudo docker exec clab-netframe-$h ip route || true
+          done
+          echo "### r1 -> h2"; sudo docker exec clab-netframe-r1 ping -c2 -W2 10.10.2.10 || true
+          echo "### r2 -> h1"; sudo docker exec clab-netframe-r2 ping -c2 -W2 10.10.1.10 || true
 
       - name: Destroy topology
         if: always()
