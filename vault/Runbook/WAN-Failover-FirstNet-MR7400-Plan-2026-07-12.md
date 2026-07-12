@@ -7,15 +7,15 @@
 ---
 
 ## Hardware
-- **Hotspot:** Netgear Nighthawk **MR7400** (AT&T FirstNet). SW `MR7400-1A1NAS_O4.17`, firmware `NTGX75_10.04.43.00`. Single **2.5 GbE** Ethernet port; **default** DHCP LAN is `192.168.1.0/24`. ⚠️ **CONFLICT** — OPNsense LAN carries a legacy `192.168.1.1/24` IP-alias ("Legacy Proxmox Network"), so `192.168.1.0/24` is already in use. **Re-subnet the hotspot to `192.168.150.0/24`** before connecting (see Part A).
+- **Hotspot:** Netgear Nighthawk **MR7400** (AT&T FirstNet). SW `MR7400-1A1NAS_O4.17`, firmware `NTGX75_10.04.43.00`. Single **2.5 GbE** Ethernet port; DHCP LAN **stays at default `192.168.1.0/24`** — no change needed. (This *was* a conflict with a legacy `192.168.1.1/24` OPNsense LAN alias; **resolved by removing that orphaned alias first** — verified unused, see Part B0.)
 - **Router:** OPNsense **VM 100** on **pve2** (`192.168.10.204`), `onboot=1`.
 
 ## Architecture
 ```
 MR7400 (FirstNet)          pve2                         OPNsense VM 100
- 2.5G Eth ──cable──►  nic2 (I350 port1) ──► vmbr2 ──► net2 → WAN2 (DHCP → 192.168.150.x)
- DHCP 192.168.150.0/24     (no host IP, plain bridge)        │
- (re-subnetted from .1.x)                                    │
+ 2.5G Eth ──cable──►  nic2 (I350 port1) ──► vmbr2 ──► net2 → WAN2 (DHCP → 192.168.1.x)
+ DHCP 192.168.1.0/24       (no host IP, plain bridge)        │
+ (default; legacy LAN alias removed first — Part B0)         │
                                                              ▼
                                                    Gateway Group "FAILOVER"
                                                      WAN  = Tier 1 (primary)
@@ -54,8 +54,8 @@ net1: virtio,bridge=vmbr1,trunks=1-70     # LAN trunk
 | GUEST (opt5) | vlan05 | `192.168.60.1/24` |
 | LAB (opt6) | vlan06 | `192.168.70.1/24` |
 
-- **`192.168.1.0/24` is the collision** → hotspot must be re-subnetted to `192.168.150.0/24` (Part A step 6). `.150` is clear of every subnet above.
-- The legacy `192.168.1.1/24` VIP is vestigial (Proxmox now on `.10`). Retiring it is a *separate, deliberate* change — do NOT delete blind; check for references first.
+- **`192.168.1.0/24` collision → resolved by REMOVING the legacy VIP** (decision 2026-07-12). Verified safe three ways: (1) config — the VIP is the *only* reference to `192.168.1.x` (no rules/NAT/routes/services); (2) live ARP — only OPNsense's own VIP IP answers, no other host; (3) DHCP — zero leases in range. Hotspot then keeps its default `192.168.1.0/24`.
+- Removal is **Part B0**, done first, at the console (deleting a VIP triggers a filter reload).
 - API creds: read-only backup key `~/.config/opnsense-backup/api.env` (config download only); `~/.config/opnsense-api/rw.env` for live diagnostics GETs. Host `192.168.10.1` (also answers on `.30.1`).
 
 ### Headscale (context for remote access)
@@ -71,7 +71,14 @@ net1: virtio,bridge=vmbr1,trunks=1-70     # LAN trunk
 3. Set **"always on when powered"** (disable sleep/battery-save power-off).
 4. **Turn Wi-Fi radios OFF** — we only use Ethernet; cuts heat, power draw, attack surface.
 5. Keep it on **AC power permanently**.
-6. ⚠️ **REQUIRED — change the hotspot LAN/DHCP subnet `192.168.1.0/24` → `192.168.150.0/24`** (hotspot becomes `192.168.150.1`). OPNsense LAN already has a legacy `192.168.1.1/24` IP-alias; leaving the hotspot on `192.168.1.x` collides and breaks WAN2 routing.
+6. Leave the hotspot LAN/DHCP at its default `192.168.1.0/24` — no change. (The former collision is handled by removing OPNsense's legacy alias in **Part B0**, done first.)
+
+## Part B0 — Remove the legacy `192.168.1.0/24` alias (do FIRST, console open)
+Frees the subnet so the hotspot stays at default. Verified orphaned 2026-07-12 (no config refs / no live ARP host / no DHCP leases).
+1. OPNsense GUI → **Interfaces → Virtual IPs → [Settings]** → find the `192.168.1.1/24` **ipalias** on **LAN**, descr *"Legacy Proxmox Network"* → **delete** → **Apply**.
+2. Deleting a VIP triggers a **filter reload** (brief) — confirm LAN + services stay up.
+3. Sanity: `192.168.1.1` should stop answering ARP on LAN; `ping 192.168.1.1` from a LAN host fails.
+> Keep console access ready (`qm terminal 100` from pve2) in case of any hiccup. This is why it's an at-the-keyboard step, not a while-away one.
 
 ## Part B — pve2 wiring
 ```bash
@@ -166,7 +173,8 @@ Not required for function; completes the off-Tailscale migration + guarantees re
 ---
 
 ## When-back checklist
-- [ ] MR7400: enable Ethernet, always-on, Wi-Fi off, on AC power
+- [ ] **Part B0:** remove legacy `192.168.1.1/24` VIP (console open) → `192.168.1.x` freed
+- [ ] MR7400: enable Ethernet, always-on, Wi-Fi off, on AC power (LAN stays default `192.168.1.0/24`)
 - [ ] `ethtool -p nic2` → ID physical jack → cable to MR7400 (NOT the switch)
 - [ ] pve2: uncomment `auto vmbr2`, `ifup vmbr2`
 - [ ] `qm set 100 -net2 virtio,bridge=vmbr2` (planned window — may need OPNsense reboot)
