@@ -1,7 +1,7 @@
-# 🎮 IMU Gesture Control — Nordic nRF52 → Home Assistant
+# 🎮 IMU Gesture Control - Nordic nRF52 → Home Assistant
 **Tags:** #projects #iot #homeassistant #bluetooth #python  
 **Related:** [[Infrastructure/Services & VMs]] · [[Compute/Small Node Cluster]]  
-**Status:** ✅ Live — running on RPi 4 with systemd autostart
+**Status:** ✅ Live - running on RPi 4 with systemd autostart
 
 ---
 
@@ -54,7 +54,7 @@ flowchart LR
 
 ---
 
-## Script — Key Logic
+## Script - Key Logic
 
 ```python
 import asyncio

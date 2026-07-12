@@ -1,4 +1,4 @@
-# 🔍 Server Scraper — eBay / TechMikeNY / Bargain Hardware
+# 🔍 Server Scraper - eBay / TechMikeNY / Bargain Hardware
 **Tags:** #projects #python #automation  
 **Related:** [[00 - Homelab MOC]]  
 **Location:** `~/serverscraper/`  
@@ -17,7 +17,7 @@ Custom Python scraper monitoring eBay, TechMikeNY, and Bargain Hardware for home
 | Feature | Detail |
 |---|---|
 | Sources | eBay, TechMikeNY, Bargain Hardware |
-| Deduplication | SQLite — avoids re-alerting on seen listings |
+| Deduplication | SQLite - avoids re-alerting on seen listings |
 | Ohio prioritization | Scores OH sellers higher (cheaper local pickup) |
 | Email alerting | Sends digest when new deals found |
 | Scheduling | cron or systemd timer |

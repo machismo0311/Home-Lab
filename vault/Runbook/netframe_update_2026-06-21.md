@@ -20,11 +20,11 @@
 | NIC | Mellanox ConnectX-3 EN 10GbE (MCX312A-XCB7) |
 | RAID Card | LSI MegaRAID (MR RMB L3-25376-00A) + Tecate supercap |
 | GPU | AMD RX 580 8GB DDR5 (awaiting power cable) |
-| GPU PWR | 3x onboard headers (GPU PWR2/3/4) — SuperMicro proprietary |
+| GPU PWR | 3x onboard headers (GPU PWR2/3/4) - SuperMicro proprietary |
 | Drive Bays | 2.5" native, 22 caddies total |
 | Riser | RSC-R10W-E8R |
 
-### BIOS Flash — Completed
+### BIOS Flash - Completed
 
 **Method:** UEFI Shell via IKVM console (IPMI web UI)
 
@@ -48,16 +48,16 @@
 
 ### Randy's Role in Cluster
 
-Randy is the **infrastructure backbone** — not a compute node.
+Randy is the **infrastructure backbone** - not a compute node.
 
 **Services (priority order):**
-1. **Proxmox Backup Server (PBS)** — critical, cluster has no backup currently
-2. **NFS/ZFS storage** — serves DS4246 JBOD + internal bays to cluster
-3. **Jellyfin** — media server, RX 580 handles ROCm transcoding
-4. **Prometheus + Grafana + Loki** — migrate from management G4
-5. **Scrutiny** — drive health monitoring for 22+ drives
-6. **MinIO** — S3 object storage for the researcher's datasets
-7. **Vaultwarden** — location TBD
+1. **Proxmox Backup Server (PBS)** - critical, cluster has no backup currently
+2. **NFS/ZFS storage** - serves DS4246 JBOD + internal bays to cluster
+3. **Jellyfin** - media server, RX 580 handles ROCm transcoding
+4. **Prometheus + Grafana + Loki** - migrate from management G4
+5. **Scrutiny** - drive health monitoring for 22+ drives
+6. **MinIO** - S3 object storage for the researcher's datasets
+7. **Vaultwarden** - location TBD
 
 **What Randy does NOT do:**
 - No ML/LLM workloads
@@ -122,7 +122,7 @@ Randy is the **infrastructure backbone** — not a compute node.
 
 ### Hardware
 - Spare HP EliteDesk G4 (unused, in rack)
-- **Standalone** — do NOT add to Proxmox cluster
+- **Standalone** - do NOT add to Proxmox cluster
 
 ### Purpose
 - Safe environment for learning and breaking things
@@ -140,7 +140,7 @@ Randy is the **infrastructure backbone** — not a compute node.
 
 | Project | Purpose |
 |---|---|
-| NetFRAME — LLM Infrastructure | Jarvis, Ollama, llm_router, GPU swap |
+| NetFRAME - LLM Infrastructure | Jarvis, Ollama, llm_router, GPU swap |
 | DUNE Agent | RAG pipeline, QuarkyLab ML env |
 
 ---

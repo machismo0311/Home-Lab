@@ -25,7 +25,7 @@ flowchart TB
         EX3400 <-->|1G trunk| EX2300
     end
 
-    subgraph PVE["km-cluster — Proxmox nodes"]
+    subgraph PVE["km-cluster - Proxmox nodes"]
         PVE2["pve2 · .204<br/>OPNsense host"]
         PVE3["pve3 · .201<br/>NPM·Vault·Grafana·Homepage·Headscale"]
         PVE4["pve4 · .202"]
@@ -35,7 +35,7 @@ flowchart TB
         RANDY["Randy · .187<br/>PBS · Jellyfin · storage"]
     end
 
-    PVE1["pve1 · .193<br/>Mac Mini — standalone<br/>Pi-hole .177"]
+    PVE1["pve1 · .193<br/>Mac Mini - standalone<br/>Pi-hole .177"]
 
     EX3400 --> PVE2 & PVE3 & PVE4 & PVE5 & QUARK & JARVIS & RANDY & PVE1
 
@@ -46,7 +46,7 @@ flowchart TB
 
 ---
 
-## VLANs (live — EX3400 ELS, activated 2026-06-25)
+## VLANs (live - EX3400 ELS, activated 2026-06-25)
 
 | VLAN | ID | Subnet | Purpose |
 |---|---|---|---|
@@ -75,9 +75,9 @@ flowchart TB
 | QuarkyLab (R730) | 192.168.10.179 | RTX 8000 48GB (installed 2026-07-01); Wazuh VM 104 (.184); Scrutiny collector |
 | Jarvis (R730) | 192.168.10.31 | LLM node (2× RTX 6000 48GB installed 2026-07-04, Ollama GPU-backed) |
 | Randy (SuperMicro) | 192.168.10.187 | PBS, Jellyfin, storage; Scrutiny hub+collector |
-| QuarkyLab iDRAC | 192.168.**20**.20 | svc tag (in ops vault) — **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
+| QuarkyLab iDRAC | 192.168.**20**.20 | svc tag (in ops vault) - **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
 | Jarvis iDRAC | 192.168.**20**.21 | **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
-| Randy IPMI | 192.168.**20**.22 | ADMIN — **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
+| Randy IPMI | 192.168.**20**.22 | ADMIN - **moved to VLAN 20 (Trusted/OOB) 2026-07-03** |
 | Juniper EX3400 | 192.168.10.50 | JunOS 23.4R2-S7.4 |
 | Nginx Proxy Manager | 192.168.10.181 | LXC 101 on pve3 |
 | Vaultwarden | 192.168.10.182 | LXC 102 on pve3 |
@@ -104,12 +104,12 @@ flowchart TB
 
 ---
 
-## Switching — Quick Reference
+## Switching - Quick Reference
 
 | Device | IP | Role |
 |--------|-----|------|
 | Juniper EX3400-48P | 192.168.10.50 | Core, PoE+, dual PSU, 10G, VLAN trunk |
-| UniFi USW-24-250W | — | Access, PoE+; Port 24 trunk to EX3400 ge-0/0/46 |
-| Juniper EX2300-48P | — | Secondary / lab isolation |
+| UniFi USW-24-250W | - | Access, PoE+; Port 24 trunk to EX3400 ge-0/0/46 |
+| Juniper EX2300-48P | - | Secondary / lab isolation |
 
 > Randy 10G: Mellanox ConnectX-3 nic3 → EX3400 xe-0/2/0.

@@ -36,9 +36,9 @@
 | 3–4 | EliteDesk G3 Mini B | COMPUTE (20) |
 | 5–6 | Mac mini + RPi 4 | COMPUTE / IOT |
 | 7–12 | UniFi APs | Trunk (MGMT tagged, SSID VLANs) |
-| 13–18 | Available | — |
+| 13–18 | Available | - |
 | 19–23 | Reserved (VoIP future) | VOIP (60) |
-| SFP+1 | DAC to EX3400 | Trunk — all VLANs |
+| SFP+1 | DAC to EX3400 | Trunk - all VLANs |
 
 ---
 

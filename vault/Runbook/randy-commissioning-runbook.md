@@ -1,4 +1,4 @@
-# Randy — SuperMicro CSE-219U Commissioning Runbook
+# Randy - SuperMicro CSE-219U Commissioning Runbook
 
 **Date:** June 22, 2026  
 **Node:** Randy (SuperMicro CSE-219U)  
@@ -12,8 +12,8 @@
 | Component | Detail |
 |---|---|
 | Chassis | SuperMicro CSE-219U 2U 24-bay |
-| CPU | Dual Intel Xeon E5-2690 v3 (2× 12c/24t = 24 cores / 48 threads) — corrected 2026-07-11 (measured `nproc=48`; original build sheet mislabeled these as v4/28c) |
-| RAM | 128 GB ECC DDR4 — **+64 GB on hand to install → 192 GB planned** (as of 2026-07-11) |
+| CPU | Dual Intel Xeon E5-2690 v3 (2× 12c/24t = 24 cores / 48 threads) - corrected 2026-07-11 (measured `nproc=48`; original build sheet mislabeled these as v4/28c) |
+| RAM | 128 GB ECC DDR4 - **+64 GB on hand to install → 192 GB planned** (as of 2026-07-11) |
 | RAID Controller | AVAGO 3108 MegaRAID (SAS-12G) |
 | NIC | Mellanox ConnectX-3 MCX312A dual-port 10GbE |
 | IPMI | 192.168.10.22 |
@@ -24,27 +24,27 @@
 | Device | Model | Count | Size | Interface | Purpose |
 |---|---|---|---|---|---|
 | Boot SSDs | Seagate ST200FM0053 | 2 | 185.8 GB | SAS | RAID-1 boot mirror |
-| Data drives | Toshiba AL15SEB18EQ | 18 | 1.636 TB | SAS 10K | ZFS `datastore` pool — 3× 6-wide RAIDZ2 |
-| Data drives | Seagate ST2000NX0423 | 4 | 1.818 TB | SATA | ZFS `datastore` pool — 1× 4-wide RAIDZ2 (all in-pool, no spares) — corrected 2026-07-11 (was mislabeled "2 / Unallocated") |
+| Data drives | Toshiba AL15SEB18EQ | 18 | 1.636 TB | SAS 10K | ZFS `datastore` pool - 3× 6-wide RAIDZ2 |
+| Data drives | Seagate ST2000NX0423 | 4 | 1.818 TB | SATA | ZFS `datastore` pool - 1× 4-wide RAIDZ2 (all in-pool, no spares) - corrected 2026-07-11 (was mislabeled "2 / Unallocated") |
 
 ---
 
 ## Issues Encountered & Root Causes
 
-### Issue 1 — No disks visible in Proxmox installer
+### Issue 1 - No disks visible in Proxmox installer
 **Root cause:** Internal SFF-8643 SAS cables were unplugged from the backplane.  
-**Fix:** Physically reconnect both SAS cables between the AVAGO 3108 card and the backplane. Blue LEDs on caddies indicate power only — drives can have power but no data path if cables are disconnected.
+**Fix:** Physically reconnect both SAS cables between the AVAGO 3108 card and the backplane. Blue LEDs on caddies indicate power only - drives can have power but no data path if cables are disconnected.
 
-### Issue 2 — MegaRAID WebBIOS showed "No PD Present"
-**Root cause:** Same as above — no data path to drives.  
+### Issue 2 - MegaRAID WebBIOS showed "No PD Present"
+**Root cause:** Same as above - no data path to drives.  
 **Fix:** Cable reconnection resolved this. All drives then showed as "Unconfigured Good."
 
-### Issue 3 — Proxmox USB booted into old BIOS flash utility
+### Issue 3 - Proxmox USB booted into old BIOS flash utility
 **Root cause:** The USB stick still contained the BIOS flash STARTUP.NSH from a previous session. The EFI shell auto-executed it.  
 **Fix:** Rewrote USB with `dd` from Ares: `sudo dd if=~/Downloads/proxmox-ve_9.1-1.iso of=/dev/sda bs=4M status=progress conv=fsync`
 
-### Issue 4 — Enterprise repos blocking apt
-**Root cause:** Proxmox 9.1 + PBS ship with multiple enterprise repo files in both `.list` and `.sources` formats — all need to be disabled.  
+### Issue 4 - Enterprise repos blocking apt
+**Root cause:** Proxmox 9.1 + PBS ship with multiple enterprise repo files in both `.list` and `.sources` formats - all need to be disabled.  
 **Files to disable:**
 - `/etc/apt/sources.list.d/pve-enterprise.list`
 - `/etc/apt/sources.list.d/pve-enterprise.sources`
@@ -53,7 +53,7 @@
 - `/etc/apt/sources.list.d/pbs-enterprise.list`
 - `/etc/apt/sources.list.d/pbs-enterprise.sources`
 
-### Issue 5 — Cluster join hostname verification failed
+### Issue 5 - Cluster join hostname verification failed
 **Root cause:** Randy couldn't resolve pve2's hostname for TLS certificate validation.  
 **Fix:**
 ```bash
@@ -61,14 +61,14 @@ echo "192.168.10.204 pve2.netframe.local pve2" >> /etc/hosts
 pvecm add 192.168.10.204 --use_ssh
 ```
 
-### Issue 6 — Tailscale overwrote /etc/resolv.conf with dead DNS
+### Issue 6 - Tailscale overwrote /etc/resolv.conf with dead DNS
 **Root cause:** Tailscale rewrites resolv.conf to use MagicDNS (100.100.100.100) on join. Headscale doesn't have MagicDNS configured, so all DNS resolution failed.  
 **Fix:**
 ```bash
 tailscale set --accept-dns=false
 ```
 
-### Issue 7 — StorCLI unavailable in apt
+### Issue 7 - StorCLI unavailable in apt
 **Root cause:** Broadcom doesn't distribute StorCLI via standard Debian repos. Their download portal also requires authentication, blocking `curl` downloads.  
 **Fix:** Download `SAS35_StorCLI_7_23-007.2310.0000.0000.zip` manually from Broadcom portal on Ares, SCP to Randy, extract the Ubuntu `.deb`:
 ```bash
@@ -83,7 +83,7 @@ ln -s /opt/MegaRAID/storcli/storcli64 /usr/sbin/storcli64
 
 ## Full Commissioning Procedure
 
-### Step 1 — MegaRAID WebBIOS (Ctrl+H during POST)
+### Step 1 - MegaRAID WebBIOS (Ctrl+H during POST)
 
 Create boot mirror on the two Seagate SSDs:
 1. Go to **VD Mgmt → F2 → Create Virtual Drive**
@@ -92,7 +92,7 @@ Create boot mirror on the two Seagate SSDs:
 4. Accept initialization when prompted
 5. Confirm VD shows: RAID-1, 185.781 GB, Optimal
 
-### Step 2 — Install Proxmox VE 9.1
+### Step 2 - Install Proxmox VE 9.1
 
 Boot from USB (`UEFI: USB Flash MemoryPMAP, Partition 1`):
 
@@ -105,7 +105,7 @@ Boot from USB (`UEFI: USB Flash MemoryPMAP, Partition 1`):
 | Gateway | 192.168.10.1 |
 | DNS | 192.168.10.177 |
 
-### Step 3 — Post-install repo cleanup
+### Step 3 - Post-install repo cleanup
 
 ```bash
 echo "# disabled" > /etc/apt/sources.list.d/pve-enterprise.list
@@ -123,14 +123,14 @@ echo "deb http://download.proxmox.com/debian/pve trixie pve-no-subscription" \
 apt update && apt dist-upgrade -y
 ```
 
-### Step 4 — Join km-cluster
+### Step 4 - Join km-cluster
 
 ```bash
 echo "192.168.10.204 pve2.netframe.local pve2" >> /etc/hosts
 pvecm add 192.168.10.204 --use_ssh
 ```
 
-### Step 5 — Enable JBOD passthrough
+### Step 5 - Enable JBOD passthrough
 
 ```bash
 # Install StorCLI (see Issue 7 above for download procedure)
@@ -144,7 +144,7 @@ storcli64 /c0/eall/sall show
 lsblk -d -o NAME,SIZE,ROTA,TYPE | grep -v loop
 ```
 
-### Step 6 — Create ZFS pool
+### Step 6 - Create ZFS pool
 
 ```bash
 zpool create -f -o ashift=12 datastore \
@@ -160,7 +160,7 @@ zpool list datastore
 #       → now 36.7TB raw / ~23TB usable
 ```
 
-### Step 7 — Install Proxmox Backup Server
+### Step 7 - Install Proxmox Backup Server
 
 ```bash
 echo "deb http://download.proxmox.com/debian/pbs trixie pbs-no-subscription" \
@@ -177,10 +177,10 @@ proxmox-backup-manager cert info | grep Fingerprint
 
 **PBS fingerprint:**
 ```
-(stored in Vaultwarden — not published)
+(stored in Vaultwarden - not published)
 ```
 
-### Step 8 — Add randy-pbs to cluster storage
+### Step 8 - Add randy-pbs to cluster storage
 
 In Proxmox web UI: **Datacenter → Storage → Add → Proxmox Backup Server**
 
@@ -192,7 +192,7 @@ In Proxmox web UI: **Datacenter → Storage → Add → Proxmox Backup Server**
 | Username | root@pam |
 | Fingerprint | (see above) |
 
-### Step 9 — Base services
+### Step 9 - Base services
 
 ```bash
 # Tailscale / Headscale
@@ -232,7 +232,7 @@ systemctl daemon-reload
 systemctl enable --now zfs-scrub.timer
 ```
 
-### Step 10 — Add Randy to Prometheus
+### Step 10 - Add Randy to Prometheus
 
 On pve3, edit LXC 103's Prometheus config:
 ```bash
@@ -246,7 +246,7 @@ pct exec 103 -- bash -c "kill -HUP \$(pgrep prometheus)"
 
 ---
 
-## Verified State — June 22, 2026
+## Verified State - June 22, 2026
 
 | Service | Status |
 |---|---|
@@ -269,9 +269,9 @@ pct exec 103 -- bash -c "kill -HUP \$(pgrep prometheus)"
 - [ ] 4th DAC cable for nic2 → xe-0/2/2 (second 10G port)
 - [x] Scrutiny web UI for visual drive health ✅ (live at 192.168.10.183:8080; collector on Randy)
 - [x] Backup schedules on all cluster nodes → randy-pbs ✅ (LXCs 02:00 / VMs 03:00 daily, 7d+4w)
-- [ ] ~~Migrate Prometheus/Grafana/Loki from management G4 to Randy~~ — superseded: stack deployed on pve3 LXC 103 instead
+- [ ] ~~Migrate Prometheus/Grafana/Loki from management G4 to Randy~~ - superseded: stack deployed on pve3 LXC 103 instead
 - [ ] DS4246 connection via LSI 9207-8e HBA
-- [ ] Jellyfin RX 580 ROCm transcoding — Jellyfin installed & live (v10.11.11); hardware transcode still pending RX 580 power cable
+- [ ] Jellyfin RX 580 ROCm transcoding - Jellyfin installed & live (v10.11.11); hardware transcode still pending RX 580 power cable
 
 ---
 

@@ -1,10 +1,10 @@
-# 📋 Runbook — Daily Operations
+# 📋 Runbook - Daily Operations
 **Tags:** #runbook #operations
 **Related:** [[Runbook/Network Procedures]] · [[Runbook/Recovery Procedures]] · [[00 - Homelab MOC]]
 
 ---
 
-> [!INFO] km-cluster is 7 nodes (pve2–pve5 + QuarkyLab .179 / Jarvis .31 / Randy .187); pve1 (Mac Mini, .193) is standalone. Mgmt/services on 192.168.10.0/24. **VLANs are active since 2026-06-25** (EX3400 trunk live) — iDRAC/IPMI now on VLAN 20, servers dual-homed on VLAN 30.
+> [!INFO] km-cluster is 7 nodes (pve2–pve5 + QuarkyLab .179 / Jarvis .31 / Randy .187); pve1 (Mac Mini, .193) is standalone. Mgmt/services on 192.168.10.0/24. **VLANs are active since 2026-06-25** (EX3400 trunk live) - iDRAC/IPMI now on VLAN 20, servers dual-homed on VLAN 30.
 
 ---
 
@@ -27,10 +27,10 @@ ssh root@192.168.10.201 "cd /opt/nginx-proxy-manager && docker compose ps; cd /o
 # 4. CrowdSec status (pve3 host)
 ssh root@192.168.10.201 "cscli metrics && cscli decisions list | head -20"
 
-# 5. Network — verify core switch
+# 5. Network - verify core switch
 ping -c 1 192.168.10.50 && echo "EX3400 OK"
 
-# 6. iDRAC/IPMI reachability (VLAN 20 — ping from Ares enp0s31f6.20)
+# 6. iDRAC/IPMI reachability (VLAN 20 - ping from Ares enp0s31f6.20)
 ping -c 1 -W 2 192.168.20.20 && echo "quarkylab iDRAC reachable"
 ping -c 1 -W 2 192.168.20.21 && echo "Jarvis iDRAC reachable"
 ping -c 1 -W 2 192.168.20.22 && echo "Randy IPMI reachable"
@@ -68,7 +68,7 @@ ping -c 1 -W 2 192.168.20.22 && echo "Randy IPMI reachable"
 
 ---
 
-## 📡 iDRAC Access (R730s — in km-cluster)
+## 📡 iDRAC Access (R730s - in km-cluster)
 
 | Node | IP | Status |
 |---|---|---|
@@ -77,7 +77,7 @@ ping -c 1 -W 2 192.168.20.22 && echo "Randy IPMI reachable"
 | Randy | 192.168.20.22 | Storage/PBS node; IPMI (ADMIN) on VLAN 20 since 2026-07-03, creds in Vaultwarden |
 
 ```bash
-# SSH to iDRAC (VLAN 20 — from Ares enp0s31f6.20)
+# SSH to iDRAC (VLAN 20 - from Ares enp0s31f6.20)
 ssh root@192.168.20.21   # Jarvis
 ssh root@192.168.20.20   # quarkylab
 
@@ -106,14 +106,14 @@ pct stop <ctid>
 qm snapshot <vmid> <snapname> --description "Pre-update"
 qm rollback <vmid> <snapname>
 
-# OPNsense console access (VM 100 on pve2 — no network needed)
+# OPNsense console access (VM 100 on pve2 - no network needed)
 ssh root@192.168.10.204
 qm terminal 100
 ```
 
 ---
 
-## 🐳 Docker Services (pve3 — 192.168.10.201)
+## 🐳 Docker Services (pve3 - 192.168.10.201)
 
 ```bash
 ssh root@192.168.10.201
@@ -166,14 +166,14 @@ systemctl restart crowdsec
 
 ### Weekly
 - [ ] Check Proxmox backup status (once PBS is deployed)
-- [ ] `docker system prune -f` on pve3 CTs — remove unused images
+- [ ] `docker system prune -f` on pve3 CTs - remove unused images
 - [ ] Review Grafana dashboards for anomalies
 - [ ] `pihole updateGravity` on pve1 LXC
 
 ### Monthly
 - [ ] Proxmox + package updates on all nodes: `apt update && apt upgrade`
 - [ ] Junos config backup from EX3400: `show configuration | save /tmp/backup.conf`
-- [ ] Review CrowdSec console — https://app.crowdsec.net
+- [ ] Review CrowdSec console - https://app.crowdsec.net
 - [ ] Check iDRAC firmware for R730s (Dell support site)
 - [ ] Renew Tailscale auth keys if needed
 
@@ -181,7 +181,7 @@ systemctl restart crowdsec
 
 ## 🔒 Headscale (self-hosted VPN control plane)
 
-> Headscale runs on pve3 CT 105 (192.168.10.186). Ares uses Headscale. the researcher's devices still on commercial Tailscale — migration pending.
+> Headscale runs on pve3 CT 105 (192.168.10.186). Ares uses Headscale. the researcher's devices still on commercial Tailscale - migration pending.
 
 ```bash
 # Health check
@@ -197,7 +197,7 @@ pct exec 105 -- journalctl -u headscale -n 30 --no-pager
 pct exec 105 -- systemctl restart headscale
 ```
 
-## 🔒 Tailscale (commercial — the researcher's devices)
+## 🔒 Tailscale (commercial - the researcher's devices)
 
 ```bash
 # Status on any node
@@ -206,12 +206,12 @@ tailscale ip
 
 # Key IPs
 # pve1: 100.x.x.x
-# Ares: 100.64.0.1 (Headscale) — was 100.x.x.x on commercial
+# Ares: 100.64.0.1 (Headscale) - was 100.x.x.x on commercial
 
 # Remote Proxmox UI via Tailscale
 # https://100.x.x.x:8006
 
-# DNS fix (if Tailscale overwrites resolv.conf — affects pve3–pve5)
+# DNS fix (if Tailscale overwrites resolv.conf - affects pve3–pve5)
 tailscale set --accept-dns=false
 ```
 

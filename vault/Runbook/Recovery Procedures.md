@@ -1,4 +1,4 @@
-# 📋 Runbook — Recovery Procedures
+# 📋 Runbook - Recovery Procedures
 **Tags:** #runbook #recovery #disaster-recovery
 **Related:** [[Runbook/Daily Operations]] · [[Infrastructure/Proxmox Cluster]] · [[Infrastructure/Storage]]
 
@@ -9,7 +9,7 @@
 
 ---
 
-## 🔴 Decision Tree — System Down
+## 🔴 Decision Tree - System Down
 
 ```mermaid
 flowchart TD
@@ -39,7 +39,7 @@ flowchart TD
 
 ```bash
 ssh root@192.168.10.201
-# Enter the CT — pct enter 101 / 102 / 103
+# Enter the CT - pct enter 101 / 102 / 103
 
 # NPM (CT 101)
 cd /opt/nginx-proxy-manager && docker compose up -d
@@ -51,7 +51,7 @@ cd /opt/vaultwarden && docker compose up -d
 cd /opt/grafana && docker compose up -d
 ```
 
-### Container won't start — permission denied on data dirs
+### Container won't start - permission denied on data dirs
 
 ```bash
 cd /opt/grafana
@@ -59,7 +59,7 @@ chmod 777 grafana-data prometheus-data loki-data
 docker compose up -d
 ```
 
-### Vaultwarden — recreate after env change
+### Vaultwarden - recreate after env change
 
 ```bash
 cd /opt/vaultwarden
@@ -81,7 +81,7 @@ systemctl restart pvedaemon pveproxy
 ### OPNsense VM unreachable (VM 100 on pve2)
 
 ```bash
-# Console access — does not need network
+# Console access - does not need network
 ssh root@192.168.10.204
 qm terminal 100
 # Press Enter, then select option from OPNsense menu
@@ -107,7 +107,7 @@ pvecm expected 1
 
 ```
 1. Verify wall power restored
-2. Check UPS A (Tripp Lite) and UPS B (Middle Atlantic) panels — both show "Online"
+2. Check UPS A (Tripp Lite) and UPS B (Middle Atlantic) panels - both show "Online"
 3. Follow startup sequence from [[Runbook/Daily Operations]]
 4. Check all containers on pve3 came back up (they should restart: unless-stopped)
 5. Manually start any that didn't: docker compose up -d in each CT
@@ -115,9 +115,9 @@ pvecm expected 1
 
 ---
 
-## 💾 ZFS Recovery (future — once DS4246 is connected)
+## 💾 ZFS Recovery (future - once DS4246 is connected)
 
-### Pool degraded (1 drive failure — RAIDZ1)
+### Pool degraded (1 drive failure - RAIDZ1)
 
 ```bash
 zpool status datastore
@@ -149,7 +149,7 @@ zpool import -f datastore
 ### Can't reach EX3400 from Ares
 
 ```bash
-# WiFi path is broken — must use wired
+# WiFi path is broken - must use wired
 sudo ip addr add 192.168.10.100/24 dev enp0s31f6
 sudo ip link set enp0s31f6 up
 ping 192.168.10.50
@@ -185,7 +185,7 @@ commit
 ### R730 won't POST
 
 ```bash
-# Check iDRAC event log (iDRAC on VLAN 20 — from Ares enp0s31f6.20)
+# Check iDRAC event log (iDRAC on VLAN 20 - from Ares enp0s31f6.20)
 racadm -r 192.168.20.21 -u root -p <pass> getsel
 
 # Force cold reset
@@ -198,7 +198,7 @@ racadm -r 192.168.20.21 -u root -p <pass> racreset
 > [!WARNING] R730 CPU Stepping
 > Silent QPI hang (no error displayed) is caused by mismatched CPU S-spec steppings. If R730 hangs at POST with no error after firmware update, verify both CPU S-specs match. See `docs/r730-bios-recovery-runbook.md`.
 
-### R730 BIOS recovery (quarkylab — iDRAC needs 2.86 first)
+### R730 BIOS recovery (quarkylab - iDRAC needs 2.86 first)
 
 ```bash
 # Step 1: Update iDRAC/LC via TFTP (no Enterprise license required)

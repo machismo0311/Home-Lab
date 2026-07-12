@@ -1,18 +1,18 @@
-# Jarvis `tank` — SMART Long-Test Qualification (2026-07-08)
+# Jarvis `tank` - SMART Long-Test Qualification (2026-07-08)
 
 **Status:** procedure + tooling committed; tests to be run on Jarvis
 **Related:** [[Runbook/Jarvis-LLM-Platform-2026-07-05]] · [[Runbook/Cluster-Health-Fixes-2026-07-07]] · [[Runbook/Randy-sdb-Monitor-Followup-2026-07-08]] · [[Infrastructure/Storage]]
 
 ## Why
 Jarvis's local `tank` pool (raidz1, 5× 2 TB **ST2000NX046x** on the onboard HBA330
-SAS-3 3008, IT mode) was built 2026-07-08 and verified `ONLINE`, but — unlike
-Randy's DS4246 drives — the five members were **never given a long SMART self-test
+SAS-3 3008, IT mode) was built 2026-07-08 and verified `ONLINE`, but - unlike
+Randy's DS4246 drives - the five members were **never given a long SMART self-test
 to qualify them**. They are used enterprise drives, so a read-failure sweep is
 worthwhile before they hold the model library and bulk datasets. This mirrors the
 qualification pass done on Randy's disks.
 
 ## Tooling
-`scripts/jarvis-tank-smart-qualify.sh` — resolves the pool members from
+`scripts/jarvis-tank-smart-qualify.sh` - resolves the pool members from
 `zpool status` (not fixed `sdX` letters, which aren't stable across reboots) and
 wraps launch / poll / summarize:
 
@@ -53,7 +53,7 @@ Refresh the Scrutiny hub so the dashboard reflects the qualification results
 systemctl start scrutiny-collector.service
 ```
 > Note: Jarvis's ST200FM0053 SAS SSDs (OS + `scratch`) return `smartctl` exit 4
-> ("checksum error in SMART data structure") every run — cosmetic, drives are
+> ("checksum error in SMART data structure") every run - cosmetic, drives are
 > healthy. The `tank` HDDs are on the same HBA; if a new disk shows the same
 > exit-4 noise it is not a fault. See [[Runbook/Cluster-Health-Fixes-2026-07-07]] §3.4.
 

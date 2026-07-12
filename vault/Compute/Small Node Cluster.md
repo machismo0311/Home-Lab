@@ -8,7 +8,7 @@
 
 | Hostname | Hardware | CPU | RAM | IP | Role |
 |---|---|---|---|---|---|
-| pve1 | Apple Mac Mini (2011) | Core i5 (Sandy Bridge) | — | 192.168.10.193 | **Standalone** (not in km-cluster); Pi-hole LXC (.177) |
+| pve1 | Apple Mac Mini (2011) | Core i5 (Sandy Bridge) | - | 192.168.10.193 | **Standalone** (not in km-cluster); Pi-hole LXC (.177) |
 | pve2 | HP EliteDesk 800 G4 SFF | i7-8700 (6c/12t) | 32GB | 192.168.10.204 | km-cluster; hosts OPNsense VM 100, step-ca |
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 (6c/12t) | 48GB | 192.168.10.201 | km-cluster; primary services (NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT) |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T (4c/4t) | 32GB | 192.168.10.202 | km-cluster node |
@@ -35,7 +35,7 @@ NetFRAME logo installed on all five nodes (replaces default Proxmox logo in the 
 
 | Path | Served via |
 |------|-----------|
-| `/usr/share/javascript/proxmox-widget-toolkit/images/proxmox_logo.svg` | `/pwt/images/` (header — primary) |
+| `/usr/share/javascript/proxmox-widget-toolkit/images/proxmox_logo.svg` | `/pwt/images/` (header - primary) |
 | `/usr/share/pve-manager/images/proxmox_logo.*` | `/pve2/images/` (secondary) |
 
 Originals backed up as `proxmox_logo.svg.bak` / `proxmox_logo.png.bak` in the same directories. Rollback: `bash netframe_logo_install.sh rollback [node]`
@@ -58,13 +58,13 @@ Originals backed up as `proxmox_logo.svg.bak` / `proxmox_logo.png.bak` in the sa
 | Nginx Proxy Manager | Docker CT 101 | 192.168.10.181 | port 81 (admin) |
 | Vaultwarden | Docker CT 102 | 192.168.10.182 | https://vault.kylemason.org |
 | Grafana + Prometheus + Loki | Docker CT 103 | 192.168.10.183 | https://grafana.kylemason.org |
-| CrowdSec + firewall-bouncer | Native on host | — | https://app.crowdsec.net |
+| CrowdSec + firewall-bouncer | Native on host | - | https://app.crowdsec.net |
 
 See [[Infrastructure/Services & VMs]] for full configs.
 
 ---
 
-## pve1 — Pi-hole
+## pve1 - Pi-hole
 
 | Role | IP | Admin |
 |------|----|-------|
@@ -74,14 +74,14 @@ See [[Infrastructure/Services & VMs]] for full configs.
 
 ---
 
-## pve1 — Mac Mini 2011 Note
+## pve1 - Mac Mini 2011 Note
 
 > [!WARNING]
-> 2011 Mac mini has a 32nm Sandy Bridge CPU. Proxmox runs but this is legacy hardware — treat as low-priority. Don't run critical VMs here. Runs **standalone** (not in km-cluster); hosts the Pi-hole LXC (192.168.10.177).
+> 2011 Mac mini has a 32nm Sandy Bridge CPU. Proxmox runs but this is legacy hardware - treat as low-priority. Don't run critical VMs here. Runs **standalone** (not in km-cluster); hosts the Pi-hole LXC (192.168.10.177).
 
 ---
 
-## Raspberry Pi 4 — Services
+## Raspberry Pi 4 - Services
 
 | Service | Status |
 |---|---|

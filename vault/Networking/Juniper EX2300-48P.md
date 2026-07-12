@@ -34,7 +34,7 @@
 
 ## Config Notes
 
-ELS Junos syntax identical to EX3400 — see [[Networking/Juniper EX3400-48P]] for full reference.
+ELS Junos syntax identical to EX3400 - see [[Networking/Juniper EX3400-48P]] for full reference.
 
 ```junos
 # All ports default to LAB VLAN
