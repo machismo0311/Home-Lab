@@ -34,7 +34,7 @@ MR7400 (FirstNet)          pve2                         OPNsense VM 100
 - **Speed penalty (100% the cellular link — wiring/2.5GbE/pve2 add none):**
   - 5G Sub-6, decent signal: real-world **~100–400 Mbps ↓ / ~10–50 ↑ / ~20–40 ms**.
   - LTE-only pocket: **~20–75 Mbps ↓ / ~30–60 ms**.
-  - vs primary (public IP, fast cable/fiber) it's a real drop but **ample** for SSH / web UIs / DNS / monitoring / tailnet relay. Avoid bulk transfers (FirstNet data limits/deprioritization).
+  - **Primary ≈ 400 Mbps cable (DOCSIS, asymmetric ~400↓ / ~20–40↑).** vs failover: strong 5G ≈ same order of magnitude down (~100–400↓) and **near-parity up** (~10–50↑); LTE pocket drops down hard (~20–75↓). Latency ~20–40 ms vs cable ~15–30 ms. Outbound (offsite backup, relay, serving) is upload-bound → **barely affected**; only bulk *downloads* suffer. Avoid bulk transfers (FirstNet data limits/deprioritization).
   - **Signal-dependent** — if install spot is weak (rack/basement), use the TS-9 external antennas.
 
 ## Verified facts (read-only recon, 2026-07-12)
