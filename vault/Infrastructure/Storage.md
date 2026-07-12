@@ -17,7 +17,7 @@
 | Total Raw (current) | **~64 TB** |
 | Sector format | **512 B native** — *not* NetApp 520 B, so usable without reformatting |
 | Attached to | **Randy** (SuperMicro) via **LSI SAS2308** HBA (PCI `85:00.0`, `mpt2sas`, SCSI host11) |
-| Pathing | Dual IOM6 → every disk on **2 paths** (32× `sdX` for 16 disks); **multipath NOT yet configured** |
+| Pathing | Dual IOM6 → every disk on **2 paths** (32× `sdX` for 16 disks); **multipath configured 2026-07-08** (exact-wwid whitelist → 16 maps) |
 | Enclosure SES id | `0x500a098005bb7186` (vendor NETAPP, product DS424IOM6) |
 | Max Capacity | 24× drives |
 | Weight (populated) | ~45 lbs — mount before drives above |
@@ -28,7 +28,7 @@
 
 ## Current Drive Inventory (2026-07-07)
 
-**16× 4 TB SAS 7.2K, all SMART health OK, grown-defect lists ~0, 512 B sectors. Blank — no ZFS pool, no partitions, no filesystems.** These are *used* enterprise drives (mixed power-on hours), so long SMART self-tests were started 2026-07-07 to qualify them before any data use. Bay↔serial mapping not yet done.
+**16× 4 TB SAS 7.2K, all SMART health OK, grown-defect lists ~0, 512 B sectors.** Blank at qualification (2026-07-07); **now all 16 are in ZFS pool `bulk`** (built 2026-07-08 — see Current State below). These are *used* enterprise drives (mixed power-on hours), so long SMART self-tests were started 2026-07-07 to qualify them before any data use. Bay↔serial mapping not yet done.
 
 | Model | Qty | Capacity | Type | Power-on hrs | Grown defects | SMART |
 |---|---|---|---|---|---|---|
@@ -43,7 +43,7 @@
 
 ## Current State & Next Steps (as of 2026-07-07)
 
-- **Status:** attached, powered, healthy, **blank/unallocated** (~64 TB raw idle). Purpose TBD.
+- **Status:** in ZFS pool **`bulk`** (2× 8-wide RAIDZ2, ~41.3 TiB usable, **ONLINE** — built 2026-07-08). *(Was blank/unallocated at the 2026-07-07 qualification below.)*
 - **Long SMART self-tests running** on all 16 (started 07-07 ~10:3x; SAS extended ≈ 7–8 h) to qualify the used drives.
 - **Before building any pool:** configure `multipathd` (or deliberately single-path) — the dual IOM6 shelf presents each disk on 2 paths, so ZFS must not be pointed at raw `sdX` or it may grab the same disk twice.
 - **Pool BUILT 2026-07-08 → `bulk`, 2× 8-wide RAIDZ2, ~41.3 TiB usable, ONLINE.** All 16 drives passed long self-tests; multipath (exact-wwid whitelist) → 16 maps; datasets `media`/`fernanda`/`archive`/`misc`; `bulk/fernanda` NFS→QuarkyLab .179; weekly scrub + smartd + ZED. `bulk/media` export still pending a media-server target. Full record: [[Runbook/DS4246-Pool-Buildout-Plan-2026-07-07]].

@@ -234,8 +234,8 @@ For every new service:
 
 ## Planned / Deferred
 
-### Jellyfin, Home Assistant, UniFi Controller
-- Pending additional node capacity (quarkylab / Jarvis online)
+### Home Assistant, UniFi Controller
+- Pending deployment decision / node placement (Jellyfin is already live on Randy — see active services above)
 - See [[Infrastructure/Proxmox Cluster]] for hardware status
 
 ### Frigate (NVR)

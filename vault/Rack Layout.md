@@ -49,7 +49,7 @@
 │ U16–  │ Dell R730 #2 — Jarvis (LLM)     │ ◄ 24c/48t │ 384GB │ 2× RTX 6000 48GB (installed 2026-07-04)
 │  U15  │   (2U — rear panel removed)     │
 ├───────┼─────────────────────────────────┤
-│ U14–  │ SuperMicro CSE-219U — Randy     │ ◄ 28c/56t │ 128GB
+│ U14–  │ SuperMicro CSE-219U — Randy     │ ◄ 24c/48t │ 128GB
 │  U13  │   (2U)                          │
 ├───────┼─────────────────────────────────┤
 │ U12–  │ NetApp DS4246 (4U JBOD)         │ ◄ 24-bay │ 6× HGST 2TB SATA
