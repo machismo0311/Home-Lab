@@ -1,0 +1,40 @@
+flowchart TB
+    wan["WAN / ISP"]
+    udr["UniFi Dream Router<br/>WAN edge · 192.168.1.x"]
+    opnsense["OPNsense (VM 100, pve2)<br/>192.168.10.1 · router / firewall / DHCP"]
+    ex3400["Juniper EX3400-48P<br/>192.168.10.50 · JunOS 23.4R2 · core"]
+    usw["UniFi USW-24-250W<br/>trunk on Port 24"]
+    ex2300["Juniper EX2300-48P"]
+    pve2["pve2<br/>.204 · OPNsense host"]
+    pve3["pve3<br/>.201 · NPM/Vault/Grafana/Homepage/Headscale"]
+    pve4["pve4<br/>.202"]
+    pve5["pve5<br/>.203"]
+    quarkylab["QuarkyLab<br/>.179 · RTX 8000 48GB · Wazuh VM 104"]
+    jarvis["Jarvis<br/>.31 · LLM · 2× RTX 6000"]
+    randy["Randy<br/>.187 · PBS · Jellyfin · storage"]
+    pve1["pve1 (Mac Mini)<br/>.193 · standalone · Pi-hole .177"]
+
+    wan --> udr
+    udr --> opnsense
+    opnsense -->|trunk| ex3400
+    ex3400 -->|ge-0/0/46| usw
+    ex3400 -->|1G trunk| ex2300
+    ex3400 --> pve2
+    ex3400 --> pve3
+    ex3400 --> pve4
+    ex3400 --> pve5
+    ex3400 --> quarkylab
+    ex3400 --> jarvis
+    ex3400 --> randy
+    ex3400 --> pve1
+
+    classDef edge fill:#cc4400,color:#fff
+    classDef firewall fill:#163016,color:#eee
+    classDef switch fill:#1a1a2e,color:#eee
+    classDef node fill:#20143a,color:#eee
+    classDef standalone fill:#2b2b2b,color:#cccccc
+    class wan,udr edge
+    class opnsense firewall
+    class ex3400,usw,ex2300 switch
+    class pve2,pve3,pve4,pve5,quarkylab,jarvis,randy node
+    class pve1 standalone

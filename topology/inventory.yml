@@ -1,0 +1,78 @@
+# NETFRAME — network source of truth.
+# This file is the single source of truth for the topology diagram.
+# Edit here, then run `python3 topology/gen_diagram.py`.
+# CI (.github/workflows/diagram.yml) fails the build if topology.mmd drifts from this file.
+
+site: NETFRAME
+
+nodes:
+  - id: wan
+    label: "WAN / ISP"
+    role: edge
+  - id: udr
+    label: "UniFi Dream Router"
+    role: edge
+    note: "WAN edge · 192.168.1.x"
+  - id: opnsense
+    label: "OPNsense (VM 100, pve2)"
+    role: firewall
+    note: "192.168.10.1 · router / firewall / DHCP"
+  - id: ex3400
+    label: "Juniper EX3400-48P"
+    role: switch
+    note: "192.168.10.50 · JunOS 23.4R2 · core"
+  - id: usw
+    label: "UniFi USW-24-250W"
+    role: switch
+    note: "trunk on Port 24"
+  - id: ex2300
+    label: "Juniper EX2300-48P"
+    role: switch
+  - id: pve2
+    label: "pve2"
+    role: node
+    note: ".204 · OPNsense host"
+  - id: pve3
+    label: "pve3"
+    role: node
+    note: ".201 · NPM/Vault/Grafana/Homepage/Headscale"
+  - id: pve4
+    label: "pve4"
+    role: node
+    note: ".202"
+  - id: pve5
+    label: "pve5"
+    role: node
+    note: ".203"
+  - id: quarkylab
+    label: "QuarkyLab"
+    role: node
+    note: ".179 · RTX 8000 48GB · Wazuh VM 104"
+  - id: jarvis
+    label: "Jarvis"
+    role: node
+    note: ".31 · LLM · 2× RTX 6000"
+  - id: randy
+    label: "Randy"
+    role: node
+    note: ".187 · PBS · Jellyfin · storage"
+  - id: pve1
+    label: "pve1 (Mac Mini)"
+    role: standalone
+    note: ".193 · standalone · Pi-hole .177"
+
+# links: [from, to] or [from, to, "edge label"]
+links:
+  - [wan, udr]
+  - [udr, opnsense]
+  - [opnsense, ex3400, "trunk"]
+  - [ex3400, usw, "ge-0/0/46"]
+  - [ex3400, ex2300, "1G trunk"]
+  - [ex3400, pve2]
+  - [ex3400, pve3]
+  - [ex3400, pve4]
+  - [ex3400, pve5]
+  - [ex3400, quarkylab]
+  - [ex3400, jarvis]
+  - [ex3400, randy]
+  - [ex3400, pve1]

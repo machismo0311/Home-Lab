@@ -1,0 +1,50 @@
+# NETFRAME virtual lab — a containerlab topology that boots real routers,
+# applies IOS-style config, and is validated end-to-end in CI.
+#
+#   h1 ── r1 ════ r2 ── h2
+#   10.10.1.0/24  10.0.0.0/30  10.10.2.0/24
+#
+# r1/r2 run FRRouting with OSPF area 0; the hosts prove inter-router
+# reachability. `netlab/tests/test_reachability.sh` asserts data-plane pings
+# AND control-plane OSPF state. Run locally with:
+#   cd netlab && sudo containerlab deploy -t netframe-lab.clab.yml
+#   sudo bash tests/test_reachability.sh
+#   sudo containerlab destroy -t netframe-lab.clab.yml --cleanup
+
+name: netframe
+
+topology:
+  nodes:
+    r1:
+      kind: linux
+      # tip: pin to a release tag (e.g. :9.1) for fully reproducible runs
+      image: quay.io/frrouting/frr:latest
+      binds:
+        - configs/r1/frr.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+
+    r2:
+      kind: linux
+      image: quay.io/frrouting/frr:latest
+      binds:
+        - configs/r2/frr.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+
+    h1:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool:latest
+      exec:
+        - ip addr add 10.10.1.10/24 dev eth1
+        - ip route replace default via 10.10.1.1
+
+    h2:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool:latest
+      exec:
+        - ip addr add 10.10.2.10/24 dev eth1
+        - ip route replace default via 10.10.2.1
+
+  links:
+    - endpoints: ["h1:eth1", "r1:eth1"]
+    - endpoints: ["r1:eth2", "r2:eth2"]
+    - endpoints: ["h2:eth1", "r2:eth1"]

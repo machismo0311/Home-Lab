@@ -1,0 +1,39 @@
+name: netlab (virtual network)
+
+on:
+  push:
+    paths:
+      - "netlab/**"
+      - ".github/workflows/netlab.yml"
+  pull_request:
+    paths:
+      - "netlab/**"
+      - ".github/workflows/netlab.yml"
+  workflow_dispatch:
+
+jobs:
+  virtual-network:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install containerlab
+        run: bash -c "$(curl -sL https://get.containerlab.dev)"
+
+      - name: Deploy topology
+        working-directory: netlab
+        run: sudo containerlab deploy -t netframe-lab.clab.yml
+
+      - name: Run network tests
+        run: sudo bash netlab/tests/test_reachability.sh
+
+      - name: Show router state (on failure)
+        if: failure()
+        run: |
+          sudo docker exec clab-netframe-r1 vtysh -c 'show ip ospf neighbor' || true
+          sudo docker exec clab-netframe-r1 vtysh -c 'show ip route' || true
+
+      - name: Destroy topology
+        if: always()
+        working-directory: netlab
+        run: sudo containerlab destroy -t netframe-lab.clab.yml --cleanup

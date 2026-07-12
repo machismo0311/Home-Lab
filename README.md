@@ -3,6 +3,12 @@
 > **Kyle Mason** · USMC Veteran · EC-135/145 Instructor Pilot
 > [`kylemason.org`](https://kylemason.org) · [`machismo0311`](https://github.com/machismo0311)
 
+[![CI](https://github.com/machismo0311/Home-Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/ci.yml)
+[![netlab (virtual network)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml)
+[![diagram-as-code](https://github.com/machismo0311/Home-Lab/actions/workflows/diagram.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/diagram.yml)
+
+> **Network as code:** [`netlab/`](netlab/) boots a virtual FRR/OSPF network and **tests real reachability in CI** on every push; [`topology/`](topology/) **generates the network diagram from a source-of-truth inventory** — CI fails the build if the picture drifts from the truth.
+
 A professional-grade homelab built inside a **NetFRAME CS9000 42U rack**, running a 7-node Proxmox VE cluster (km-cluster) — PVE 9.2.3 on every node except Randy (9.1.1, kernel/ZFS-only upgrade). Purpose-built as a live CCNA lab, LLM inference platform, ML research node, and backup infrastructure — documented here as a technical portfolio.
 
 **Why this exists:** I'm a U.S. Marine Corps aviator (EC-135/145 Instructor Pilot, FOQA Officer) transitioning into network & infrastructure engineering, currently pursuing my **CCNA**. This lab is where I apply the discipline of mission-critical aviation — checklists, root-cause analysis, and zero-defect execution — to production-style infrastructure:
@@ -183,7 +189,8 @@ Home-Lab/
 │   └── Compute/ Infrastructure/ Networking/ Runbook/ Projects/
 ├── scripts/                      # llm_router (FastAPI), jarvis-oncall bot, gpu-fan-control, SMART tooling
 ├── services/                     # homepage/ + netframe-monitor/ configs & systemd units
-├── topology/                     # Sanitized network topology reference (.md/.tex/.pdf)
+├── netlab/                       # containerlab virtual network (FRR/OSPF) + CI reachability tests
+├── topology/                     # Network topology reference + diagram-as-code (inventory → Mermaid)
 ├── headscale/                    # Headscale VPN docs
 ├── student-guide/                # QuarkyLab researcher/student onboarding guides
 └── dotfiles/                     # .bashrc, .bash_aliases, .ssh/config (sanitized)
