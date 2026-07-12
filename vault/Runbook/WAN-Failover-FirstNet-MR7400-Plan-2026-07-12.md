@@ -186,6 +186,30 @@ Not required for function; completes the off-Tailscale migration + guarantees re
 
 ---
 
+## Roadmap: OPNsense HA pair (CARP) — 🟡 PLANNED (future phase)
+Removes the router itself as a single point of failure (current limit: OPNsense is one VM on pve2). Build a second box identical to pve2 (Proxmox running only OPNsense, 3 NICs) and run the two as a CARP high-availability pair.
+
+**What CARP is:** two firewalls share one virtual IP; one is MASTER, one BACKUP; heartbeats a few times/sec; backup takes over the shared IP in ~1 s if the master dies. Free + built into OPNsense (System → High Availability). Companions, also free: **pfSync** (syncs the live connection table so sessions survive failover) and **XMLRPC config sync** (backup auto-mirrors the master's config). Cost = hardware only (spare SFF box + a multi-port NIC if it has <3 ports + cables); the HA software is free.
+
+**Key shift:** two routers means WAN, LTE, and LAN each move from point-to-point onto shared L2 segments through the EX3400. Nothing stays point-to-point.
+
+**NIC roles (identical on both boxes):**
+| NIC | Role | EX3400 |
+|---|---|---|
+| nic0 (onboard I219) | WAN | access, VLAN 900 (WAN-TRANSIT) |
+| nic1 (I350 p0) | LAN trunk | trunk, VLANs 1,20–70 + 902 |
+| nic2 (I350 p1) | WAN2 / LTE | access, VLAN 901 (LTE-TRANSIT) |
+
+**New isolated VLANs:** 900 WAN-TRANSIT (modem + both WANs), 901 LTE-TRANSIT (hotspot + both WAN2), 902 CARP-SYNC (tagged on LAN trunk). Keep 900/901 strictly isolated (live public internet / cellular).
+
+**CARP config notes:**
+- CARP VIP = `.1` of LAN + each VLAN (host gateway). Router A real `.2`, Router B real `.3`. ~1 s automatic gateway failover.
+- **Single dynamic public IP** → no WAN CARP VIP possible (needs 3 IPs). Fix: set the **same spoofed MAC on both WAN interfaces** so the master holds the one DHCP lease and it transfers cleanly on failover. Optional on WAN2.
+- **Sync over VLAN 902** (no spare 4th NIC): pfSync + XMLRPC config sync.
+- Hotspot DHCPs both WAN2 interfaces; master routes; each box monitors its own gateway.
+
+**Decision:** active CARP pair (recommended — automatic router failover, the real HA) vs cold standby (identical box powered off, manual swap). Active CARP chosen as the target.
+
 ## When-back checklist
 - [ ] **Part B0:** remove legacy `192.168.1.1/24` VIP (console open) → `192.168.1.x` freed
 - [ ] MR7400: enable Ethernet, always-on, Wi-Fi off, on AC power (LAN stays default `192.168.1.0/24`)
