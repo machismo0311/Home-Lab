@@ -77,5 +77,6 @@ DNS and the Kubernetes control plane are already HA. WAN failover and an OPNsens
 ## 🔗 Go deeper
 - [[00 - Homelab MOC]]: master index of the whole vault
 - [[High Availability/High Availability MOC]]: resilience map and roadmap
+- [[ADR/README]]: architecture decision records (the why behind key choices)
 - [[Runbook/Production-Readiness-Checklist-2026-07-10]]: prioritized operational punch list
 - [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]]: Kubernetes build

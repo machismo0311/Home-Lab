@@ -26,6 +26,8 @@ mindmap
       [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]]
     High Availability
       [[High Availability/High Availability MOC]]
+    Decisions
+      [[ADR/README]]
     Projects
       [[Projects/VoIP - FreePBX]]
       [[Projects/IMU Gesture Control]]
@@ -118,6 +120,9 @@ mindmap
 
 ### High Availability
 - [[High Availability/High Availability MOC]]: cluster resilience map covering completed HA (DNS, RKE2 control plane, quorum, monitoring) and prioritized projects (compute HA, storage redundancy, switch Virtual Chassis, OPNsense CARP pair, WAN failover)
+
+### Decision Records
+- [[ADR/README]]: architecture decision log with the context, decision, and consequences behind key choices (dedicated router, LXC-first, DNS HA, self-hosted Headscale, compute-HA storage)
 
 ### Switching
 - [[Networking/Juniper EX3400-48P]] - Core switch config & Junos notes
