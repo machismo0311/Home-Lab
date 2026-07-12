@@ -36,7 +36,7 @@ MR7400 (FirstNet)          pve2                         OPNsense VM 100
   - LTE-only pocket: **~20–75 Mbps ↓ / ~30–60 ms**.
   - **Primary ≈ 400 Mbps cable (DOCSIS, asymmetric ~400↓ / ~20–40↑).** vs failover: strong 5G ≈ same order of magnitude down (~100–400↓) and **near-parity up** (~10–50↑); LTE pocket drops down hard (~20–75↓). Latency ~20–40 ms vs cable ~15–30 ms. Outbound (offsite backup, relay, serving) is upload-bound → **barely affected**; only bulk *downloads* suffer. Avoid bulk transfers (FirstNet data limits/deprioritization).
   - **Signal CONFIRMED full at the install spot (next to the server)** → expect the upper range; **no external antennas needed**. (Full bars ≠ guaranteed throughput under tower congestion, but strong signal + FirstNet priority is the best case.)
-  - **Placement:** runs 24/7 next to the servers → keep some airflow around it (Wi-Fi-off already trims heat).
+  - **Placement:** sits **on top of the server, out of the warm rack interior** (ambient room air) — good for 24/7 thermals; Wi-Fi-off further trims heat. Metal chassis underneath doesn't hurt signal (full bars confirmed).
 
 ## Verified facts (read-only recon, 2026-07-12)
 
