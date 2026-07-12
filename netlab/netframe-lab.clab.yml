@@ -17,15 +17,15 @@ topology:
   nodes:
     r1:
       kind: linux
-      # tip: pin to a release tag (e.g. :9.1) for fully reproducible runs
-      image: quay.io/frrouting/frr:latest
+      # FRR pinned to a specific release for reproducible CI runs
+      image: quay.io/frrouting/frr:10.6.1
       binds:
         - configs/r1/frr.conf:/etc/frr/frr.conf
         - configs/daemons:/etc/frr/daemons
 
     r2:
       kind: linux
-      image: quay.io/frrouting/frr:latest
+      image: quay.io/frrouting/frr:10.6.1
       binds:
         - configs/r2/frr.conf:/etc/frr/frr.conf
         - configs/daemons:/etc/frr/daemons
