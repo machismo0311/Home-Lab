@@ -65,9 +65,24 @@ Worth a Grafana alert on this CronJob failing.
 - URL: `https://registry.netframe.local` (MetalLB `192.168.10.72`), Pi-hole DNS on `.177`/`.178`.
 - Any client that trusts the NetFRAME root CA can push/pull today, e.g.:
   `skopeo copy --dest-tls-verify=true docker://busybox:1.36 docker://registry.netframe.local/busybox:1.36`
-- **In-cluster pulls (TODO):** RKE2 nodes' containerd must trust the root CA via
-  `/etc/rancher/rke2/registries.yaml` (then restart rke2 on each node) before cluster
-  **pods** can pull `registry.netframe.local/...`.
+- **In-cluster pulls — DONE.** Every RKE2 node trusts the registry, so cluster **pods**
+  can pull `registry.netframe.local/...`. On each node:
+  ```sh
+  # root CA
+  install -d -m0755 /etc/rancher/rke2/tls
+  cp netframe-root-ca.crt /etc/rancher/rke2/tls/netframe-root-ca.crt   # from `step ca root`
+  # registries.yaml
+  cat > /etc/rancher/rke2/registries.yaml <<'EOF'
+  configs:
+    "registry.netframe.local":
+      tls:
+        ca_file: /etc/rancher/rke2/tls/netframe-root-ca.crt
+  EOF
+  systemctl restart rke2-server   # or rke2-agent on Randy
+  ```
+  Do it **rolling, one node at a time, waiting for `Ready`** (preserves etcd quorum).
+  RKE2/containerd 2.x renders this to `.../containerd/certs.d/registry.netframe.local/hosts.toml`.
+  Verify: a pod with `image: registry.netframe.local/busybox:1.36` + `imagePullPolicy: Always` goes Running.
 
 ## Rollback
 ```sh

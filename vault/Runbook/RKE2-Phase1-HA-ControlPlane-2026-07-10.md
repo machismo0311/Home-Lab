@@ -109,4 +109,13 @@ Exposed the registry via **MetalLB LoadBalancer `192.168.10.72:443`** with **reg
 
 **Auto-renew — in-cluster CronJob `registry-cert-renew` (ns `registry`), every 8h.** Uses **`step ca renew`**, which authenticates with the *current cert via mTLS* → **no provisioner password stored anywhere**. initContainer (`smallstep/step-cli`) renews → main container (`alpine/kubectl`) updates `secret/registry-tls` + `rollout restart deploy/registry` (registry:2 loads certs only at start → brief `Recreate` blip ~3×/day). Least-privilege SA/Role (patch that one secret + restart that one deploy). Validated: two manual runs advanced the secret's `notAfter` and TLS kept serving. **If the cert ever lapses >24h** (CA/cluster down a day), mTLS renew can't recover it → re-issue once with the JWK password; worth a Grafana alert on the CronJob failing.
 
-**Secret hygiene:** provisioner password streamed via stdin + `shred`ed (never in argv/`ps`); TLS private key never written to Ares disk (streamed secret↔pve2 via ssh); temp cert/key + hosts entries removed from pve2. **Still open:** node/containerd trust (`registries.yaml` + rolling rke2 restarts) so in-cluster *pods* can pull; external clients trusting the NetFRAME root CA work today.
+**Secret hygiene:** provisioner password streamed via stdin + `shred`ed (never in argv/`ps`); TLS private key never written to Ares disk (streamed secret↔pve2 via ssh); temp cert/key + hosts entries removed from pve2.
+
+**Node/containerd trust — DONE (2026-07-11).** All 4 nodes now trust the registry so in-cluster **pods** can pull. On each node: root CA → `/etc/rancher/rke2/tls/netframe-root-ca.crt`, plus `/etc/rancher/rke2/registries.yaml`:
+```yaml
+configs:
+  "registry.netframe.local":
+    tls:
+      ca_file: /etc/rancher/rke2/tls/netframe-root-ca.crt
+```
+Applied by **restarting rke2** — **rolling, one node at a time, waiting for `Ready`** to preserve etcd quorum (`rke2-server` on cp1/cp2/cp3, `rke2-agent` on Randy). RKE2 (containerd 2.x) renders this to `certs.d/registry.netframe.local/hosts.toml` (`config_path` in `config.toml`), **not** inline. Verified with canary pods (`imagePullPolicy: Always`) pulling `registry.netframe.local/busybox` on both a CP node and Randy. Randy's host services (quorum 7/7, pools ONLINE, PBS/NFS) re-verified intact after its `rke2-agent` restart.
