@@ -93,6 +93,8 @@ mindmap
 
 ## 🔗 Key Links
 
+- [[Architecture Overview]] — Top-down system architecture, design principles, and layer map (**start here**)
+
 ### Infrastructure
 - [[Rack Layout]] — Physical layout, depth notes, thermal zones
 - [[Power Distribution]] — Dual UPS bus diagram, load calculations
