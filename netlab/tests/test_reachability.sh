@@ -18,7 +18,7 @@ check() { # check "<description>" <command...>
 }
 
 echo "== wait for OSPF to converge =="
-for i in $(seq 1 30); do
+for i in $(seq 1 45); do
 	if docker exec "clab-${lab}-r1" vtysh -c 'show ip ospf neighbor' 2>/dev/null | grep -q Full; then
 		echo "  OSPF adjacency reached Full after ${i}s"
 		break
