@@ -27,3 +27,26 @@
     owner: root
     group: root
     mode: "0644"
+
+# node_exporter textfile metric so Prometheus/Grafana can alert on staleness.
+# time() - the generated timestamp is the report age; Grafana fires when it
+# exceeds the freshness window. Skipped on hosts without the textfile dir.
+- name: Report — check for node_exporter textfile dir
+  ansible.builtin.stat:
+    path: "{{ backup_verify_textfile_dir }}"
+  register: backup_verify_textfile_stat
+
+- name: Report — write node_exporter staleness metric
+  ansible.builtin.copy:
+    dest: "{{ backup_verify_textfile_dir }}/{{ backup_verify_textfile_name }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # HELP backup_verify_report_generated_timestamp_seconds Unix time the backup-verify report was generated.
+      # TYPE backup_verify_report_generated_timestamp_seconds gauge
+      backup_verify_report_generated_timestamp_seconds {{ backup_verify_report.generated_epoch }}
+      # HELP backup_verify_overall_pass 1 if all backup-verify checks passed, else 0.
+      # TYPE backup_verify_overall_pass gauge
+      backup_verify_overall_pass {{ 1 if backup_verify_report.overall == 'pass' else 0 }}
+  when: backup_verify_textfile_stat.stat.exists and backup_verify_textfile_stat.stat.isdir

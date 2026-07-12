@@ -36,3 +36,7 @@ backup_verify_ds4246_count_cmd: >-
 
 # --- report tag -------------------------------------------------------------
 backup_verify_report_path: /var/log/netframe-monitor/backup-report.json
+# node_exporter textfile metric for Prometheus/Grafana staleness alerting.
+# Written only where the textfile dir already exists (i.e. Randy).
+backup_verify_textfile_dir: /var/lib/prometheus/node-exporter
+backup_verify_textfile_name: backup_verify.prom
