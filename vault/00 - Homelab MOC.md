@@ -162,4 +162,4 @@ mindmap
 - [ ] Headscale Phase 3: migrate Kyle + the researcher devices off commercial Tailscale
 - [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs
 - [ ] VoIP project (deferred — post core infra)
-- [ ] CCNA study cadence established (VetTec 2.0 pathway)
+- [ ] CCNA study cadence established
