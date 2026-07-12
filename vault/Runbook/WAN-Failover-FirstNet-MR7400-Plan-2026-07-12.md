@@ -7,14 +7,15 @@
 ---
 
 ## Hardware
-- **Hotspot:** Netgear Nighthawk **MR7400** (AT&T FirstNet). SW `MR7400-1A1NAS_O4.17`, firmware `NTGX75_10.04.43.00`. Single **2.5 GbE** Ethernet port; hands out DHCP on **192.168.1.0/24** (no collision with 192.168.10.x / VLAN20 / VLAN30 — good).
+- **Hotspot:** Netgear Nighthawk **MR7400** (AT&T FirstNet). SW `MR7400-1A1NAS_O4.17`, firmware `NTGX75_10.04.43.00`. Single **2.5 GbE** Ethernet port; **default** DHCP LAN is `192.168.1.0/24`. ⚠️ **CONFLICT** — OPNsense LAN carries a legacy `192.168.1.1/24` IP-alias ("Legacy Proxmox Network"), so `192.168.1.0/24` is already in use. **Re-subnet the hotspot to `192.168.150.0/24`** before connecting (see Part A).
 - **Router:** OPNsense **VM 100** on **pve2** (`192.168.10.204`), `onboot=1`.
 
 ## Architecture
 ```
 MR7400 (FirstNet)          pve2                         OPNsense VM 100
- 2.5G Eth ──cable──►  nic2 (I350 port1) ──► vmbr2 ──► net2 → WAN2 (DHCP → 192.168.1.x)
- DHCP 192.168.1.0/24       (no host IP, plain bridge)        │
+ 2.5G Eth ──cable──►  nic2 (I350 port1) ──► vmbr2 ──► net2 → WAN2 (DHCP → 192.168.150.x)
+ DHCP 192.168.150.0/24     (no host IP, plain bridge)        │
+ (re-subnetted from .1.x)                                    │
                                                              ▼
                                                    Gateway Group "FAILOVER"
                                                      WAN  = Tier 1 (primary)
@@ -41,6 +42,22 @@ net0: virtio,bridge=vmbr0                 # WAN
 net1: virtio,bridge=vmbr1,trunks=1-70     # LAN trunk
 ```
 
+### OPNsense addressing (API-verified 2026-07-12, read-only backup+rw keys)
+| Interface | Device | Subnet |
+|---|---|---|
+| WAN | vtnet0 | `173.91.172.132/19` — **public IP** (DHCP), no `192.168.1.x` here |
+| LAN | vtnet1 | `192.168.10.1/24` **+ `192.168.1.1/24` IP-alias VIP ("Legacy Proxmox Network")** ⚠️ |
+| TRUSTED (opt1) | vlan01 | `192.168.20.1/24` |
+| SERVERS (opt2) | vlan02 | `192.168.30.1/24` |
+| IOT (opt3) | vlan03 | `192.168.40.1/24` |
+| VoIP (opt4) | vlan04 | `192.168.50.1/24` |
+| GUEST (opt5) | vlan05 | `192.168.60.1/24` |
+| LAB (opt6) | vlan06 | `192.168.70.1/24` |
+
+- **`192.168.1.0/24` is the collision** → hotspot must be re-subnetted to `192.168.150.0/24` (Part A step 6). `.150` is clear of every subnet above.
+- The legacy `192.168.1.1/24` VIP is vestigial (Proxmox now on `.10`). Retiring it is a *separate, deliberate* change — do NOT delete blind; check for references first.
+- API creds: read-only backup key `~/.config/opnsense-backup/api.env` (config download only); `~/.config/opnsense-api/rw.env` for live diagnostics GETs. Host `192.168.10.1` (also answers on `.30.1`).
+
 ### Headscale (context for remote access)
 - v0.29.1, LXC **105** on **pve3**, IP `192.168.10.186`. Reach via `ssh pve3 'pct exec 105 -- …'` (direct SSH key not authorized).
 - `server_url: http://192.168.10.186:8080` (**LAN-only** control plane), `base_domain: netframe.local`.
@@ -54,7 +71,7 @@ net1: virtio,bridge=vmbr1,trunks=1-70     # LAN trunk
 3. Set **"always on when powered"** (disable sleep/battery-save power-off).
 4. **Turn Wi-Fi radios OFF** — we only use Ethernet; cuts heat, power draw, attack surface.
 5. Keep it on **AC power permanently**.
-6. Confirm DHCP pool = `192.168.1.0/24` (only change if a future collision appears).
+6. ⚠️ **REQUIRED — change the hotspot LAN/DHCP subnet `192.168.1.0/24` → `192.168.150.0/24`** (hotspot becomes `192.168.150.1`). OPNsense LAN already has a legacy `192.168.1.1/24` IP-alias; leaving the hotspot on `192.168.1.x` collides and breaks WAN2 routing.
 
 ## Part B — pve2 wiring
 ```bash
