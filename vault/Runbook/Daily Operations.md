@@ -205,11 +205,11 @@ tailscale status
 tailscale ip
 
 # Key IPs
-# pve1: 100.116.237.31
-# Ares: 100.64.0.1 (Headscale) — was 100.124.118.63 on commercial
+# pve1: 100.x.x.x
+# Ares: 100.64.0.1 (Headscale) — was 100.x.x.x on commercial
 
 # Remote Proxmox UI via Tailscale
-# https://100.116.237.31:8006
+# https://100.x.x.x:8006
 
 # DNS fix (if Tailscale overwrites resolv.conf — affects pve3–pve5)
 tailscale set --accept-dns=false

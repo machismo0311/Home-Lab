@@ -57,7 +57,7 @@ The three nodes are **corosync cluster members**. Proxmox's own docs say corosyn
 
 ## Safety nets (always available)
 1. **iDRAC/IPMI on VLAN 1** — QuarkyLab `.10.20`, Jarvis `.10.21`, Randy `.10.22`. On-site console survives any OS-network change.
-2. **Tailscale up on all three** — QuarkyLab `100.119.89.38`, Randy `100.64.0.2`, Jarvis `100.64.0.6`. Survives LAN re-IP as long as egress works.
+2. **Tailscale up on all three** — QuarkyLab `100.x.x.x`, Randy `100.64.0.2`, Jarvis `100.64.0.6`. Survives LAN re-IP as long as egress works.
 3. **Admin SSH is same-subnet** (from VLAN 1 `.199`) → reaches nodes' `.10.x` **directly**, so the default-gateway swap can never lock us out.
 4. **Corosync untouched** → the cluster is never at risk at any step.
 

@@ -13,29 +13,29 @@
 
 ```mermaid
 flowchart TB
-    WAN[🌍 WAN / ISP] --> UDR[UniFi Dream Router\nWAN edge · 192.168.1.x WiFi]
-    UDR --> OPN[OPNsense VM 100 (pve2)\n192.168.10.1\nLAN router / firewall / DHCP]
+    WAN["🌍 WAN / ISP"] --> UDR["UniFi Dream Router<br/>WAN edge · 192.168.1.x WiFi"]
+    UDR --> OPN["OPNsense VM 100 (pve2)<br/>192.168.10.1<br/>LAN router / firewall / DHCP"]
     OPN <-->|trunk| EX3400
 
     subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
-        EX3400[Juniper EX3400-48P\n192.168.10.50\nJunOS 23.4R2-S7.4]
-        USW[UniFi USW-24-250W\nU39 · trunk on Port 24]
-        EX2300[Juniper EX2300-48P\nU38]
+        EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4"]
+        USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
+        EX2300["Juniper EX2300-48P<br/>U38"]
         EX3400 <-->|ge-0/0/46 trunk| USW
         EX3400 <-->|1G trunk| EX2300
     end
 
     subgraph PVE["km-cluster — Proxmox nodes"]
-        PVE2[pve2 · .204\nOPNsense host]
-        PVE3[pve3 · .201\nNPM·Vault·Grafana·Homepage·Headscale]
-        PVE4[pve4 · .202]
-        PVE5[pve5 · .203]
-        QUARK[QuarkyLab · .179\nRTX 8000 48GB · Wazuh VM 104 ·184]
-        JARVIS[Jarvis · .31\nLLM node · 2× RTX 6000 48GB installed 2026-07-04]
-        RANDY[Randy · .187\nPBS · Jellyfin · storage]
+        PVE2["pve2 · .204<br/>OPNsense host"]
+        PVE3["pve3 · .201<br/>NPM·Vault·Grafana·Homepage·Headscale"]
+        PVE4["pve4 · .202"]
+        PVE5["pve5 · .203"]
+        QUARK["QuarkyLab · .179<br/>RTX 8000 48GB · Wazuh VM 104 ·184"]
+        JARVIS["Jarvis · .31<br/>LLM node · 2× RTX 6000 48GB installed 2026-07-04"]
+        RANDY["Randy · .187<br/>PBS · Jellyfin · storage"]
     end
 
-    PVE1[pve1 · .193\nMac Mini — standalone\nPi-hole .177]
+    PVE1["pve1 · .193<br/>Mac Mini — standalone<br/>Pi-hole .177"]
 
     EX3400 --> PVE2 & PVE3 & PVE4 & PVE5 & QUARK & JARVIS & RANDY & PVE1
 

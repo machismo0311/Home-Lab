@@ -175,14 +175,12 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 Home-Lab/
 ├── README.md
 ├── CLAUDE.md                     # Homelab context for Claude Code (canonical)
-├── CLAUDE.dotfiles.md            # Dotfiles repo context
 ├── index.html                    # Personal landing page (kylemason.org)
 ├── docs/                         # Runbooks, incident reports, LaTeX sources (.tex)
 │   └── storage/                  #   PDFs are recompiled from .tex before publishing
 ├── runbooks/                     # Session runbooks (EX3400, VLAN, Homepage)
 ├── vault/                        # Obsidian knowledge base — canonical runbooks & topic docs
-│   ├── Compute/ Infrastructure/ Networking/ Runbook/ Projects/
-│   └── CLAUDE.netframe.md        # Deployed copy of root CLAUDE.md
+│   └── Compute/ Infrastructure/ Networking/ Runbook/ Projects/
 ├── scripts/                      # llm_router (FastAPI), jarvis-oncall bot, gpu-fan-control, SMART tooling
 ├── services/                     # homepage/ + netframe-monitor/ configs & systemd units
 ├── topology/                     # Sanitized network topology reference (.md/.tex/.pdf)

@@ -60,7 +60,7 @@ flowchart TB
 | pve3 | 100.64.0.5 |
 | Jarvis | 100.64.0.6 |
 
-Headscale control plane: 192.168.10.186 (LXC 105). Remote PVE access: `https://100.116.237.31:8006` (pve1 Tailscale).
+Headscale control plane: 192.168.10.186 (LXC 105). Remote PVE access: `https://100.x.x.x:8006` (pve1 Tailscale).
 
 ---
 

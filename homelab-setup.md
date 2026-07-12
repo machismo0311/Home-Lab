@@ -53,12 +53,12 @@
 
 | Device/Service | IP | Notes |
 |---------------|----|-------|
-| pve1 (Mac Mini) | 192.168.10.193 | Tailscale: 100.116.237.31 |
+| pve1 (Mac Mini) | 192.168.10.193 | Tailscale: 100.x.x.x |
 | pve2 | 192.168.10.204 | |
 | pve3 | 192.168.10.201 | |
 | pve4 | 192.168.10.202 | |
 | pve5 | 192.168.10.203 | |
-| Ares (Dell laptop) | DHCP / 192.168.10.100 (wired) | Tailscale: 100.124.118.63 |
+| Ares (Dell laptop) | DHCP / 192.168.10.100 (wired) | Tailscale: 100.x.x.x |
 | Juniper EX3400 | 192.168.10.50 | SSH: `ssh mason@192.168.10.50` |
 | quarkylab iDRAC | 192.168.10.20 | R730 svc tag (in ops vault) |
 | Jarvis iDRAC | 192.168.10.21 | R730 (MAC: XX:XX:XX:XX:XX:XX) |

@@ -66,7 +66,7 @@ mindmap
 | Device | IP | Notes |
 |--------|-----|-------|
 | OPNsense (LAN gateway) | 192.168.10.1 | VM 100 on pve2, v25.7 |
-| pve1 (Mac Mini) | 192.168.10.193 | **Standalone** (not in km-cluster); Pi-hole host. TS: 100.116.237.31 |
+| pve1 (Mac Mini) | 192.168.10.193 | **Standalone** (not in km-cluster); Pi-hole host. TS: 100.x.x.x |
 | pve2 (EliteDesk G4) | 192.168.10.204 | 32GB; OPNsense VM 100, step-ca |
 | pve3 (EliteDesk G4) | 192.168.10.201 | 48GB; primary services node |
 | pve4 (EliteDesk G3) | 192.168.10.202 | 32GB |
@@ -85,7 +85,7 @@ mindmap
 | Pi-hole (secondary) | 192.168.10.178 | CT 108 on pve5 (nebula-sync mirror, 2026-07-10) |
 | RKE2 API VIP | 192.168.10.54 | kube-vip; CP = rke2-cp1/2/3 (.51/.52/.53 = VMs 201-203 on pve3/4/5); Randy = bare-metal worker |
 | RKE2 MetalLB LBs | 192.168.10.71–.75 | .71 Uptime Kuma (status.netframe.local), .72 registry (registry.netframe.local, TLS) |
-| Ares (laptop) | 192.168.10.100 wired | TS: 100.124.118.63 |
+| Ares (laptop) | 192.168.10.100 wired | TS: 100.x.x.x |
 
 ---
 
