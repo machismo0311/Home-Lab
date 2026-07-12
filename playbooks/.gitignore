@@ -1,0 +1,7 @@
+# Encrypted secrets stay local on the control node (public repo — do not
+# publish even ansible-vault ciphertext). Recreate from the vault password
+# stored in Vaultwarden.
+group_vars/all/vault.yml
+
+# Ansible runtime cruft
+*.retry

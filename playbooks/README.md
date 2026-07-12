@@ -95,7 +95,7 @@ Create a read-only token on Randy, then store it in the vault:
 ```bash
 # on Randy:
 proxmox-backup-manager user generate-token root@pam ansible-verify
-proxmox-backup-manager acl update /datastore Audit --auth-id 'root@pam!ansible-verify'
+proxmox-backup-manager acl update /datastore DatastoreAudit --auth-id 'root@pam!ansible-verify'
 ```
 
 Put the returned id/secret in `group_vars/all/vault.yml` as `vault_pbs_token_id`
@@ -145,8 +145,8 @@ ansible-playbook backup-verify.yml --vault-password-file ~/.ansible-vault-pass
 ## Still open
 
 1. ~~Scheduling~~ — **done:** daily 06:00 user cron on Ares (see Scheduling).
-2. **Live-verify the `pbs` path** — once the token exists, confirm the API
-   JSON parsing (per-datastore `backup-time`) against real data. `zfs`,
-   `scrutiny`, and `ds4246` are already live-verified against Randy.
+2. ~~Live-verify the `pbs` path~~ — **done:** token created (`root@pam!ansible-verify`,
+   `DatastoreAudit`), vault encrypted; live run parses real snapshots and all
+   four checks pass. Vault password is in Vaultwarden; `vault.yml` is gitignored.
 3. **Ollama ingestion** — optional follow-up to merge the report into
    `last_run.json` so the existing summarizer picks it up.
