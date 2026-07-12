@@ -23,8 +23,12 @@ r1() { docker exec "clab-${lab}-r1" "$@"; }
 # <iface>"), where the token after "via" is the next-hop IP — unlike the
 # single-prefix detailed view, where "via" is followed by the interface name.
 route_nexthop() {
+	# NB: during reconvergence the prefix is briefly absent, so grep finds no
+	# match and exits non-zero. The trailing `|| true` keeps that from tripping
+	# `set -e`/`pipefail` and aborting the poll loop; `awk NR==1` (not `head`)
+	# avoids SIGPIPE-ing the upstream grep.
 	r1 vtysh -c "show ip route ospf" 2>/dev/null \
-		| grep -F "${1}" | grep -oE 'via [0-9.]+' | head -1 | awk '{print $2}'
+		| grep -F "${1}" | grep -oE 'via [0-9.]+' | awk 'NR==1{print $2}' || true
 }
 
 # wait_nexthop <dest> <expected-nh> <timeout-s> -> polls until r1 routes <dest>
