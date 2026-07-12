@@ -1,0 +1,33 @@
+---
+# ZFS pool health. Pass = zpool status -x reports all healthy AND every pool
+# in `zpool list` is ONLINE. Empty backup_verify_zfs_pools = all pools, so
+# this covers both `datastore` and `bulk` (DS4246) with no hardcoding.
+
+- name: ZFS — list pools and health
+  ansible.builtin.command: "zpool list -H -o name,health {{ backup_verify_zfs_pools | join(' ') }}"
+  register: backup_verify_zpool_list
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: ZFS — check for pools with problems
+  ansible.builtin.command: "zpool status -x {{ backup_verify_zfs_pools | join(' ') }}"
+  register: backup_verify_zpool_x
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: ZFS — record result
+  ansible.builtin.set_fact:
+    backup_verify_results: >-
+      {{ backup_verify_results + [ {
+           'name': 'zfs_health',
+           'status': ('pass' if (backup_verify_zpool_list.rc == 0
+                                 and (backup_verify_unhealthy | length) == 0
+                                 and (backup_verify_zpool_x.stdout | trim) == 'all pools are healthy') else 'fail'),
+           'detail': (backup_verify_zpool_x.stdout | trim),
+           'pools': backup_verify_zpool_list.stdout_lines,
+           'unhealthy': backup_verify_unhealthy
+         } ] }}
+  vars:
+    backup_verify_unhealthy: "{{ backup_verify_zpool_list.stdout_lines | reject('search', 'ONLINE') | list }}"

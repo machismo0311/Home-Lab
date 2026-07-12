@@ -1,0 +1,38 @@
+---
+# Scrutiny drive health via its API. Pass = every monitored device reports
+# device_status 0 (passed). Count is reported, not hardcoded, so adding a
+# collector/drive is not a playbook edit.
+
+- name: Scrutiny — fetch device summary
+  ansible.builtin.uri:
+    url: "{{ backup_verify_scrutiny_url }}/api/summary"
+    method: GET
+  register: backup_verify_scrutiny
+  failed_when: false
+  check_mode: false
+
+- name: Scrutiny — record result
+  ansible.builtin.set_fact:
+    backup_verify_results: >-
+      {{ backup_verify_results + [ {
+           'name': 'scrutiny_drives',
+           'status': ('pass' if (backup_verify_scrutiny.status == 200
+                                 and (backup_verify_devices | length) > 0
+                                 and (backup_verify_failed | length) == 0) else 'fail'),
+           'detail': ((backup_verify_devices | length) ~ ' drive(s) monitored, ' ~ (backup_verify_failed | length) ~ ' not passing'),
+           'total': (backup_verify_devices | length),
+           'failed': backup_verify_failed
+         } ] }}
+  vars:
+    # Scrutiny returns {data:{summary:{<wwn>:{device:{device_status:0..},smart:..}}}}.
+    # Fall back to data-as-map for older builds. VERIFY against the live API.
+    backup_verify_summary: >-
+      {{ (backup_verify_scrutiny.json.data.summary
+          if backup_verify_scrutiny.json.data.summary is defined
+          else backup_verify_scrutiny.json.data) | default({}) }}
+    backup_verify_devices: "{{ backup_verify_summary | dict2items }}"
+    backup_verify_failed: >-
+      {{ backup_verify_summary | dict2items
+         | selectattr('value.device.device_status', 'defined')
+         | rejectattr('value.device.device_status', 'equalto', 0)
+         | map(attribute='key') | list }}

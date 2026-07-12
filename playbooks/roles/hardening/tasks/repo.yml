@@ -1,0 +1,51 @@
+---
+# Configure the Proxmox no-subscription repo and disable the paywalled
+# enterprise repos. Auto-skips any non-PVE host, so the role stays reusable.
+
+- name: Detect Proxmox VE host
+  ansible.builtin.stat:
+    path: /usr/bin/pveversion
+  register: hardening_pveversion_bin
+
+- name: Configure Proxmox APT repositories
+  when: hardening_pveversion_bin.stat.exists
+  block:
+    - name: Enable pve-no-subscription repository
+      ansible.builtin.deb822_repository:
+        name: pve-no-subscription
+        types: [deb]
+        uris: "{{ hardening_pve_nosub_uri }}"
+        suites: ["{{ hardening_pve_nosub_suite }}"]
+        components: [pve-no-subscription]
+        signed_by: "{{ hardening_pve_keyring }}"
+        enabled: true
+        state: present
+
+    # Match on content, not filename, so this catches pve-enterprise AND ceph
+    # enterprise in either .sources (deb822) or legacy .list format.
+    - name: Find enabled Proxmox enterprise repo files
+      ansible.builtin.find:
+        paths: /etc/apt/sources.list.d
+        patterns: ["*.sources", "*.list"]
+        contains: ".*{{ hardening_pve_enterprise_marker | regex_escape }}.*"
+      register: hardening_enterprise_files
+
+    - name: Disable enterprise repo (deb822 .sources files)
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^\s*Enabled:'
+        line: "Enabled: false"
+        insertafter: EOF
+        validate: false
+      loop: "{{ hardening_enterprise_files.files | selectattr('path', 'search', '\\.sources$') | list }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Disable enterprise repo (legacy .list files)
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: '^(deb\s+.*{{ hardening_pve_enterprise_marker | regex_escape }}.*)$'
+        replace: '# \1'
+      loop: "{{ hardening_enterprise_files.files | selectattr('path', 'search', '\\.list$') | list }}"
+      loop_control:
+        label: "{{ item.path }}"

@@ -1,0 +1,11 @@
+---
+# Backup & storage-health verification. Read-only; writes one JSON report on
+# the storage host. Preview with:
+#   ansible-playbook backup-verify.yml --check --diff
+# Scope to individual checks with --tags pbs|zfs|scrutiny|ds4246|report.
+- name: Verify backups and storage health
+  hosts: storage
+  become: true
+  gather_facts: true
+  roles:
+    - backup_verify

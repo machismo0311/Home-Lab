@@ -1,0 +1,8 @@
+---
+# Reload (not restart) so the config is re-read without dropping the live SSH
+# session Ansible is running over. The template's sshd -t validate has already
+# proven the config is syntactically good before we get here.
+- name: Reload sshd
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded

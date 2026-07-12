@@ -1,0 +1,29 @@
+---
+# Serialise all check results to one JSON file. `generated` is the freshness
+# guard: a downstream consumer treats an old timestamp (dead timer) as a loud
+# failure rather than a silent no-report.
+
+- name: Report — ensure output directory exists
+  ansible.builtin.file:
+    path: "{{ backup_verify_report_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Report — compose
+  ansible.builtin.set_fact:
+    backup_verify_report:
+      generated: "{{ ansible_date_time.iso8601 }}"
+      generated_epoch: "{{ ansible_date_time.epoch | int }}"
+      host: "{{ inventory_hostname }}"
+      overall: "{{ 'pass' if (backup_verify_results | selectattr('status', 'in', ['fail', 'error']) | list | length == 0) else 'fail' }}"
+      checks: "{{ backup_verify_results }}"
+
+- name: Report — write JSON
+  ansible.builtin.copy:
+    content: "{{ backup_verify_report | to_nice_json }}\n"
+    dest: "{{ backup_verify_report_path }}"
+    owner: root
+    group: root
+    mode: "0644"

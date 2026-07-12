@@ -1,0 +1,15 @@
+---
+# TEMPLATE ONLY — copy to vault.yml, fill in, then:  ansible-vault encrypt vault.yml
+# The real vault.yml MUST be encrypted and is the only file here allowed to hold secrets.
+# Vault password itself stays OUTSIDE the repo (password manager), per spec Section 3.
+
+vault_become_password: "CHANGE_ME"
+
+# PBS read-only API token for backup-verify.yml (Datastore.Audit is enough).
+# Create on Randy:
+#   proxmox-backup-manager user generate-token root@pam ansible-verify
+#   proxmox-backup-manager acl update /datastore Audit \
+#     --auth-id 'root@pam!ansible-verify'
+# then paste the token id + returned secret here:
+vault_pbs_token_id: "root@pam!ansible-verify"
+vault_pbs_token_secret: "CHANGE_ME"

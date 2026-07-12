@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+# SSH hardening — managed by the Ansible `hardening` role. Do not edit by hand.
+# Included ahead of the main sshd_config, so these values take precedence.
+
+PermitRootLogin {{ hardening_ssh_permit_root_login }}
+PasswordAuthentication {{ hardening_ssh_password_authentication }}
+PubkeyAuthentication {{ hardening_ssh_pubkey_authentication }}
+KbdInteractiveAuthentication {{ hardening_ssh_kbd_interactive }}
+PermitEmptyPasswords {{ hardening_ssh_permit_empty_passwords }}
+X11Forwarding {{ hardening_ssh_x11_forwarding }}

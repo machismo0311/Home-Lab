@@ -1,0 +1,20 @@
+---
+# Each block is imported under its own tag so runs can be scoped, e.g.:
+#   ansible-playbook desired-state.yml --tags ssh --check --diff
+# import_tasks (not include_tasks) so --list-tasks and --check show everything.
+
+- name: Proxmox APT repositories
+  ansible.builtin.import_tasks: repo.yml
+  tags: [repo]
+
+- name: SSH daemon hardening
+  ansible.builtin.import_tasks: ssh.yml
+  tags: [ssh]
+
+- name: Kernel/filesystem sysctl hardening
+  ansible.builtin.import_tasks: sysctl.yml
+  tags: [sysctl]
+
+- name: Baseline packages
+  ansible.builtin.import_tasks: packages.yml
+  tags: [packages]

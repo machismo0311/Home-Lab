@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: backup_verify
+  author: machismo0311
+  description: PBS freshness, ZFS health, Scrutiny, and DS4246 enumeration checks -> JSON report.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+
+dependencies: []

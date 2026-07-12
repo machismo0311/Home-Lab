@@ -1,0 +1,38 @@
+---
+# ============================================================================
+# backup_verify role defaults. Runs on the storage host (Randy). Each check
+# appends a {name, status, detail, ...} entry to backup_verify_results;
+# report.yml assembles them into one JSON file whose `generated` timestamp
+# doubles as the freshness/last_run guard (a stale file = a dead timer).
+# ============================================================================
+
+# --- pbs tag: backup freshness (PBS REST API) -------------------------------
+backup_verify_pbs_scheme: https
+backup_verify_pbs_host: 127.0.0.1              # query PBS locally on Randy
+backup_verify_pbs_port: 8007
+backup_verify_pbs_validate_certs: false        # localhost self-signed cert
+backup_verify_pbs_token_id: "{{ vault_pbs_token_id | default('') }}"
+backup_verify_pbs_token_secret: "{{ vault_pbs_token_secret | default('') }}"
+backup_verify_pbs_datastores: []               # [] = auto-discover all
+backup_verify_pbs_max_age_hours: 25            # 24h cadence + 1h slack
+
+# --- zfs tag: pool health ---------------------------------------------------
+backup_verify_zfs_pools: []                    # [] = every pool on the host
+                                               # (covers datastore AND bulk)
+
+# --- scrutiny tag: drive health (Scrutiny API) ------------------------------
+backup_verify_scrutiny_url: "http://192.168.10.183:8080"
+
+# --- ds4246 tag: shelf enumeration ------------------------------------------
+# Confirms the expected number of DS4246 disks enumerate to Randy (catches an
+# HBA/passthrough fault even while the pool still reads ONLINE). The shelf is
+# dual-pathed, so each physical disk shows as two `disk` paths — we dedup by
+# WWN to count physical disks. Best-effort: whole disks in the ~4 TB band.
+backup_verify_ds4246_expected: 16
+backup_verify_ds4246_count_cmd: >-
+  lsblk -dnb -o TYPE,SIZE,WWN |
+  awk '$1=="disk" && $2 > 3.5e12 && $2 < 4.6e12 {print $3}' |
+  sort -u | wc -l
+
+# --- report tag -------------------------------------------------------------
+backup_verify_report_path: /var/log/netframe-monitor/backup-report.json

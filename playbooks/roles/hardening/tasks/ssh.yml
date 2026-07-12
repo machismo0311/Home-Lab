@@ -1,0 +1,25 @@
+---
+# Enforce SSH hardening via a drop-in. Debian's sshd_config Includes
+# sshd_config.d/*.conf at the TOP, and sshd takes the FIRST value for a
+# keyword, so this drop-in overrides whatever the main file (or the May
+# hardening pass) set — without editing that file.
+
+- name: Ensure sshd_config.d drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy SSH hardening drop-in
+  ansible.builtin.template:
+    src: 10-hardening.conf.j2
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+    # Syntax-check the whole effective config before it can take effect;
+    # a bad drop-in fails the task instead of breaking sshd on reload.
+    validate: "/usr/sbin/sshd -t -f %s"
+  notify: Reload sshd

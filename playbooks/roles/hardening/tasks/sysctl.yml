@@ -1,0 +1,15 @@
+---
+# Kernel/filesystem sysctl hardening only. See defaults/main.yml for the
+# rationale on why no networking knobs are set here by default.
+
+- name: Apply hardening sysctls
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_file: "{{ hardening_sysctl_file }}"
+    sysctl_set: true       # also set the live value, not just the file
+    state: present
+    reload: true
+  loop: "{{ hardening_sysctls | dict2items }}"
+  loop_control:
+    label: "{{ item.key }} = {{ item.value }}"

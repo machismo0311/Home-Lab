@@ -1,0 +1,7 @@
+---
+# Non-secret variables applied to every host.
+# Reference secrets from vault.yml via the vault_ prefix convention, e.g.:
+#   ansible_become_password: "{{ vault_become_password }}"
+
+# Silence the interpreter-discovery warning (nodes are Debian 13 / py3.13).
+ansible_python_interpreter: auto_silent

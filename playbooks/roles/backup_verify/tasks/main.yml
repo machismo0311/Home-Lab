@@ -1,0 +1,29 @@
+---
+# Each check appends to backup_verify_results; report.yml serialises them.
+# The accumulator is initialised under `always` so a tag-scoped run (e.g.
+# --tags scrutiny) still produces a coherent report.
+
+- name: Initialise results accumulator
+  ansible.builtin.set_fact:
+    backup_verify_results: []
+  tags: always
+
+- name: PBS backup freshness
+  ansible.builtin.import_tasks: pbs.yml
+  tags: [pbs]
+
+- name: ZFS pool health
+  ansible.builtin.import_tasks: zfs.yml
+  tags: [zfs]
+
+- name: Scrutiny drive health
+  ansible.builtin.import_tasks: scrutiny.yml
+  tags: [scrutiny]
+
+- name: DS4246 shelf enumeration
+  ansible.builtin.import_tasks: ds4246.yml
+  tags: [ds4246]
+
+- name: Write JSON report
+  ansible.builtin.import_tasks: report.yml
+  tags: [report]

@@ -1,0 +1,54 @@
+---
+# ============================================================================
+# hardening role defaults — every tunable lives here so the role is reusable
+# and the risky operations are opt-in. Override per-group in group_vars/ or
+# per-host in the inventory.
+# ============================================================================
+
+# --- repo tag ---------------------------------------------------------------
+# Proxmox no-subscription repo. suite defaults to the host's own Debian
+# codename (trixie on PVE 9.x) so this is correct on mixed PVE versions.
+hardening_pve_nosub_suite: "{{ ansible_facts['distribution_release'] }}"
+hardening_pve_nosub_uri: "http://download.proxmox.com/debian/pve"
+hardening_pve_keyring: /usr/share/keyrings/proxmox-archive-keyring.gpg
+# Disable any repo file pointing at the paywalled enterprise mirror
+# (catches pve-enterprise AND ceph enterprise, both .sources and .list).
+hardening_pve_enterprise_marker: "enterprise.proxmox.com"
+
+# --- ssh tag ----------------------------------------------------------------
+# Dropped as /etc/ssh/sshd_config.d/10-hardening.conf, which Debian includes
+# at the TOP of sshd_config, so these win over anything in the main file.
+# NOTE: PermitRootLogin is prohibit-password (NOT "no") on purpose — Ansible
+# connects to every host as root over a key, so "no" would lock us out.
+hardening_ssh_permit_root_login: prohibit-password
+hardening_ssh_password_authentication: "no"
+hardening_ssh_pubkey_authentication: "yes"
+hardening_ssh_kbd_interactive: "no"
+hardening_ssh_permit_empty_passwords: "no"
+hardening_ssh_x11_forwarding: "no"
+
+# --- sysctl tag -------------------------------------------------------------
+# Deliberately kernel/fs hardening ONLY. No forwarding / rp_filter / bridge /
+# redirect knobs — those can break PVE routing, VLAN30 asymmetric paths, and
+# OPNsense-adjacent nodes. Add network sysctls here per-host only if you have
+# verified they are safe on that node.
+hardening_sysctl_file: /etc/sysctl.d/99-hardening.conf
+hardening_sysctls:
+  kernel.kptr_restrict: "1"
+  kernel.dmesg_restrict: "1"
+  kernel.randomize_va_space: "2"
+  fs.protected_hardlinks: "1"
+  fs.protected_symlinks: "1"
+  fs.protected_fifos: "1"
+  fs.protected_regular: "2"
+  fs.suid_dumpable: "0"
+
+# --- packages tag -----------------------------------------------------------
+# Cache refresh is always safe. Everything that CHANGES installed packages is
+# opt-in and defaults off, because a blind upgrade can pull a new kernel and
+# break the pinned NVIDIA stack on QuarkyLab/Jarvis (6.14.11-9-pve).
+hardening_apt_cache_valid_time: 3600      # seconds; skip re-refresh if newer
+hardening_apt_packages: []                # baseline packages to ensure present
+                                          # e.g. [vim, curl, htop] — none by default
+hardening_apt_upgrade: "no"               # "no" (off) | "safe" | "full" | "dist"
+                                          # matches the apt module's own vocabulary

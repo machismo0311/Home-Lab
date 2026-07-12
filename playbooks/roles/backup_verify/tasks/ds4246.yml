@@ -1,0 +1,25 @@
+---
+# DS4246 enumeration: confirm the expected number of shelf disks are visible
+# to Randy. shell (not command) because the count uses a pipe/awk.
+
+- name: DS4246 — count enumerated disks  # noqa: command-instead-of-shell
+  # shell is required: the default count command pipes lsblk | awk | wc.
+  ansible.builtin.shell: "{{ backup_verify_ds4246_count_cmd }}"
+  register: backup_verify_ds4246
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: DS4246 — record result
+  ansible.builtin.set_fact:
+    backup_verify_results: >-
+      {{ backup_verify_results + [ {
+           'name': 'ds4246_enumeration',
+           'status': ('pass' if (backup_verify_ds4246.rc == 0
+                                 and (backup_verify_found | int) == (backup_verify_ds4246_expected | int)) else 'fail'),
+           'detail': ('enumerated ' ~ backup_verify_found ~ ' of ' ~ backup_verify_ds4246_expected ~ ' expected disk(s)'),
+           'expected': (backup_verify_ds4246_expected | int),
+           'found': (backup_verify_found | int)
+         } ] }}
+  vars:
+    backup_verify_found: "{{ backup_verify_ds4246.stdout | trim | default('0', true) }}"

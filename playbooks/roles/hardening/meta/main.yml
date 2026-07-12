@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: hardening
+  author: machismo0311
+  description: Baseline hardening for km-cluster Proxmox nodes (repo, ssh, sysctl, packages).
+  license: MIT
+  min_ansible_version: "2.15"      # deb822_repository
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+
+dependencies: []                   # ansible.posix supplied via requirements.yml

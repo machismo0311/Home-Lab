@@ -1,0 +1,23 @@
+---
+# Refreshing the cache is always safe. Anything that changes installed
+# packages is opt-in (see defaults/main.yml) because an unguarded upgrade can
+# pull a new kernel and break the pinned NVIDIA stack on QuarkyLab/Jarvis.
+
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: "{{ hardening_apt_cache_valid_time }}"
+
+- name: Ensure baseline packages are present
+  ansible.builtin.apt:
+    name: "{{ hardening_apt_packages }}"
+    state: present
+  when: hardening_apt_packages | length > 0
+
+# hardening_apt_upgrade is "no" by default. Set it to "safe" (apt-get upgrade,
+# never removes packages) or "full"/"dist" ONLY on hosts where a kernel bump is
+# acceptable — never on the GPU nodes while their kernel is pinned.
+- name: Upgrade packages (opt-in)
+  ansible.builtin.apt:
+    upgrade: "{{ hardening_apt_upgrade }}"
+  when: hardening_apt_upgrade | string | lower not in ['no', 'false', '']

@@ -1,0 +1,86 @@
+---
+# PBS backup freshness: newest snapshot per datastore must be within
+# backup_verify_pbs_max_age_hours. Read-only API calls (check_mode:false so a
+# --check run still gathers real data). Never aborts the play — a failed check
+# is recorded, not raised.
+
+- name: PBS — record error when no API token is configured
+  ansible.builtin.set_fact:
+    backup_verify_results: >-
+      {{ backup_verify_results + [ {
+           'name': 'pbs_freshness',
+           'status': 'error',
+           'detail': 'no PBS API token configured (set vault_pbs_token_id / vault_pbs_token_secret)'
+         } ] }}
+  when: backup_verify_pbs_token_secret | length == 0
+
+- name: PBS freshness via REST API
+  when: backup_verify_pbs_token_secret | length > 0
+  check_mode: false
+  block:
+    - name: PBS — discover datastores
+      ansible.builtin.uri:
+        url: "{{ backup_verify_pbs_scheme }}://{{ backup_verify_pbs_host }}:{{ backup_verify_pbs_port }}/api2/json/admin/datastore"
+        method: GET
+        headers:
+          Authorization: "PBSAPIToken={{ backup_verify_pbs_token_id }}:{{ backup_verify_pbs_token_secret }}"
+        validate_certs: "{{ backup_verify_pbs_validate_certs }}"
+      register: backup_verify_pbs_ds
+      failed_when: false
+
+    - name: PBS — resolve datastore list
+      ansible.builtin.set_fact:
+        backup_verify_pbs_stores: >-
+          {{ backup_verify_pbs_datastores
+             if (backup_verify_pbs_datastores | length > 0)
+             else ((backup_verify_pbs_ds.json.data | default([])) | map(attribute='store') | list) }}
+
+    - name: PBS — fetch snapshots per datastore
+      ansible.builtin.uri:
+        url: "{{ backup_verify_pbs_scheme }}://{{ backup_verify_pbs_host }}:{{ backup_verify_pbs_port }}/api2/json/admin/datastore/{{ item }}/snapshots"
+        method: GET
+        headers:
+          Authorization: "PBSAPIToken={{ backup_verify_pbs_token_id }}:{{ backup_verify_pbs_token_secret }}"
+        validate_certs: "{{ backup_verify_pbs_validate_certs }}"
+      register: backup_verify_pbs_snaps
+      failed_when: false
+      loop: "{{ backup_verify_pbs_stores }}"
+      loop_control:
+        label: "{{ item }}"
+
+    # newest-per-store = max of the backup-time epochs; age = now - newest.
+    - name: PBS — evaluate freshness per datastore
+      ansible.builtin.set_fact:
+        backup_verify_pbs_detail: >-
+          {{ backup_verify_pbs_detail | default([]) + [ {
+               'datastore': item.item,
+               'reachable': (item.status == 200),
+               'snapshots': (item.json.data | default([]) | length),
+               'newest_epoch': (backup_verify_newest if backup_verify_has_snaps else 0),
+               'age_hours': (((backup_verify_now - backup_verify_newest) / 3600) | round(1) if backup_verify_has_snaps else -1),
+               'fresh': (backup_verify_has_snaps and ((backup_verify_now - backup_verify_newest) <= (backup_verify_pbs_max_age_hours | int) * 3600))
+             } ] }}
+      vars:
+        backup_verify_now: "{{ ansible_date_time.epoch | int }}"
+        backup_verify_has_snaps: "{{ item.status == 200 and (item.json.data | default([]) | length) > 0 }}"
+        backup_verify_newest: >-
+          {{ (item.json.data | map(attribute='backup-time') | max)
+             if backup_verify_has_snaps else 0 }}
+      loop: "{{ backup_verify_pbs_snaps.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: PBS — record result
+      ansible.builtin.set_fact:
+        backup_verify_results: >-
+          {{ backup_verify_results + [ {
+               'name': 'pbs_freshness',
+               'status': ('pass' if (backup_verify_detail | length > 0 and (backup_verify_detail | rejectattr('fresh') | list | length) == 0) else 'fail'),
+               'detail': ((backup_verify_detail | length) ~ ' datastore(s) checked; '
+                          ~ (backup_verify_detail | rejectattr('fresh') | list | length)
+                          ~ ' stale/unreachable (threshold ' ~ backup_verify_pbs_max_age_hours ~ 'h)'),
+               'threshold_hours': (backup_verify_pbs_max_age_hours | int),
+               'datastores': backup_verify_detail
+             } ] }}
+      vars:
+        backup_verify_detail: "{{ backup_verify_pbs_detail | default([]) }}"

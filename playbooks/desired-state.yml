@@ -1,0 +1,13 @@
+---
+# Baseline hardening — desired state. Idempotent; always preview first:
+#   ansible-playbook desired-state.yml --check --diff
+# Scope with --limit and/or --tags, e.g.:
+#   ansible-playbook desired-state.yml --limit pve3 --tags ssh --check --diff
+- name: Apply baseline hardening to the km-cluster
+  hosts: monitoring_targets
+  become: true
+  roles:
+    - role: hardening
+      # Hard rule: pve2 (OPNsense host) is excluded from all config changes.
+      # It stays in the group for visibility but no hardening task runs on it.
+      when: not (exclude_from_hardening | default(false))
