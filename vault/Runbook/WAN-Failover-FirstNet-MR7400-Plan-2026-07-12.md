@@ -36,7 +36,7 @@ The primary must be monitored via the **Monitor IP** field, NOT the gateway or F
    - Save + **Apply Changes**.
    - (Optional cleanup: convert WAN2 to the same clean method - IP Address empty, Far Gateway unchecked, Monitor IP `1.1.1.1` - instead of the current far-gateway trick, which works but is a hack.)
 2. **Launch dpinger** (GUI Apply alone does not): from pve2, `qm guest exec 100 -- /usr/local/etc/rc.routing_configure`. Verify both gateways show real loss/delay (not `~`) at `/api/routes/gateway/status`, and `qm guest exec 100 -- pgrep -fl dpinger` lists one dpinger per gateway.
-3. **Verify routing is UNAFFECTED** (the check that would have caught the outage): OPNsense default route still `173.91.160.1` (`qm guest exec 100 -- netstat -rn -f inet | grep default`), internet still up.
+3. **Verify routing is UNAFFECTED** (the check that would have caught the outage): OPNsense default route still `<ISP-GATEWAY>` (`qm guest exec 100 -- netstat -rn -f inet | grep default`), internet still up.
 4. **Re-point the LAN rule** (and each VLAN internet rule) gateway to **Failover**.
 5. **Test:** from pve2 arm a deadman first (`ssh pve2 'nohup sh -c "sleep 120; ip link set nic0 up" >/dev/null 2>&1 &'`), then `ip link set nic0 down`, confirm dpinger marks WAN_GW down and traffic shifts to WAN2 (internet still up), then `ip link set nic0 up` and confirm failback.
 
@@ -86,7 +86,7 @@ MR7400 (FirstNet)          pve2                         OPNsense VM 100
 | `nic1` | Intel I350 port 0 | `01:00.0` | `vmbr1` (VLAN-aware, host .204) | **LAN trunk** → OPNsense `net1` (trunks 1–70) |
 | **`nic2`** | **Intel I350 port 1** | `01:00.1` | **none** (`vmbr2` disabled) | **FREE - down, no carrier. Use this.** |
 
-- `nic2` MAC `b4:96:91:90:85:d5`, driver `igb`. Its bridge `vmbr2` was disabled 2026-06-25 (caused a VLAN trunk loop **when patched into the EX3400**). Point-to-point to the hotspot = **no loop risk**. Do **not** cable it into the switch.
+- `nic2` MAC `<MAC>`, driver `igb`. Its bridge `vmbr2` was disabled 2026-06-25 (caused a VLAN trunk loop **when patched into the EX3400**). Point-to-point to the hotspot = **no loop risk**. Do **not** cable it into the switch.
 - WAN is **bridge-attached, not PCI-passthrough** → we mirror that pattern for WAN2 (no passthrough needed).
 
 ### OPNsense VM 100 (current)
@@ -98,7 +98,7 @@ net1: virtio,bridge=vmbr1,trunks=1-70     # LAN trunk
 ### OPNsense addressing (API-verified 2026-07-12, read-only backup+rw keys)
 | Interface | Device | Subnet |
 |---|---|---|
-| WAN | vtnet0 | `173.91.172.132/19` - **public IP** (DHCP), no `192.168.1.x` here |
+| WAN | vtnet0 | `<PUBLIC-WAN-IP>/19` - **public IP** (DHCP), no `192.168.1.x` here |
 | LAN | vtnet1 | `192.168.10.1/24` **+ `192.168.1.1/24` IP-alias VIP ("Legacy Proxmox Network")** ⚠️ |
 | TRUSTED (opt1) | vlan01 | `192.168.20.1/24` |
 | SERVERS (opt2) | vlan02 | `192.168.30.1/24` |

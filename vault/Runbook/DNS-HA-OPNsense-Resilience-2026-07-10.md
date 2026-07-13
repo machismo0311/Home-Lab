@@ -23,7 +23,7 @@ Two of three Tier-1 single-points-of-failure closed. No disruptive changes to pv
 
 **Replication - nebula-sync (v0.11.2):** binary at `/usr/local/bin/nebula-sync` on CT 108, `systemd nebula-sync.timer` every 15 min (oneshot `nebula-sync.service`), `EnvironmentFile=/etc/nebula-sync.env` (600). `FULL_SYNC=true` replicates gravity/adlists/local-DNS/allow-deny **and** config (incl. admin password → both Pi-holes now share one admin password, in Vaultwarden). Note: adlist *config* syncs in 15 min but the replica compiles new lists into gravity on its own weekly `pihole -g` cron (or run manually).
 
-**DHCP failover (the OPNsense side):** OPNsense DHCPv4 (legacy ISC `dhcpd`) now hands out **`.177` then `.178`** on **all 7 scopes** (lan + opt1–opt6 = VLANs 10/20/30/40/50/60/70). Verified via `/api/core/backup/download/this`. `.178` also has a static DHCP reservation (MAC `BC:24:11:B1:86:6F`) so it's never leased out.
+**DHCP failover (the OPNsense side):** OPNsense DHCPv4 (legacy ISC `dhcpd`) now hands out **`.177` then `.178`** on **all 7 scopes** (lan + opt1–opt6 = VLANs 10/20/30/40/50/60/70). Verified via `/api/core/backup/download/this`. `.178` also has a static DHCP reservation (MAC `<MAC>`) so it's never leased out.
 
 **Verified:** both resolvers answer; secondary blocks (576k domains, oisd+StevenBlack, matches primary) and resolves local records (`llm.netframe.local`, `homepage.kylemason.org` → `.181`).
 

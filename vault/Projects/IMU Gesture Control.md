@@ -62,10 +62,10 @@ from bleak import BleakScanner, BleakClient
 import aiohttp
 
 IMU_ADDRESSES = [
-    "AA:BB:CC:DD:EE:01",  # IMU #1
-    "AA:BB:CC:DD:EE:02",  # IMU #2
-    "AA:BB:CC:DD:EE:03",  # IMU #3
-    "AA:BB:CC:DD:EE:04",  # IMU #4
+    "<MAC>",  # IMU #1
+    "<MAC>",  # IMU #2
+    "<MAC>",  # IMU #3
+    "<MAC>",  # IMU #4
 ]
 
 HA_URL = "http://10.0.50.1:8123"
