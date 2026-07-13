@@ -4,7 +4,7 @@ This is a personal project maintained by Kyle Mason. If you believe you have fou
 
 ## Reporting
 
-Email **masonkr@gmail.com** with details and, where possible, steps to reproduce. I will acknowledge receipt and address valid reports as quickly as I am able.
+Email **Kyle@kylemason.org** with details and, where possible, steps to reproduce. I will acknowledge receipt and address valid reports as quickly as I am able.
 
 ## Scope
 
