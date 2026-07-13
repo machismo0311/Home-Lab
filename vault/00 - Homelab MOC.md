@@ -28,6 +28,8 @@ mindmap
       [[High Availability/High Availability MOC]]
     Decisions
       [[ADR/README]]
+    Operations
+      [[Operations and Onboarding]]
     Projects
       [[Projects/VoIP - FreePBX]]
       [[Projects/IMU Gesture Control]]
@@ -96,6 +98,7 @@ mindmap
 ## 🔗 Key Links
 
 - [[Architecture Overview]]: top-down system architecture, design principles, and layer map (**start here**)
+- [[Operations and Onboarding]]: how the cluster is run day to day (access, routine, safety rules)
 
 ### Infrastructure
 - [[Rack Layout]] - Physical layout, depth notes, thermal zones

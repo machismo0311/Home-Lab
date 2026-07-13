@@ -17,8 +17,13 @@ This folder records the significant architecture decisions behind NetFRAME: the 
 | [[0003-dual-pihole-dns-ha]] | DNS high availability via dual Pi-hole | Accepted |
 | [[0004-self-hosted-headscale]] | Self-hosted Headscale over commercial Tailscale | Accepted |
 | [[0005-compute-ha-storage-strategy]] | Compute HA storage: Ceph vs ZFS replication | Proposed |
+| [[0006-rke2-kubernetes-distribution]] | RKE2 as the Kubernetes distribution | Accepted |
+| [[0007-vlan-segmentation-model]] | Seven-VLAN segmentation model with dual-homed servers | Accepted |
+| [[0008-config-as-code-manual-deploy]] | Config-as-code with manual deployment | Accepted |
+| [[0009-randy-storage-host]] | Randy as the single ZFS and PBS storage host | Accepted |
+| [[0010-gpu-node-kernel-pinning]] | Kernel pinning on GPU nodes for the NVIDIA driver stack | Accepted |
 
 ## Backlog (not yet written)
-RKE2 as the Kubernetes distribution, VLAN segmentation model, config-as-code with manual deploy, Randy as ZFS and PBS storage host, GPU node kernel pinning.
+Offsite backup strategy (restic to B2), alerting without Alertmanager (Grafana-native to Discord), secrets management with Vaultwarden, WAN failover and OPNsense CARP (drafted in the runbook and [[High Availability/High Availability MOC]]).
 
 Related: [[Architecture Overview]] · [[High Availability/High Availability MOC]]
