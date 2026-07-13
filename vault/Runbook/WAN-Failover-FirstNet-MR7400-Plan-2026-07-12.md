@@ -25,11 +25,25 @@
 - WAN_GW: reverted (real DHCP gateway, healthy, but NOT monitored).
 - LAN rule: reverted to gateway = **default** (no policy-route to the group). Normal routing, internet stable, cluster 7/7 quorate.
 
-**Remaining to finish (turnkey):**
-1. Monitor the PRIMARY the correct way: find the proper "Monitor IP" field for WAN_GW (separate from the gateway) and set `8.8.8.8` WITHOUT touching the gateway or Far Gateway. If no distinct Monitor IP field exists in v25.7, research the correct method - do NOT far-gateway the primary.
-2. Launch dpinger: `qm guest exec 100 -- /usr/local/etc/rc.routing_configure`; verify BOTH gateways show real loss/delay.
-3. Re-point the LAN rule (and each VLAN internet rule) gateway to `Failover`.
-4. Test: from pve2 `ip link set nic0 down` (arm a deadman `sleep 120; ip link set nic0 up` first), confirm failover to WAN2, then restore and confirm failback. Note: host `nic0` down breaks internet but OPNsense `vtnet0` stays up, so failover relies entirely on dpinger.
+**Remaining to finish failover (turnkey - method CONFIRMED 2026-07-13 from OPNsense source):**
+The primary must be monitored via the **Monitor IP** field, NOT the gateway or Far Gateway. Putting an IP in "IP Address" on the primary hijacks the active default route and caused the 2026-07-13 outage. "IP Address" = `gateway_item.gateway` (next hop); "Monitor IP" = `gateway_item.monitor` (the dpinger target). Monitor IP is **hidden by default** - the form JS only shows it when you toggle "Disable Gateway Monitoring".
+
+1. **Set the primary Monitor IP.** System → Gateways → Configuration → edit **WAN_GW**:
+   - **Reveal the hidden field:** check **"Disable Gateway Monitoring"** then uncheck it - that fires the JS (`configuration.volt`) which shows the `monitor_opt` fields including **Monitor IP**.
+   - **IP Address: leave EMPTY** (dynamic gateway; do NOT put an IP here).
+   - **Far Gateway: unchecked.**
+   - **Monitor IP: `8.8.8.8`** (external host = detects real internet loss, not just link).
+   - Save + **Apply Changes**.
+   - (Optional cleanup: convert WAN2 to the same clean method - IP Address empty, Far Gateway unchecked, Monitor IP `1.1.1.1` - instead of the current far-gateway trick, which works but is a hack.)
+2. **Launch dpinger** (GUI Apply alone does not): from pve2, `qm guest exec 100 -- /usr/local/etc/rc.routing_configure`. Verify both gateways show real loss/delay (not `~`) at `/api/routes/gateway/status`, and `qm guest exec 100 -- pgrep -fl dpinger` lists one dpinger per gateway.
+3. **Verify routing is UNAFFECTED** (the check that would have caught the outage): OPNsense default route still `173.91.160.1` (`qm guest exec 100 -- netstat -rn -f inet | grep default`), internet still up.
+4. **Re-point the LAN rule** (and each VLAN internet rule) gateway to **Failover**.
+5. **Test:** from pve2 arm a deadman first (`ssh pve2 'nohup sh -c "sleep 120; ip link set nic0 up" >/dev/null 2>&1 &'`), then `ip link set nic0 down`, confirm dpinger marks WAN_GW down and traffic shifts to WAN2 (internet still up), then `ip link set nic0 up` and confirm failback.
+
+**2026-07-13 incident notes (adjacent gotchas):**
+- The far-gateway-on-primary left a **stale `8.8.8.8` default route in the live routing table** (the config was actually clean); it broke LAN internet overnight and was masked by devices riding a phone hotspot. Fix was `route change default <real-gw>` + let the clean config stand.
+- Removing the legacy `192.168.1.1` VIP orphaned **pve3 and pve4**, which had a hardcoded bogus `gateway 192.168.1.1` (a pre-renumber onlink leftover, same as pve5 had). Fixed to `192.168.10.1` in their `/etc/network/interfaces` (backups `.bak-gwfix-2026-07-13`). The VIP had been silently serving as their gateway.
+- **Lesson:** the backup API (`/api/core/backup/download/this`) can return a STALE config. For ground truth read `/conf/config.xml` live via `qm guest exec 100`.
 
 ## Hardware
 - **Hotspot:** Netgear Nighthawk **MR7400** (AT&T FirstNet). SW `MR7400-1A1NAS_O4.17`, firmware `NTGX75_10.04.43.00`. Single **2.5 GbE** Ethernet port; DHCP LAN **stays at default `192.168.1.0/24`** - no change needed. (This *was* a conflict with a legacy `192.168.1.1/24` OPNsense LAN alias; **resolved by removing that orphaned alias first** - verified unused, see Part B0.)
