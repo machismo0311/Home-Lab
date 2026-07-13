@@ -205,7 +205,7 @@ EX3400 & \texttt{ge-0/0/22} & Jarvis nic2 & 1G & Native VLAN 1 (mgmt / corosync)
 EX3400 & \texttt{ge-0/0/30,32,44} & iDRAC / IPMI OOB & 1G & Tagged VLAN 20 only \\
 pve2 & \texttt{nic0} onboard & ISP handoff & 1G & Primary WAN, vtnet0, public /19 \\
 pve2 & \texttt{nic2} (I350) & MR7400 5G hotspot & 2.5G & Backup WAN2, vtnet2, direct cable \\
-EX3400 & \texttt{xe-0/2/3} & UniFi SFP2 DAC & --- & \textbf{DOWN}, 10G/1G EEPROM mismatch \\
+EX3400 & \texttt{xe-0/2/3} & UniFi SFP2 DAC & -- & \textbf{DOWN}, 10G/1G EEPROM mismatch \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -341,14 +341,14 @@ Self-hosted Headscale v0.29.1 (LXC 105, \ip{192.168.10.186:8080}), tailnet \ip{1
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l l l l X@{}}
 \toprule Node & Chassis & CPU & RAM & GPU & Kernel \\ \midrule
-pve2 & EliteDesk 800 G4 & i7-8700 & 32G & --- & 7.0.12-pve \\
-pve3 & EliteDesk 800 G4 & i7-8700 & 48G & --- & 7.0.12-pve \\
-pve4 & EliteDesk 800 G3 Mini & i5-7500T & 32G & --- & 7.0.12-pve \\
-pve5 & EliteDesk 800 G3 Mini & i5-7500T & 32G & --- & 7.0.12-pve \\
+pve2 & EliteDesk 800 G4 & i7-8700 & 32G & -- & 7.0.12-pve \\
+pve3 & EliteDesk 800 G4 & i7-8700 & 48G & -- & 7.0.12-pve \\
+pve4 & EliteDesk 800 G3 Mini & i5-7500T & 32G & -- & 7.0.12-pve \\
+pve5 & EliteDesk 800 G3 Mini & i5-7500T & 32G & -- & 7.0.12-pve \\
 QuarkyLab & Dell R730 & 2\texttimes\ E5-2699v4 & 512G & RTX 8000 48G & \textbf{6.14.11-pve} \\
 Jarvis & Dell R730 & 2\texttimes\ E5-2687Wv4 & 384G & 2\texttimes\ RTX 6000 & \textbf{6.14.11-pve} \\
 Randy & SuperMicro CSE-219U & 2\texttimes\ E5-2690v3 & 128G & RX 580 & 7.0.12-pve \\
-pve1 & Mac Mini (standalone) & --- & --- & --- & Pi-hole host \\
+pve1 & Mac Mini (standalone) & -- & -- & -- & Pi-hole host \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -362,16 +362,16 @@ QuarkyLab and Jarvis are pinned to \textbf{6.14.11-9-pve} via \texttt{GRUB\_DEFA
 \toprule ID & Name & Host & Res & IP & Payload \\ \midrule
 VM100 & OPNsense & pve2 & 4G & \ip{.1} & LAN router / FW / DHCP / dual-WAN v25.7 \\
 VM104 & Wazuh & QuarkyLab & 16G & \ip{.184} & SIEM (guest-agent installed) \\
-VM201 & rke2-cp1 & pve3 & --- & \ip{.51} & RKE2 control plane / etcd \\
-VM202 & rke2-cp2 & pve4 & --- & \ip{.52} & RKE2 control plane / etcd \\
-VM203 & rke2-cp3 & pve5 & --- & \ip{.53} & RKE2 control plane / etcd \\
+VM201 & rke2-cp1 & pve3 & -- & \ip{.51} & RKE2 control plane / etcd \\
+VM202 & rke2-cp2 & pve4 & -- & \ip{.52} & RKE2 control plane / etcd \\
+VM203 & rke2-cp3 & pve5 & -- & \ip{.53} & RKE2 control plane / etcd \\
 101 & nginx-proxy & pve3 & 512M/8G & \ip{.181} & Nginx Proxy Manager \\
 102 & vaultwarden & pve3 & 512M/10G & \ip{.182} & Vaultwarden \\
 103 & grafana & pve3 & 2G/20G & \ip{.183} & Grafana + Prom + Loki + Influx + Scrutiny \\
 105 & headscale & pve3 & 512M/4G & \ip{.186} & Mesh VPN control \\
 106 & homepage & pve3 & 512M/8G & \ip{.148} & Homepage + PeaNUT \\
 107 & openwebui & pve3 & 4G/16G & \ip{.185} & Open WebUI \\
-108 & netframe-pihole2 & pve5 & --- & \ip{.178} & Secondary Pi-hole (DNS HA) \\
+108 & netframe-pihole2 & pve5 & -- & \ip{.178} & Secondary Pi-hole (DNS HA) \\
 \bottomrule
 \end{tabularx}
 \end{center}
