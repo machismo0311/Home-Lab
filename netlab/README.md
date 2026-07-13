@@ -3,7 +3,7 @@
 [![netlab (virtual network)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml)
 
 A [containerlab](https://containerlab.dev) topology that boots **real routers**, applies
-IOS-style routing config, and is validated **end-to-end in CI** — every push spins the
+IOS-style routing config, and is validated **end-to-end in CI**  every push spins the
 network up, checks it, and tears it down. The green badge above means the routing
 actually works, not just that a YAML file parses.
 
@@ -27,7 +27,7 @@ actually works, not just that a YAML file parses.
   - *control plane* — `r1`'s OSPF neighbor is `Full` and it has learned `10.10.2.0/24`
     via OSPF (not a static/connected route).
 
-This is the same discipline the physical NETFRAME lab is built on — VLAN/subnet design,
+This is the same discipline the physical NETFRAME lab is built on  VLAN/subnet design,
 routing, and change validation — reduced to something a reviewer can run in 60 seconds.
 
 ## Run it locally
