@@ -82,11 +82,18 @@ ansible-playbook backup-verify.yml --tags zfs,ds4246   # subset
 ```
 
 The report's `generated` timestamp doubles as `last_run` (a stale file = a
-dead timer). **Report wiring:** the report is standalone for now.
-`netframe_monitor.py` is a self-contained collector that writes its own
-`last_run.json`; it does not read an external report, so auto-ingestion into
-the Ollama summarizer is a deliberate follow-up (a small collector tweak),
-not part of this role.
+dead timer). The run also writes a node_exporter textfile metric on Randy
+(`/var/lib/prometheus/node-exporter/backup_verify.prom`:
+`backup_verify_report_generated_timestamp_seconds` + `backup_verify_overall_pass`).
+
+**Consumers of the report:**
+- **NetFRAME monitor** (`netframe_monitor.py` on Jarvis) reads it every 15 min as
+  a `backup_verify` check → `last_run.json` + the LLM report / `health.kylemason.org`
+  (WARN if stale >26h or any sub-check failed).
+- **Grafana** (via the textfile metric) → Discord `discord-alerts`:
+  `BackupVerifyReportStale` (`time()-generated > 26h` — dead cron) and
+  `BackupVerifyFailing` (`overall_pass == 0` — a fresh run that failed a check).
+  Rules live in `machismo0311/netframe-monitoring-stack`.
 
 ### PBS token (required for the `pbs` check)
 
@@ -147,6 +154,12 @@ ansible-playbook backup-verify.yml --vault-password-file ~/.ansible-vault-pass
 1. ~~Scheduling~~ — **done:** daily 06:00 user cron on Ares (see Scheduling).
 2. ~~Live-verify the `pbs` path~~ — **done:** token created (`root@pam!ansible-verify`,
    `DatastoreAudit`), vault encrypted; live run parses real snapshots and all
-   four checks pass. Vault password is in Vaultwarden; `vault.yml` is gitignored.
-3. **Ollama ingestion** — optional follow-up to merge the report into
-   `last_run.json` so the existing summarizer picks it up.
+   four checks pass. `vault.yml` is gitignored.
+3. ~~Ollama ingestion~~ — **done:** `netframe_monitor.py` reads the report as a
+   `backup_verify` check (folds into `last_run.json` / LLM report / web page).
+4. ~~Grafana alerting~~ — **done:** `BackupVerifyReportStale` + `BackupVerifyFailing`
+   → Discord (see the metric note under Playbook 2).
+5. **Hardening not yet applied** — `desired-state.yml` is built and `--check`-verified
+   but has never run for real against any node. Apply per-node when ready.
+6. **⚠️ Vault password backup** — the only copy is `~/.config/ansible/vault-pass`
+   on Ares. Save it in Vaultwarden.
