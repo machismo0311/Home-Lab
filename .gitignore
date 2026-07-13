@@ -25,3 +25,8 @@ known_hosts
 # ── Python cache ──
 **/__pycache__/
 *.py[cod]
+
+# ── CLAUDE.md kept local/private (OPSEC), not published. It stays on disk so
+#    Claude Code still reads it; do NOT re-add it. See dotfiles memory
+#    "project-claude-md-private". ──
+/CLAUDE.md
