@@ -6,6 +6,31 @@
 
 ---
 
+## ⚠️ Build log and current state (updated 2026-07-13, IN PROGRESS)
+**Built and verified this session:**
+- `nic2` -> `vmbr2` -> OPNsense `net2` (`vtnet2`). Hotspot cabled point-to-point, link 1G, serving DHCP (probe got `192.168.1.53`).
+- OPNsense **rebooted** to detect `vtnet2` (virtio hotplug does NOT work on FreeBSD; a reboot is required).
+- Legacy `192.168.1.1/24` VIP removed (Part B0 done). Subnet free.
+- WAN2 assigned (**OPT7** = `vtnet2`), DHCP, got `192.168.1.199`, gateway `192.168.1.1`. "Block private networks" unchecked.
+- Failover gateway group created (WAN_GW Tier 1, WAN2_DHCP Tier 2, trigger member-down).
+
+**KEY LESSON - gateway monitoring (dpinger):**
+- OPNsense was NOT auto-monitoring the dynamic gateways (dpinger not running, no `/var/etc/dpinger*`, status `loss=~`). Failover cannot trigger without it.
+- dpinger only launches for a gateway that has a valid monitor target. A dynamic gateway needs an explicit monitor.
+- The **far-gateway trick** (gateway IP = monitor IP + check "Far Gateway") WORKS on the **backup** (WAN2 = `1.1.1.1`): dpinger monitored it, routing unaffected because WAN2 was not the active default. Then launch dpinger with `qm guest exec 100 -- /usr/local/etc/rc.routing_configure` (SSH is disabled, use the guest agent). GUI Apply alone did NOT launch dpinger.
+- The SAME trick on the **PRIMARY** (WAN_GW = `8.8.8.8` + Far Gateway) **HIJACKED the live default route and caused a network outage.** DO NOT far-gateway the primary. It is the active default gateway; changing its gateway address breaks routing.
+
+**Current safe state (left clean overnight):**
+- WAN2: built + dpinger monitoring via far-gateway `1.1.1.1`. Ready.
+- WAN_GW: reverted (real DHCP gateway, healthy, but NOT monitored).
+- LAN rule: reverted to gateway = **default** (no policy-route to the group). Normal routing, internet stable, cluster 7/7 quorate.
+
+**Remaining to finish (turnkey):**
+1. Monitor the PRIMARY the correct way: find the proper "Monitor IP" field for WAN_GW (separate from the gateway) and set `8.8.8.8` WITHOUT touching the gateway or Far Gateway. If no distinct Monitor IP field exists in v25.7, research the correct method - do NOT far-gateway the primary.
+2. Launch dpinger: `qm guest exec 100 -- /usr/local/etc/rc.routing_configure`; verify BOTH gateways show real loss/delay.
+3. Re-point the LAN rule (and each VLAN internet rule) gateway to `Failover`.
+4. Test: from pve2 `ip link set nic0 down` (arm a deadman `sleep 120; ip link set nic0 up` first), confirm failover to WAN2, then restore and confirm failback. Note: host `nic0` down breaks internet but OPNsense `vtnet0` stays up, so failover relies entirely on dpinger.
+
 ## Hardware
 - **Hotspot:** Netgear Nighthawk **MR7400** (AT&T FirstNet). SW `MR7400-1A1NAS_O4.17`, firmware `NTGX75_10.04.43.00`. Single **2.5 GbE** Ethernet port; DHCP LAN **stays at default `192.168.1.0/24`** - no change needed. (This *was* a conflict with a legacy `192.168.1.1/24` OPNsense LAN alias; **resolved by removing that orphaned alias first** - verified unused, see Part B0.)
 - **Router:** OPNsense **VM 100** on **pve2** (`192.168.10.204`), `onboot=1`.
