@@ -23,6 +23,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 
 ## 2. Backup & Disaster Recovery
 - ✅ PBS nightly (LXCs + VMs) on Randy; on-site RAIDZ2 + sanoid/syncoid.
+- ✅ **RKE2 control-plane VMs 201/202/203 now backed up** (2026-07-12): added a daily vzdump job to randy-pbs (they were previously uncovered) and gave all three an immediate restore point. Added a **per-guest coverage check** to `backup_verify` (all 12 expected guests must be fresh, not just per-datastore freshness) which flows to the existing `BackupVerifyFailing` alert. Validated live (12/12 fresh).
 - ✅ OPNsense config: nightly age-encrypted → private git (offsite), decrypt round-trip tested.
 - ⏳ **P1 - Offsite backup for `bulk/fernanda`** (restic→B2): PARKED, but the trigger is **data arriving** (currently empty). Execute when the researcher's data lands. Needs: B2 account + key + passphrase→Vaultwarden.
 - ⏳ **P2 - Offsite for the PBS datastore itself** (VM/CT restore points are single-site on Randy). Remote PBS sync or restic the critical-config subset to B2.
@@ -31,7 +32,7 @@ Related: [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]] · [[Runbook/Monitori
 ## 3. Monitoring & Alerting
 - ✅ Prom/Grafana/Loki + Scrutiny; 10 Grafana→Discord alert rules (node/DNS/ZFS/GPU/disk/mem/UPS), 2 channels; config-as-code.
 - ✅ UPS alerting verified (both units); GPU util/temp/mem collectors on QuarkyLab+Jarvis.
-- ⏳ **P2** - WAN-failover (cellular/dpinger) + PVE cluster-quorum alerts (no OPNsense/pve-exporter metrics yet).
+- ◐ **P2** - **PVE cluster-quorum alerts: collector DEPLOYED 2026-07-12.** `corosync-quorumtool` -> node_exporter textfile on all 7 nodes; `node_pve_cluster_{quorate,expected_votes,total_votes,votes_needed}` scraping in Prometheus (7/7 series). Rules `ClusterNotQuorate` (critical) + `ClusterVotesBelowExpected` (warning) staged in netframe-monitoring-stack. **Remaining:** apply the 2 rules to Grafana (API/import; needs admin cred). **WAN-failover (cellular/dpinger) alert still pending** the MR7400 WAN2 build.
 - ⏳ **P3** - dashboards for the new GPU/ZFS/DNS metrics; log-based alerts in Loki.
 - ⏳ **P3** - optional: Grafana file-provisioned alerting (currently API-created, persisted in `grafana-data`).
 
