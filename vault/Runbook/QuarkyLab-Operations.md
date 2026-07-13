@@ -29,7 +29,7 @@ The reliability/observability layer added around the student environment (2026-0
 
 ## Monitoring
 - **Metrics:** `quarkylab-metrics.sh` writes GPU (util/mem/temp/power) + SLURM (running/pending/students_active/shards_allocated) as `quarkylab_*` gauges to node_exporter's textfile dir (`/var/lib/prometheus/node-exporter/`). QuarkyLab is already a Prometheus target (`instance="quarkylab"`, job `proxmox-nodes`) - **confirmed live in Prometheus**.
-- **Grafana dashboard: IMPORTED & live** → `http://192.168.10.183:3000/d/quarkylab-gpu/quarkylab-gpu-cluster` (uid `quarkylab-gpu`, 7 panels: GPU util, GPU memory used/total, temp, power, shards-allocated gauge, active students, SLURM running/pending). Source JSON kept at `QuarkyLab:/root/quarkylab-grafana-dashboard.json`. Grafana is docker in pve3 LXC103; re-import via `pct exec 103 -- curl -u admin:<pw> -XPOST localhost:3000/api/dashboards/db -d @payload`.
+- **Grafana dashboard: IMPORTED & live** → `http://192.168.10.183:3000/d/quarkylab-gpu/quarkylab-gpu-cluster` (uid `quarkylab-gpu`, 7 panels: GPU util, GPU memory used/total, temp, power, shards-allocated gauge, active students, SLURM running/pending). Source JSON kept at `QuarkyLab:/root/quarkylab-grafana-dashboard.json`. Grafana is docker in pve3 LXC103; re-import via `pct exec 103 -- curl -u "$GRAFANA_USER:$GRAFANA_PASS" -XPOST localhost:3000/api/dashboards/db -d @payload`.
 - Example PromQL: `quarkylab_gpu_utilization_percent`, `quarkylab_gpu_memory_used_bytes / quarkylab_gpu_memory_total_bytes`, `quarkylab_slurm_shards_allocated`.
 
 ## Researcher-activity alerts (2026-07-08)

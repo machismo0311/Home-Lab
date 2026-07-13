@@ -99,7 +99,7 @@ Run from Ares' VLAN 20 leg (`enp0s31f6.20`, carrier=1). The BMC stays powered wi
 ```bash
 IDRAC=192.168.20.21
 B="https://$IDRAC/redfish/v1/Systems/System.Embedded.1/Bios"
-C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u root:<vaultwarden-pw>"   # SECLEVEL=0 required for iDRAC-8 TLS
+C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u "$IDRAC_USER:$IDRAC_PASS""   # SECLEVEL=0 required for iDRAC-8 TLS
 $C -X PATCH "$B/Settings" -H 'Content-Type: application/json' -d '{"Attributes":{"ErrPrompt":"Disabled"}}'
 $C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Jobs" -H 'Content-Type: application/json' -d "{\"TargetSettingsURI\":\"$B/Settings\"}"
 # verify after boot:  $C "$B" | tr ',' '\n' | grep -i errprompt   → "ErrPrompt":"Disabled"
@@ -108,7 +108,7 @@ $C -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Jobs" -H 'Conten
 ### Thermal verify/set (match QuarkyLab) - from Ares VLAN 20 leg
 ```bash
 IDRAC=192.168.20.21
-C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u root:<vaultwarden-pw>"
+C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u "$IDRAC_USER:$IDRAC_PASS""
 # READ: export System profile → GET the returned JID → grep the thermal attrs from the XML
 $C -D - -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ExportSystemConfiguration" \
    -H 'Content-Type: application/json' -d '{"ExportFormat":"XML","ShareParameters":{"Target":"System"},"ExportUse":"Default","IncludeInExport":"Default"}'

@@ -122,7 +122,7 @@ Auto-ramp is intact by design: these settings only set the floor/offset; the ram
 
 ```bash
 IDRAC=192.168.20.20
-C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u root:<vaultwarden-pw>"      # SECLEVEL=0 required for iDRAC-8 TLS
+C="curl -sk --ciphers DEFAULT@SECLEVEL=0 -u "$IDRAC_USER:$IDRAC_PASS""      # SECLEVEL=0 required for iDRAC-8 TLS
 # READ: export System profile → note the JID → GET the task; XML body carries ThermalSettings when Completed
 $C -D - -X POST "https://$IDRAC/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.ExportSystemConfiguration" \
    -H 'Content-Type: application/json' \
