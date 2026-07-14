@@ -24,16 +24,20 @@ jobs:
         working-directory: netlab
         run: sudo containerlab deploy -t netframe-lab.clab.yml
 
-      - name: Run network tests
+      - name: Run reachability tests (steady state)
         run: sudo bash netlab/tests/test_reachability.sh
+
+      - name: Run failover tests (kill primary link, prove OSPF reroutes)
+        run: sudo bash netlab/tests/test_failover.sh
 
       - name: Diagnostics (on failure)
         if: failure()
         run: |
-          for n in r1 r2; do
-            echo "### $n ip_forward + routes"
+          for n in r1 r2 r3; do
+            echo "### $n ip_forward + routes + OSPF neighbors"
             sudo docker exec clab-netframe-$n cat /proc/sys/net/ipv4/ip_forward || true
             sudo docker exec clab-netframe-$n vtysh -c 'show ip route' || true
+            sudo docker exec clab-netframe-$n vtysh -c 'show ip ospf neighbor' || true
           done
           for h in h1 h2; do
             echo "### $h addr/route"
