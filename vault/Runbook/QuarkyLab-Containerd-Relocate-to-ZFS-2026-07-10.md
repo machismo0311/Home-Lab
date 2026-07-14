@@ -39,7 +39,9 @@ Root cause: Docker 29.6 uses the **containerd image store**, and containerd's ro
 so one image nearly fills the OS disk.
 
 Meanwhile the **`workspace` ZFS pool is 9.09 TB with only ~2 TB used** - the big
-storage is sitting idle because containers don't live on it.
+storage is sitting idle because containers don't live on it. *(Pool has since been
+expanded to **10.9 TB** raw, 6-wide raidz1 + hot spare, on 2026-07-13 - see
+[[Runbook/QuarkyLab-Storage-Expansion-2026-07-13]].)*
 
 **This is a placement misconfiguration, not a capacity problem.** A `docker builder
 prune` was run 2026-07-10 and reclaimed the build-cache *index* (14.6 GB → 90 MB) but

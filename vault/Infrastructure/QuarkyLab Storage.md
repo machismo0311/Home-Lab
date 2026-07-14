@@ -15,7 +15,9 @@ Storage for **QuarkyLab** (mgmt `.10.179`, ML node / the researcher's DUNE agent
 flowchart TB
     subgraph QUARK[QuarkyLab .179]
         OS[OS disk\nsda LVM · pve-root 96G ext4\nDO NOT store data]
-        WS[workspace ZFS pool\n5× 1.8TB raidz1 · ~7.2TB · lz4]
+        WS[workspace ZFS pool\n6× 1.8TB raidz1 · 10.9TB raw\n~9.1TB usable · lz4]
+        SP[hot spare\nsdh · 2TB SAS · AVAIL]
+        WS -.spare.- SP
         WS --> STU[workspace/students\n3TB · homes student01-20]
         WS --> RES[workspace/researchers\n1TB · homes researcher01-06]
         WS --> FER[workspace/fernanda\n4TB · fernanda home]
@@ -37,9 +39,68 @@ flowchart TB
 
 ---
 
+## Physical drives & RAID controller
+
+> [!IMPORTANT] The pool lives on JBOD pass-through, not a hardware RAID VD
+> QuarkyLab's disks hang off a **Dell PERC H330 Mini** (LSI SAS-3 3008 "Fury" ASIC, ctrl SN `4AM00EM`, FW `25.2.1.0037`) in **RAID-Mode personality with JBOD ON**. Each drive is set to **JBOD** so the OS sees a raw `/dev/sd*` and ZFS owns the redundancy - there is **no** hardware RAID volume. `storcli64` lives at `/usr/local/bin/storcli64` (controller `/c0`). The 8-bay backplane is a Dell **BP13G+** (enclosure `EID 32`, slots 0-7).
+
+### Drive inventory (as of 2026-07-13)
+
+| Slot | Device | Model | Interface | Serial | WWN (by-id) | Role |
+|---|---|---|---|---|---|---|
+| 32:0 | `sda` | Hitachi HUA723020ALA640 2TB | SATA | MK0171YFHSG5PA | `wwn-0x5000cca223d8c148` | **OS / boot** (LVM: `pve-root` 96G + `pve-data` thin → Wazuh VM 104) |
+| 32:1 | `sdb` | Hitachi HUA723020ALA640 2TB | SATA | MK0171YFHRY8YA | `wwn-0x5000cca223d8859d` | `workspace` raidz1 member |
+| 32:2 | `sdc` | **HGST HUS724020ALS640 2TB** | **SAS** | **P6JRLE5V** | `wwn-0x5000cca02899d158` | `workspace` raidz1 member (added 2026-07-13) |
+| 32:3 | `sdd` | Hitachi HUA723020ALA640 2TB | SATA | MK0131YFG86HLA | `wwn-0x5000cca223c3bb61` | `workspace` raidz1 member |
+| 32:4 | `sde` | Hitachi HUA723020ALA640 2TB | SATA | MK0231YGG6N46A | `wwn-0x5000cca224c305d0` | `workspace` raidz1 member |
+| 32:5 | `sdf` | Hitachi HUA723020ALA640 2TB | SATA | MK0131YFG87XHA | `wwn-0x5000cca223c3c0b2` | `workspace` raidz1 member |
+| 32:6 | `sdg` | Hitachi HUA723020ALA640 2TB | SATA | MK0131YFG87B6A | `wwn-0x5000cca223c3be9a` | `workspace` raidz1 member |
+| 32:7 | `sdh` | **HGST HUS724020ALS640 2TB** | **SAS** | **P6HK5U6V** | `wwn-0x5000cca028579e88` | **hot spare** (`AVAIL`, added 2026-07-13) |
+
+The pool is 6 members (`sdb`-`sdg` + the new SAS `sdc`); `sda` is the OS disk and `sdh` is a ZFS hot spare. The old 931 GB Hitachi HUA722010CLA330 (SN `JPW9K0N13BHTVL`) that used to sit in slot 2 was **pulled 2026-07-13** (undersized, never pooled) and replaced by the 2TB SAS drive.
+
+### `workspace` pool geometry
+
+| Property | Value |
+|---|---|
+| Layout | single vdev, **`raidz1-0`, 6-wide** (single-disk fault tolerance) |
+| Raw size | **10.9 TB** (`zpool list`) |
+| Usable | ~9.1 TB (5 data disks × 1.82 TB), carved by dataset quotas/reservations below |
+| Compression | lz4 · mountpoint `/workspace` |
+| ashift | auto (drives are 512 B native) |
+| `feature@raidz_expansion` | **active** (used for the 2026-07-13 5→6 widen) |
+| Hot spare | 1× 2TB SAS (`sdh`, slot 7) - auto-resilvers on any member failure |
+
+> [!NOTE] Expanded 5→6 wide on 2026-07-13
+> The vdev was widened from 5 to 6 disks via **RAIDZ expansion** (`zpool attach workspace raidz1-0 <disk>`). Pre-existing data keeps its **old 5-wide parity ratio** until rewritten, so realised usable growth is a bit under a full disk at first. Full record: [[Runbook/QuarkyLab-Storage-Expansion-2026-07-13]].
+
+### Adding / replacing a drive (PERC H330 + ZFS)
+
+A freshly inserted disk on this PERC appears as **Unconfigured Good** (often with a stale **Foreign** config) and is **not** passed to the OS until set to JBOD:
+
+```bash
+storcli64 /c0 show                              # find the new slot (Physical Drives count)
+storcli64 /c0 /fall del                         # clear any leftover foreign config
+storcli64 /c0 /e32 /sN set jbod                 # N = slot; exposes it as /dev/sdX
+for h in /sys/class/scsi_host/host*/scan; do echo "- - -" > "$h"; done   # rescan
+# identify a physical drive by blinking its bay LED:
+storcli64 /c0 /e32 /sN start locate             # ... stop locate  when done
+# then, by stable by-id path:
+zpool attach workspace raidz1-0 /dev/disk/by-id/wwn-0x...   # WIDEN the vdev (raidz expansion)
+zpool add    workspace spare    /dev/disk/by-id/wwn-0x...   # OR add as a hot spare
+```
+
+> [!WARNING] Never `zpool add workspace <disk>` bare
+> That stripes a single unprotected disk onto the pool and destroys raidz redundancy. To grow the array use `attach … raidz1-0` (expansion); for a standby use `add … spare`.
+
+> [!NOTE] Slot 7 gotcha - it was a piece of paper
+> The first drive put in **slot 7** was undetected by the controller and logged `phy bad for slot 7` (CRIT) - it looked like a dead bay. Root cause was a **piece of paper in the bay** blocking the drive-to-backplane connector. Once removed, slot 7 negotiates a clean 6.0 Gb/s link and passed a sustained-read test with zero I/O errors. The bay is good. (`Other Error Count` on a slot ticks a few counts on each hotplug/reseat - that is link-negotiation, not I/O errors.)
+
+---
+
 ## Tier 1 - Local working sets (`workspace` ZFS pool)
 
-Local pool on 5× 1.8 TB HDDs in **raidz1** (single-disk fault tolerance), lz4 compression, mounted at `/workspace`. `sdc` (931 GB) is a free spare, not pooled.
+Local pool on **6× 1.8 TB HDDs (5× SATA + 1× SAS) in raidz1** (single-disk fault tolerance) plus a **2TB SAS hot spare**, lz4 compression, mounted at `/workspace`. See [Physical drives & RAID controller](#physical-drives--raid-controller) above for the slot/serial map. Drives are 10-13 years old (SATA) - suitable for scratch/working sets, not sole-copy primary storage; everything important is backed up to Randy PBS.
 
 | Dataset | Mountpoint | Quota | Per-user quota | Use |
 |---|---|---|---|---|
@@ -49,6 +110,8 @@ Local pool on 5× 1.8 TB HDDs in **raidz1** (single-disk fault tolerance), lz4 c
 | `workspace/scratch` | `/workspace/scratch` | 2 TB | 200 GB | disposable per-user scratch (capped so it can't starve the shared pool) |
 
 **Homes live on the pool (model A):** `usermod -d` repointed every student/researcher/fernanda home off the cramped OS disk onto these datasets (2026-07-02). `/home` now holds only admin accounts (kyle, machismo). Student jobs bind `$HOME` + `/workspace/scratch/$USER:/scratch` (see [[Compute/Dell R730 - ML Node]] / job_submit.lua).
+
+The pool also carries two **system datasets** outside the user-home tiers: `workspace/containerd` → `/var/lib/containerd` (the system containerd store, relocated off the OS disk 2026-07-10 - see [[Runbook/QuarkyLab-Containerd-Relocate-to-ZFS-2026-07-10]]) and `workspace/backup` (with a read-only `workspace/backup/randy-fernanda` child).
 
 ```bash
 zpool status workspace                     # raidz1 health
@@ -127,8 +190,19 @@ proxmox-backup-client restore host/quarkylab-workspace/<snapshot> students.pxar 
 
 ---
 
+## Change log
+
+| Date | Change |
+|---|---|
+| 2026-07-13 | Pulled the undersized 931 GB Hitachi from slot 2; added **2× 2TB HGST SAS** (`HUS724020ALS640`). One (`sdc`, SN P6JRLE5V) **expanded `raidz1-0` 5→6 wide** (raidz expansion, raw 9.09→10.9 TB); the other (`sdh`, SN P6HK5U6V, slot 7) added as a **hot spare**. Slot 7's earlier "dead bay" was a piece of paper blocking the connector. See [[Runbook/QuarkyLab-Storage-Expansion-2026-07-13]]. |
+| 2026-07-10 | `workspace/containerd` dataset created; system containerd store relocated off the OS disk. See [[Runbook/QuarkyLab-Containerd-Relocate-to-ZFS-2026-07-10]]. |
+| 2026-07-02 | Pool + tiers built; homes moved onto ZFS datasets; NFS `/data` + PBS backup moved to VLAN 30. |
+
+---
+
 ## Related
 - [[Infrastructure/Storage]] - physical JBOD / NetApp DS4246
 - [[Compute/Dell R730 - ML Node]] - QuarkyLab node, GPU, student SLURM env
 - [[Infrastructure/Proxmox Cluster]] - cluster storage overview
+- [[Runbook/QuarkyLab-Storage-Expansion-2026-07-13]] - the 2026-07-13 drive add + raidz expansion
 - [[Runbook/randy-commissioning-runbook]] - Randy (PBS/storage) build

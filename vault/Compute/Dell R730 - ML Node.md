@@ -42,6 +42,9 @@
 | **RAM** | 512 GB LRDIMM ECC DDR4 |
 | **GPU** | NVIDIA Quadro RTX 8000 48GB GDDR6 ECC (driver 550.163.01) - installed 2026-07-01 (swapped from RTX 6000) |
 | NICs | 4× 1G onboard |
+| **Storage controller** | Dell **PERC H330 Mini** (LSI SAS-3 3008), RAID-Mode + **JBOD ON** → drives pass through for ZFS; 8-bay **BP13G+** backplane. `storcli64` at `/usr/local/bin` |
+| **Boot / OS** | `sda` (slot 0), 2TB Hitachi, `pve` LVM (`pve-root` 96G + `pve-data` thin → **Wazuh VM 104**) |
+| **`workspace` ZFS pool** | **6-wide raidz1** (5× 2TB SATA + 1× 2TB SAS), **10.9 TB raw** / ~9.1 TB usable, lz4, `/workspace` + **1× 2TB SAS hot spare** (slot 7). Full slot/serial map: [[Infrastructure/QuarkyLab Storage]] · expansion history: [[Runbook/QuarkyLab-Storage-Expansion-2026-07-13]] |
 | Remote Mgmt | iDRAC 8 (192.168.20.20, VLAN 20 since 2026-07-03) |
 | Depth | ~28" - **rear panel removed** from NetFRAME CS9000 |
 

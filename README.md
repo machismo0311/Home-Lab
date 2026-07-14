@@ -147,6 +147,13 @@ QuarkyLab's single RTX 8000 is safely shared between production research and a c
 - 16× 4TB SAS, dual-path via LSI 9207-8e HBA (IT mode) + multipath, SFF-8644→SFF-8088 cables
 - **Pool `bulk` — built & online 2026-07-08:** 2× 8-wide RAIDZ2, 58.2TB raw / ~41.3 TiB usable, reboot-verified (auto-imports cleanly)
 
+### QuarkyLab — Local ZFS workspace pool
+
+- **Controller:** Dell PERC H330 Mini (LSI SAS-3 3008), RAID-Mode + JBOD ON — drives pass through for ZFS; 8-bay BP13G+ backplane
+- **Pool `workspace`:** 6-wide RAIDZ1 (5× 2TB SATA + 1× 2TB SAS) — **10.9TB raw / ~9.1TB usable**, lz4, `/workspace` — student/researcher homes + system containerd store
+- **Hot spare:** 1× 2TB SAS (auto-resilvers on a member failure)
+- **Boot/OS:** separate 2TB disk (Proxmox `pve` LVM + Wazuh VM 104); expanded 5→6 wide via RAIDZ expansion on 2026-07-13
+
 ---
 
 ## Services
