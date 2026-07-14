@@ -84,3 +84,59 @@
              } ] }}
       vars:
         backup_verify_detail: "{{ backup_verify_pbs_detail | default([]) }}"
+
+    # --- per-guest coverage: every expected vmid must have a fresh snapshot ---
+    # Flatten all snapshots across datastores, then for each expected guest find
+    # its newest backup and check the age. Catches a single missing/stale guest
+    # that per-datastore freshness misses.
+    - name: PBS (coverage) — flatten snapshots across datastores
+      ansible.builtin.set_fact:
+        backup_verify_all_snaps: >-
+          {{ backup_verify_pbs_snaps.results | default([])
+             | selectattr('status', 'equalto', 200)
+             | selectattr('json.data', 'defined')
+             | map(attribute='json.data') | flatten }}
+      when: backup_verify_pbs_expected_guests | length > 0
+
+    - name: PBS (coverage) — evaluate each expected guest
+      ansible.builtin.set_fact:
+        backup_verify_guest_detail: >-
+          {{ backup_verify_guest_detail | default([]) + [ {
+               'vmid': (item | int),
+               'present': (backup_verify_guest_snaps | length > 0),
+               'age_hours': (((backup_verify_now - backup_verify_guest_newest) / 3600) | round(1)
+                             if (backup_verify_guest_snaps | length > 0) else -1),
+               'fresh': ((backup_verify_guest_snaps | length > 0)
+                         and ((backup_verify_now - backup_verify_guest_newest)
+                              <= (backup_verify_pbs_max_age_hours | int) * 3600))
+             } ] }}
+      vars:
+        backup_verify_now: "{{ ansible_date_time.epoch | int }}"
+        backup_verify_guest_snaps: >-
+          {{ backup_verify_all_snaps | selectattr('backup-id', 'equalto', item | string) | list }}
+        backup_verify_guest_newest: >-
+          {{ (backup_verify_guest_snaps | map(attribute='backup-time') | max)
+             if (backup_verify_guest_snaps | length > 0) else 0 }}
+      loop: "{{ backup_verify_pbs_expected_guests }}"
+      loop_control:
+        label: "{{ item }}"
+      when: backup_verify_pbs_expected_guests | length > 0
+
+    - name: PBS (coverage) — record result
+      ansible.builtin.set_fact:
+        backup_verify_results: >-
+          {{ backup_verify_results + [ {
+               'name': 'pbs_guest_coverage',
+               'status': ('pass' if (backup_verify_gd | rejectattr('fresh') | list | length) == 0 else 'fail'),
+               'detail': ((backup_verify_gd | length) ~ ' expected guest(s); '
+                          ~ (backup_verify_gd | rejectattr('fresh') | list | length) ~ ' missing/stale'
+                          ~ ((': ' ~ (backup_verify_gd | rejectattr('fresh')
+                                      | map(attribute='vmid') | list | join(',')))
+                             if (backup_verify_gd | rejectattr('fresh') | list | length) > 0 else '')
+                          ~ ' (threshold ' ~ backup_verify_pbs_max_age_hours ~ 'h)'),
+               'threshold_hours': (backup_verify_pbs_max_age_hours | int),
+               'guests': backup_verify_gd
+             } ] }}
+      vars:
+        backup_verify_gd: "{{ backup_verify_guest_detail | default([]) }}"
+      when: backup_verify_pbs_expected_guests | length > 0

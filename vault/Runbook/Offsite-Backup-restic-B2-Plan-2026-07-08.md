@@ -1,4 +1,4 @@
-# 📄 Off-site Backup Plan — restic → Backblaze B2 (`bulk/fernanda`)
+# 📄 Off-site Backup Plan - restic → Backblaze B2 (`bulk/fernanda`)
 
 **Tags:** #plan #backup #offsite #restic #b2 #randy #dr
 **Related:** [[Runbook/DS4246-Pool-Buildout-Plan-2026-07-07]] · [[Infrastructure/Storage]] · [[00 - Homelab MOC]]
@@ -6,9 +6,9 @@
 | | |
 |---|---|
 | **Goal** | The **off-site** tier for `bulk/fernanda` (survives site loss: fire/theft/flood) |
-| **Why** | Existing protection = RAIDZ2 + sanoid snapshots + syncoid off-box to QuarkyLab — all **same rack**. This adds the 3rd leg of 3-2-1. |
+| **Why** | Existing protection = RAIDZ2 + sanoid snapshots + syncoid off-box to QuarkyLab - all **same rack**. This adds the 3rd leg of 3-2-1. |
 | **Choice** | **restic → Backblaze B2** (encrypted, dedup, incremental) |
-| **Status** | PLAN — not executed. Needs a B2 account + key (user action) first. |
+| **Status** | PLAN - not executed. Needs a B2 account + key (user action) first. |
 
 ## Pricing verified 2026-07-08 (why B2)
 | Option | Storage | Notes |
@@ -25,7 +25,7 @@ At current size (`bulk/fernanda` ~empty) this is **pennies/month**; ~$0.70/mo pe
 2. Create an **Application Key** scoped to that bucket → note `keyID` + `applicationKey`.
 3. Pick a **strong restic repo passphrase** and store it in **Vaultwarden** (LXC 102). ⚠️ *Lose this passphrase = backups unrecoverable. No recovery.*
 
-## Setup (on Randy — has the data locally)
+## Setup (on Randy - has the data locally)
 ```bash
 apt-get install -y restic
 
@@ -52,7 +52,7 @@ restic backup "/mnt/bulk/fernanda/.zfs/snapshot/$snap" --tag fernanda --host ran
 restic forget --tag fernanda --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune
 ```
 
-**Schedule** — systemd `restic-fernanda.timer` daily (offset from the 6-h syncoid + 03:00 backups), e.g. `OnCalendar=*-*-* 05:30`, `Persistent=true`. Service sources `/root/.restic-b2.env` then runs the backup+forget above.
+**Schedule** - systemd `restic-fernanda.timer` daily (offset from the 6-h syncoid + 03:00 backups), e.g. `OnCalendar=*-*-* 05:30`, `Persistent=true`. Service sources `/root/.restic-b2.env` then runs the backup+forget above.
 
 ## Verify / restore
 ```bash
@@ -67,7 +67,7 @@ restic restore latest --target /mnt/restore --include ...   # DR restore
 
 ## Notes
 - **restic runs on Randy** (data is local → no NFS pull). Could alternatively run on Ares.
-- **Encryption is client-side** — B2 only ever sees ciphertext.
+- **Encryption is client-side** - B2 only ever sees ciphertext.
 - After this, `bulk/fernanda` = 3-2-1 complete: (1) live RAIDZ2, (2) off-box syncoid→QuarkyLab, (3) off-site restic→B2.
 - Only `bulk/fernanda` in scope; media/archive are re-acquirable. Add tags/paths if that changes.
 

@@ -1,4 +1,4 @@
-# Jarvis On-Call Discord Bot — Runbook
+# Jarvis On-Call Discord Bot - Runbook
 
 **Node:** Jarvis (Dell PowerEdge R730, service tag (in ops vault))
 **Status:** 🟢 Deployed & live on Jarvis 2026-07-09 (systemd `jarvis-oncall`, DM-only)
@@ -13,7 +13,7 @@
 A Discord bot that runs on **Jarvis** so any km-cluster node can be troubleshot
 remotely: paste an error/log excerpt into Discord and the bot identifies the
 node, diagnoses it via Jarvis's `llm_router` (Ollama-first / Claude-fallback),
-runs **read-only diagnostics over SSH**, and — for state-changing fixes —
+runs **read-only diagnostics over SSH**, and - for state-changing fixes -
 proposes the exact command and waits for explicit confirmation before running it.
 
 Reuses the existing low-priv **`monitor`** user (from the NetFRAME health daemon,
@@ -27,7 +27,7 @@ locally.
   allowlist, so tools are node-agnostic and adding a node needs no code change.
 - Forwards messages to **`llm_router` `:8000`** with the whitelisted tool schemas.
   This required an **additive tool-calling passthrough** in `llm_router.py`
-  (Ollama native + Anthropic conversion; `tool_use` → OpenAI `tool_calls`) —
+  (Ollama native + Anthropic conversion; `tool_use` → OpenAI `tool_calls`) -
   no-tools callers (Open WebUI, RAG) are unaffected.
 - **Agentic loop:** model calls tools → bot runs the read-only ones as `monitor`
   → feeds results back → model analyzes and answers. Live `🔧` progress posted.
@@ -36,14 +36,14 @@ locally.
 
 - Answers **only** `ALLOWED_USER_ID` (allowlist-of-one), in DMs or one
   `CHANNEL_ID`; everyone else ignored + audit-logged.
-- **No raw shell** — the model may only name whitelisted tools; each validates
+- **No raw shell** - the model may only name whitelisted tools; each validates
   its target node first.
 - **Read-only** tools run free: `check_service_status`, `tail_logs`,
   `zpool_status`, `gpu_status`, `disk_usage`, `vm_status`.
 - **`restart_service`** is the ONLY state-changing tool. Confirm-and-execute:
   bot posts `sudo systemctl restart <unit>` + node and waits for an explicit
   `yes`/`do it` (60 s) before running via **command-exact NOPASSWD sudo**.
-  Refuses any unit outside that node's allowlist and any unreachable node —
+  Refuses any unit outside that node's allowlist and any unreachable node -
   without prompting. `corosync` / `pve-cluster` / `sshd` deliberately excluded.
 - Token + IDs live in `/opt/jarvis-oncall/.env` (chmod 600, token from
   Vaultwarden), never in git.
@@ -61,7 +61,7 @@ locally.
 | pve4 / pve5 | pveproxy, pvedaemon, pvestatd |
 
 > **pve1** (standalone Mac Mini / Pi-hole) is registered but `reachable: false`
-> — it has no `monitor` user, so the bot cannot reach it until one is provisioned.
+> - it has no `monitor` user, so the bot cannot reach it until one is provisioned.
 
 ## 5. Deploy checklist (on Jarvis)
 

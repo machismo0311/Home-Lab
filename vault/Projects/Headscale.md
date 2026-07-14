@@ -1,10 +1,10 @@
-# 🔒 Headscale — Self-Hosted VPN Control Plane
+# 🔒 Headscale - Self-Hosted VPN Control Plane
 **Tags:** #project #networking #vpn #tailscale #headscale
 **Related:** [[Infrastructure/Services & VMs]] · [[Networking/Network Overview]] · [[Runbook/Daily Operations]]
 
 ---
 
-> **Status:** Phase 1 complete — Ares connected. the researcher migration pending.
+> **Status:** Phase 1 complete - Ares connected. the researcher migration pending.
 > **Full runbook:** `Home-Lab/headscale/HEADSCALE.md`
 
 ---
@@ -13,7 +13,7 @@
 
 Headscale replaces the commercial Tailscale control plane for NetFRAME. It lets unlimited students connect to QuarkyLab's ML environment using the native Tailscale app, with per-semester lifecycle management via CLI. The commercial Tailscale free tier (6 seats) couldn't scale to ~15 students per semester.
 
-Headscale handles **authentication and key distribution only** — it does not carry traffic. After registration, devices communicate peer-to-peer via WireGuard. If Headscale goes down, existing connections stay up.
+Headscale handles **authentication and key distribution only** - it does not carry traffic. After registration, devices communicate peer-to-peer via WireGuard. If Headscale goes down, existing connections stay up.
 
 ---
 
@@ -67,6 +67,6 @@ sudo tailscale up --login-server=http://192.168.10.186:8080 --authkey=<key>
 
 | Issue | Status |
 |-------|--------|
-| Ares MagicDNS permission error on `/etc/resolv.conf` | Open — non-critical, connectivity unaffected |
+| Ares MagicDNS permission error on `/etc/resolv.conf` | Open - non-critical, connectivity unaffected |
 | the researcher still on commercial Tailscale | Pending migration window |
-| No TLS — server_url is plain HTTP | Planned: step-ca cert after VLAN 30 migration |
+| No TLS - server_url is plain HTTP | Planned: step-ca cert after VLAN 30 migration |

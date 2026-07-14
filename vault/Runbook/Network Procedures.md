@@ -1,4 +1,4 @@
-# 📋 Runbook — Network Procedures
+# 📋 Runbook - Network Procedures
 **Tags:** #runbook #networking #junos
 **Related:** [[Networking/Juniper EX3400-48P]] · [[Networking/Network Overview]] · [[Runbook/Daily Operations]]
 
@@ -16,7 +16,7 @@ sudo ip link set enp0s31f6 up
 # SSH to EX3400
 ssh mason@192.168.10.50
 
-# SSH to EX2300 (IP TBD — not yet on network)
+# SSH to EX2300 (IP TBD - not yet on network)
 # ssh mason@<ex2300-ip>
 
 # Access cluster nodes
@@ -29,7 +29,7 @@ ssh root@192.168.10.203   # pve5
 
 ---
 
-## Junos — Safe Change Procedure
+## Junos - Safe Change Procedure
 
 > [!WARNING] Always use `commit confirmed` for risky changes. Auto-rolls back in 10 minutes if you don't confirm.
 
@@ -42,17 +42,17 @@ show | compare
 
 commit confirmed 10
 
-# If all good — confirm permanently
+# If all good - confirm permanently
 commit
 
-# If something broke — wait for auto-rollback or:
+# If something broke - wait for auto-rollback or:
 rollback 1
 commit
 ```
 
 ---
 
-## VLAN Provisioning — New Port
+## VLAN Provisioning - New Port
 
 ```junos
 # Access port (single VLAN)
@@ -84,7 +84,7 @@ commit
 
 # Step 2: Add to trunk ports
 set interfaces ge-0/0/46 unit 0 family ethernet-switching vlan members <NAME>
-# Note: do NOT add native-vlan-id — not supported on EX3400
+# Note: do NOT add native-vlan-id - not supported on EX3400
 commit
 
 # Step 3: Create IRB interface for routing
@@ -194,7 +194,7 @@ scp root@192.168.10.50:/tmp/ex3400-backup-*.conf root@192.168.10.201:/root/switc
 
 ---
 
-## Emergency — Switch Unreachable
+## Emergency - Switch Unreachable
 
 ```bash
 # Physical console (RJ45 console cable → Ares USB)

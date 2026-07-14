@@ -1,4 +1,4 @@
-# NetFRAME Infrastructure Update — June 22, 2026
+# NetFRAME Infrastructure Update - June 22, 2026
 
 **Session:** Randy commissioned, PBS live, ZFS pool online, full cluster update
 
@@ -11,10 +11,10 @@
 | Randy | Storage / PBS | 192.168.10.187 | 2× E5-2690 v4 | 128GB | RX 580 8GB |
 | QuarkyLab | ML / the researcher | 192.168.10.30 | 2× E5-2699 v4 | 512GB | RTX 6000 24GB |
 | Jarvis | LLM Inference | 192.168.10.31 | 2× E5-2687W v4 | 384GB | RTX 8000 48GB |
-| pve2 | OPNsense host | 192.168.10.204 | i7-8700 | 32GB | — |
-| pve3 | Cluster node | 192.168.10.201 | i7-8700 | 48GB | — |
-| pve4 | Cluster node | 192.168.10.202 | i5-7500T | 32GB | — |
-| pve5 | Cluster node | 192.168.10.203 | i5-7500T | 32GB | — |
+| pve2 | OPNsense host | 192.168.10.204 | i7-8700 | 32GB | - |
+| pve3 | Cluster node | 192.168.10.201 | i7-8700 | 48GB | - |
+| pve4 | Cluster node | 192.168.10.202 | i5-7500T | 32GB | - |
+| pve5 | Cluster node | 192.168.10.203 | i5-7500T | 32GB | - |
 
 Cluster: **km-cluster**, Proxmox VE 9.1. pve1 (Mac Mini 2011) removed.
 
@@ -24,19 +24,19 @@ Cluster: **km-cluster**, Proxmox VE 9.1. pve1 (Mac Mini 2011) removed.
 
 ---
 
-## Randy — Commissioned
+## Randy - Commissioned
 
 ### Storage
 
 - **Boot:** RAID-1 mirror on 2× Seagate SAS SSDs via AVAGO 3108 MegaRAID
-- **ZFS pool:** `datastore` — 3× RAIDZ2 vdevs of 6× Toshiba AL15SEB18EQ 1.6TB 10K SAS (expanded 2026-06-25 with a 4th RAIDZ2 of 4× Seagate ST2000NX0423 → 4× RAIDZ2 total)
+- **ZFS pool:** `datastore` - 3× RAIDZ2 vdevs of 6× Toshiba AL15SEB18EQ 1.6TB 10K SAS (expanded 2026-06-25 with a 4th RAIDZ2 of 4× Seagate ST2000NX0423 → 4× RAIDZ2 total)
 - **Usable:** ~19.5TB (as of 2026-06-22; ~23TB / 36.7TB raw after the 2026-06-25 expansion)
 
 ### Proxmox Backup Server
 
 - **UI:** `https://192.168.10.187:8007`
 - **Version:** v4.2.2
-- **Fingerprint:** `(stored in Vaultwarden — not published)`
+- **Fingerprint:** `(stored in Vaultwarden - not published)`
 
 ### DS4246 JBOD
 
@@ -48,7 +48,7 @@ Cluster: **km-cluster**, Proxmox VE 9.1. pve1 (Mac Mini 2011) removed.
 
 ## Network Updates
 
-- **OPNsense** now at `192.168.10.1` — handles routing/firewall/DHCP for all VLANs
+- **OPNsense** now at `192.168.10.1` - handles routing/firewall/DHCP for all VLANs
 - **Pi-hole** moved to `192.168.10.177` on pve3 (was 192.168.1.47)
 - **PDU** identified: APC AP7901 on EX3400 ge-0/0/38
 - **10G fabric**: Mellanox ConnectX-3 DAC links from Randy/QuarkyLab/Jarvis to EX3400 xe- ports
@@ -70,6 +70,6 @@ Cluster: **km-cluster**, Proxmox VE 9.1. pve1 (Mac Mini 2011) removed.
 - [ ] Jellyfin on Randy (RX 580 ROCm transcoding)
 - [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
 - [ ] RKE2 Kubernetes (Cilium, MetalLB, NVIDIA GPU Operator)
-- [ ] Cyberpunk monitoring dashboard — live API integration
+- [ ] Cyberpunk monitoring dashboard - live API integration
 - [ ] IMU gesture control (nRF52 trackers → Home Assistant)
 - [ ] Headscale migration (remaining devices off commercial Tailscale)

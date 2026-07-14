@@ -9,7 +9,7 @@
 Storage for **QuarkyLab** (mgmt `.10.179`, ML node / the researcher's DUNE agent + the multi-tenant student SLURM environment) is split into three tiers by purpose: fast local working sets, bulk persistent data on Randy over NFS, and backups to Randy's PBS. Set up during the 2026-07-02 maintenance window.
 
 > [!NOTE] Storage traffic runs on VLAN 30 (since 2026-07-02)
-> QuarkyLab and Randy are dual-homed on the `servers` VLAN 30. **NFS `/data` and PBS backup now use the VLAN 30 addresses** — QuarkyLab `192.168.30.179`, Randy `192.168.30.187` — while cluster/management/monitoring stay on VLAN 1 (`.10.x`). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
+> QuarkyLab and Randy are dual-homed on the `servers` VLAN 30. **NFS `/data` and PBS backup now use the VLAN 30 addresses** - QuarkyLab `192.168.30.179`, Randy `192.168.30.187` - while cluster/management/monitoring stay on VLAN 1 (`.10.x`). See [[Runbook/VLAN30-Migration-Report-2026-07-02]].
 
 ```mermaid
 flowchart TB
@@ -37,7 +37,7 @@ flowchart TB
 
 ---
 
-## Tier 1 — Local working sets (`workspace` ZFS pool)
+## Tier 1 - Local working sets (`workspace` ZFS pool)
 
 Local pool on 5× 1.8 TB HDDs in **raidz1** (single-disk fault tolerance), lz4 compression, mounted at `/workspace`. `sdc` (931 GB) is a free spare, not pooled.
 
@@ -45,7 +45,7 @@ Local pool on 5× 1.8 TB HDDs in **raidz1** (single-disk fault tolerance), lz4 c
 |---|---|---|---|---|
 | `workspace/students` | `/workspace/students` | 3 TB | 100 GB | student01–20 homes |
 | `workspace/researchers` | `/workspace/researchers` | 1 TB | 150 GB | researcher01–06 homes |
-| `workspace/fernanda` | `/workspace/fernanda` | 4 TB | — | the researcher's home + data |
+| `workspace/fernanda` | `/workspace/fernanda` | 4 TB | - | the researcher's home + data |
 | `workspace/scratch` | `/workspace/scratch` | 2 TB | 200 GB | disposable per-user scratch (capped so it can't starve the shared pool) |
 
 **Homes live on the pool (model A):** `usermod -d` repointed every student/researcher/fernanda home off the cramped OS disk onto these datasets (2026-07-02). `/home` now holds only admin accounts (kyle, machismo). Student jobs bind `$HOME` + `/workspace/scratch/$USER:/scratch` (see [[Compute/Dell R730 - ML Node]] / job_submit.lua).
@@ -58,7 +58,7 @@ zfs userspace workspace/students           # per-user usage vs 100G quota
 
 ---
 
-## Tier 2 — Bulk persistent (`/data`, NFS from Randy)
+## Tier 2 - Bulk persistent (`/data`, NFS from Randy)
 
 Randy exports the ZFS dataset `datastore/quarkylab` (2 TB quota, lz4) to QuarkyLab **only**; QuarkyLab mounts it at `/data`.
 
@@ -73,7 +73,7 @@ Randy exports the ZFS dataset `datastore/quarkylab` (2 TB quota, lz4) to QuarkyL
 
 ---
 
-## Tier 3 — Backup (Randy PBS)
+## Tier 3 - Backup (Randy PBS)
 
 Randy (`.187`) runs **Proxmox Backup Server** (`:8007`, datastore `datastore` at `/datastore`, ~23 TB). The same ZFS pool does double duty: raw NFS shares (Tier 2) **and** PBS dedup chunk storage.
 
@@ -100,9 +100,9 @@ proxmox-backup-client prune host/quarkylab-workspace --keep-daily 7 --keep-weekl
 | Verify | Randy `verify-datastore` job | weekly **Sun 04:00** | `ignore-verified`, re-verify >30 days |
 
 > [!NOTE] Dedup is content-addressed
-> Re-running the backup with unchanged data uploads **0 bytes** (100% chunk reuse) — only genuinely changed data transfers. Because same-day snapshots are byte-identical, GC after a same-day prune frees ~0 (chunks still referenced by the surviving snapshot); real reclamation happens as older daily/weekly snapshots age out.
+> Re-running the backup with unchanged data uploads **0 bytes** (100% chunk reuse) - only genuinely changed data transfers. Because same-day snapshots are byte-identical, GC after a same-day prune frees ~0 (chunks still referenced by the surviving snapshot); real reclamation happens as older daily/weekly snapshots age out.
 
-Since homes moved off `/home`, the **host-level** `host/quarkylab` backup's `home.pxar` is now near-empty — `host/quarkylab-workspace` is the authoritative home/user-data backup.
+Since homes moved off `/home`, the **host-level** `host/quarkylab` backup's `home.pxar` is now near-empty - `host/quarkylab-workspace` is the authoritative home/user-data backup.
 
 ### Restore
 
@@ -128,7 +128,7 @@ proxmox-backup-client restore host/quarkylab-workspace/<snapshot> students.pxar 
 ---
 
 ## Related
-- [[Infrastructure/Storage]] — physical JBOD / NetApp DS4246
-- [[Compute/Dell R730 - ML Node]] — QuarkyLab node, GPU, student SLURM env
-- [[Infrastructure/Proxmox Cluster]] — cluster storage overview
-- [[Runbook/randy-commissioning-runbook]] — Randy (PBS/storage) build
+- [[Infrastructure/Storage]] - physical JBOD / NetApp DS4246
+- [[Compute/Dell R730 - ML Node]] - QuarkyLab node, GPU, student SLURM env
+- [[Infrastructure/Proxmox Cluster]] - cluster storage overview
+- [[Runbook/randy-commissioning-runbook]] - Randy (PBS/storage) build

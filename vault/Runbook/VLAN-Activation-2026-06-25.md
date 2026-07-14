@@ -1,6 +1,6 @@
-# VLAN Activation — COMPLETE
+# VLAN Activation - COMPLETE
 **Date:** 2026-06-25
-**Status:** ✅ **DONE** — VLAN trunking live, verified end-to-end via DHCP lease on VLAN 20
+**Status:** ✅ **DONE** - VLAN trunking live, verified end-to-end via DHCP lease on VLAN 20
 **Follows:** `EX3400-Network-Buildout-2026-06-14.md`
 
 ---
@@ -21,11 +21,11 @@ Management (untagged VLAN 1) stays fully stable with the trunk active.
 
 ## The Root Cause (why it took several attempts)
 
-**`native-vlan-id` must be at the PHYSICAL INTERFACE level on JunOS ELS — not under
+**`native-vlan-id` must be at the PHYSICAL INTERFACE level on JunOS ELS - not under
 `unit 0 family ethernet-switching`.**
 
 ```
-✗ WRONG — accepted by JunOS without error, but does NOT drive untagged egress:
+✗ WRONG - accepted by JunOS without error, but does NOT drive untagged egress:
    set interfaces ge-0/0/46 unit 0 family ethernet-switching native-vlan-id 1
 
 ✓ CORRECT (EX3400 / JunOS ELS 23.4):
@@ -37,7 +37,7 @@ switch (which expects untagged native VLAN 1 on its uplink) then lost its own ma
 taking down everything behind it (pve2, OPNsense). The "commit complete" with no error
 masked the problem.
 
-Secondary issue: **pve2 nic2/vmbr2** — an unused bridge with a live cable to the UniFi —
+Secondary issue: **pve2 nic2/vmbr2** - an unused bridge with a live cable to the UniFi -
 created an L2 loop that melted the *entire* network on early attempts. Disabled (below).
 
 ---
@@ -64,9 +64,9 @@ unit 0 {
 | Port 14 | OPNsense / pve2 | Default (1) | Allow All |
 
 ### pve2
-- `vmbr1`: `bridge-vlan-aware yes` (requires full reboot to apply — `ifreload -a` insufficient)
+- `vmbr1`: `bridge-vlan-aware yes` (requires full reboot to apply - `ifreload -a` insufficient)
 - VM 100 (OPNsense) `net1`: `trunks=1-70`
-- `vmbr2`/`nic2`: **auto-start disabled** in `/etc/network/interfaces` — unused bridge,
+- `vmbr2`/`nic2`: **auto-start disabled** in `/etc/network/interfaces` - unused bridge,
   live UniFi cable caused the trunk loop. Kept down persistently.
 
 ---
@@ -86,16 +86,16 @@ ssh pve2 "
 ---
 
 ## Safety Notes
-- **Keep Ares wired (enp0s31f6, 192.168.10.100) during any pve2/OPNsense/EX3400 work** —
+- **Keep Ares wired (enp0s31f6, 192.168.10.100) during any pve2/OPNsense/EX3400 work** -
   Ares WiFi is on the WAN side; an OPNsense outage cuts the management network from WiFi.
-- **Use `commit confirmed 5` on the EX3400** for any risky change — auto-reverts in 5 min.
-- **Do not re-enable vmbr2/nic2** without removing its UniFi cable first — it loops the trunk.
+- **Use `commit confirmed 5` on the EX3400** for any risky change - auto-reverts in 5 min.
+- **Do not re-enable vmbr2/nic2** without removing its UniFi cable first - it loops the trunk.
 - `native-vlan-id` goes at the **interface level** on this EX3400 (ELS).
 
 ---
 
 ## Next (now unblocked)
-- Move IoT devices to VLAN 40 (Fire Tablet, Echo ×5, BBL strip — pentest F-07/09/10)
+- Move IoT devices to VLAN 40 (Fire Tablet, Echo ×5, BBL strip - pentest F-07/09/10)
 - Move Transmission client to VLAN 40
 - Decide permanent fate of nic2 cable (remove or repurpose)
 
@@ -117,7 +117,7 @@ originated inside the bridge and never traversed nic1.
 # Runtime (immediate):
 ssh pve2 "for v in 20 30 40 50 60 70; do bridge vlan add dev nic1 vid \$v; done"
 
-# Persistent — add to vmbr1 in /etc/network/interfaces:
+# Persistent - add to vmbr1 in /etc/network/interfaces:
 #     bridge-vlan-aware yes
 #     bridge-vids 2-4094        ← makes the uplink carry all VLANs
 #     bridge-fd 0

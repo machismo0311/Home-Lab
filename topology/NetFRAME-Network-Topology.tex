@@ -1,13 +1,13 @@
 % !TEX program = pdflatex
-% NetFRAME Home Lab — Network Topology & Systems Reference
+% NetFRAME Home Lab : Network Topology & Systems Reference
 % Build:  latexmk -pdf NetFRAME-Network-Topology.tex   (or: pdflatex twice)
 % Requires: texlive-latex-recommended texlive-pictures texlive-latex-extra texlive-fonts-recommended
-\documentclass[11pt,a4paper]{article}
+\documentclass[11pt,letterpaper]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
-\usepackage[margin=2cm,headheight=15pt]{geometry}
+\usepackage[margin=1.9cm,headheight=15pt]{geometry}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -34,12 +34,13 @@
 \definecolor{nfslate}{HTML}{3A4150}
 \definecolor{nfgrey}{HTML}{EDEFF3}
 \definecolor{nfgrey2}{HTML}{DDE2EA}
+\definecolor{nfteal}{HTML}{1F7A8C}
 
 % ---- Header / footer ----
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\small\textsc{NetFRAME Network Topology Reference}}
-\rhead{\small v1.0 · 2026-07-08}
+\rhead{\small v2.0 \textperiodcentered\ 2026-07-13}
 \lfoot{\small Sanitized public edition}
 \rfoot{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -55,6 +56,7 @@
 
 \newcommand{\ip}[1]{\texttt{#1}}
 \renewcommand{\arraystretch}{1.25}
+\setlength{\emergencystretch}{2em}
 
 % ---- TikZ styles ----
 \tikzset{
@@ -64,9 +66,12 @@
   node730/.style={dev,fill=nfred!14,draw=nfred},
   small/.style={dev,fill=nfblue!12,draw=nfblue},
   stor/.style={dev,fill=nfamber!16,draw=nfamber},
+  k8s/.style={dev,fill=nfteal!16,draw=nfteal},
+  wan2/.style={dev,fill=nforange!16,draw=nforange},
   vlanpill/.style={rounded corners=3pt,draw,font=\scriptsize\bfseries,inner sep=2pt,minimum width=14mm,text=white},
   lnk/.style={-{Latex[length=2mm]},thick,draw=nfslate},
   lnk10/.style={-{Latex[length=2mm]},very thick,draw=nfgreen},
+  lnkbak/.style={-{Latex[length=2mm]},thick,draw=nforange,dashed},
 }
 
 \begin{document}
@@ -78,25 +83,25 @@
   \fill[nfink] (current page.north west) rectangle ([yshift=-6.2cm]current page.north east);
   \node[anchor=west,text=white,font=\Huge\bfseries] at ([xshift=2cm,yshift=-2.6cm]current page.north west) {NetFRAME};
   \node[anchor=west,text=nfgrey2,font=\LARGE] at ([xshift=2cm,yshift=-3.7cm]current page.north west) {Network Topology \& Systems Reference};
-  \node[anchor=west,text=nfgreen,font=\large\ttfamily] at ([xshift=2cm,yshift=-4.7cm]current page.north west) {192.168.10.0/24 · km-cluster · 7 nodes · 3 GPUs · 4× RAIDZ2};
+  \node[anchor=west,text=nfgreen,font=\large\ttfamily] at ([xshift=2cm,yshift=-4.7cm]current page.north west) {192.168.10.0/24 \textperiodcentered\ km-cluster \textperiodcentered\ 7 nodes \textperiodcentered\ 3 GPUs \textperiodcentered\ RKE2};
 \end{tikzpicture}
 \vspace{7cm}
 
 \noindent\begin{tabularx}{\textwidth}{@{}l X@{}}
 \toprule
-\textbf{Owner} & Kyle Mason (\texttt{machismo0311}) — Greater Cleveland, OH \\
+\textbf{Owner} & Kyle Mason (\texttt{machismo0311}), Greater Cleveland, OH \\
 \textbf{Document} & NetFRAME Network Topology \& Systems Reference \\
-\textbf{Version} & 1.0 \\
-\textbf{Generated} & 2026-07-08 \\
-\textbf{Classification} & Public / Sanitized (service tags \& serials omitted) \\
-\textbf{Method} & Live discovery (nmap · Proxmox API · SSH facts · Headscale · ZFS) reconciled against the Home-Lab vault \\
-\textbf{Scope} & Every host, VLAN, subnet, link, service, pool, and overlay path \\
+\textbf{Version} & 2.0 \\
+\textbf{Generated} & 2026-07-13 (supersedes v1.0, 2026-07-08) \\
+\textbf{Classification} & Public / Sanitized (public IPs, service tags, serials, and secrets omitted) \\
+\textbf{Method} & Live discovery (Proxmox API, guest-agent, \texttt{kubectl}, ZFS, SSH facts) reconciled against the Home-Lab vault \\
+\textbf{Scope} & Every host, VLAN, subnet, WAN, link, service, pool, cluster, and overlay path \\
 \bottomrule
 \end{tabularx}
 
 \vfill
 \begin{center}\small\color{nfslate}
-Single-site production-grade home lab · Proxmox VE 9.2.3 · Juniper-cored VLAN fabric · ZFS + PBS · private GPU LLM platform
+Single-site production-grade home lab \textperiodcentered\ Proxmox VE 9.2.3 \textperiodcentered\ Juniper-cored VLAN fabric \textperiodcentered\ ZFS + PBS \textperiodcentered\ RKE2 Kubernetes \textperiodcentered\ private GPU LLM platform
 \end{center}
 \end{titlepage}
 
@@ -105,48 +110,51 @@ Single-site production-grade home lab · Proxmox VE 9.2.3 · Juniper-cored VLAN 
 
 % ============================ 1. SUMMARY ============================
 \section{Executive Summary}
-\textbf{NetFRAME} is a single-site, 42U home lab built around a \textbf{7-node Proxmox VE 9.2.3 cluster} (\texttt{km-cluster}), a \textbf{Juniper-cored, VLAN-segmented fabric}, and a \textbf{24-bay ZFS storage node} providing NFS and Proxmox Backup Server. It runs reverse-proxied web services with automated TLS, a Prometheus/Grafana/Loki observability stack, drive-health telemetry across \textasciitilde50 disks, a Wazuh SIEM, an internal ACME PKI, a password vault, and a \textbf{GPU-accelerated private LLM platform} (RTX 8000 + dual RTX 6000, \textasciitilde96\,GB VRAM) with a custom OpenAI-compatible router that transparently escalates to the Claude API.
+\textbf{NetFRAME} is a single-site, 42U home lab built around a \textbf{7-node Proxmox VE 9.2.3 cluster} (\texttt{km-cluster}), a \textbf{Juniper-cored, VLAN-segmented fabric}, and a \textbf{24-bay ZFS storage node} providing NFS and Proxmox Backup Server. It runs reverse-proxied web services with automated TLS, a Prometheus / Grafana / Loki observability stack with Discord alerting, drive-health telemetry across roughly 50 disks, a Wazuh SIEM, an internal step-ca PKI, a password vault, a \textbf{3-node HA RKE2 Kubernetes cluster}, and a \textbf{GPU-accelerated private LLM platform} (RTX 8000 plus dual RTX 6000, roughly 96\,GB VRAM) with a custom OpenAI-compatible router that transparently escalates to the Claude API. The site rides \textbf{dual WAN} (ISP primary, FirstNet 5G backup) and \textbf{HA DNS}.
 
 \vspace{2mm}
 \noindent\begin{tabularx}{\textwidth}{@{}Xr@{\hskip 2em}Xr@{}}
 \toprule
-Proxmox nodes (quorate) & 7/7 & ZFS raw / usable & 36.7\,TB / \textasciitilde23\,TB \\
+Proxmox nodes (quorate) & 7/7 & ZFS raw across pools & \textasciitilde95\,TB \\
 Standalone hypervisor & 1 (pve1) & PBS datastore & 24.6\,TB \\
-VMs / LXCs & 2 / 6 & Monitored drives & \textasciitilde50 \\
-Managed switches & 3 & Overlay VPN nodes & 9 \\
-VLANs defined & 7 & Aggregate RAM & \textasciitilde1.5\,TB \\
-Physical GPUs / VRAM & 3 / \textasciitilde96\,GB & UPS (split-bus) & 2 / \textasciitilde2220\,W \\
+Cluster VMs / LXCs & 5 / 7 & Monitored drives & \textasciitilde50 \\
+Managed switches & 3 & Overlay VPN nodes & 6 \\
+VLANs defined & 7 & Aggregate RAM & \textasciitilde1.2\,TB \\
+Physical GPUs / VRAM & 3 / \textasciitilde96\,GB & Kubernetes nodes & 4 (3 CP + 1 agent) \\
+WAN uplinks & 2 (ISP + 5G) & UPS (split-bus) & 2 / \textasciitilde2220\,W \\
 \bottomrule
 \end{tabularx}
 
-\begin{note}[Edge model — deliberate double-NAT]
-A UniFi Dream Router is the WAN edge (\ip{192.168.1.0/24}); \textbf{OPNsense} (VM 100 on \texttt{pve2}) is the LAN router / firewall / DHCP for \ip{192.168.10.0/24} and the inter-VLAN gateway. The lab LAN therefore sits behind its own firewall boundary.
+\begin{note}[Edge model: single-NAT with dual-WAN failover]
+\textbf{OPNsense} (VM 100 on \texttt{pve2}) is the network edge. Its primary WAN sits \emph{directly} on the ISP public assignment (DHCP, a routable \texttt{/19}), so the lab is single-NAT, not double-NAT. A second WAN interface carries a \textbf{FirstNet 5G hotspot} (\ip{192.168.1.0/24}) as an automatic backup uplink via an OPNsense gateway group. OPNsense is also the LAN router / firewall / DHCP for \ip{192.168.10.0/24} and the inter-VLAN gateway. (v1.0 of this document described a UniFi Dream Router double-NAT edge; that was incorrect and is corrected here.)
 \end{note}
 
 % ============================ 2. TOPOLOGY DIAGRAM ============================
 \section{Physical \& Logical Topology}
 \begin{center}
 \begin{tikzpicture}[node distance=8mm and 12mm]
-  \node[net] (wan) {\textbf{WAN / ISP}};
-  \node[net,below=of wan] (udr) {UniFi Dream Router\\WAN edge\\\ip{192.168.1.1}};
-  \node[fw,below=of udr] (opn) {OPNsense · VM100\\\ip{192.168.10.1}\\FW / DHCP / router};
-  \node[net,below=of opn] (ex34) {\textbf{EX3400-48P} core\\\ip{192.168.10.50}\\JunOS 23.4R2·STP root};
+  \node[net] (wan) {\textbf{ISP} (public /19)};
+  \node[wan2,left=14mm of wan] (fn) {FirstNet 5G\\MR7400 hotspot\\\ip{192.168.1.1}};
+  \node[fw,below=of wan] (opn) {OPNsense \textperiodcentered\ VM100\\\ip{192.168.10.1}\\FW / DHCP / router};
+  \node[net,below=of opn] (ex34) {\textbf{EX3400-48P} core\\\ip{192.168.10.50}\\JunOS 23.4R2 \textperiodcentered\ STP root};
 
   \node[net,left=22mm of ex34] (usw) {UniFi USW-24\\Port24 trunk};
   \node[net,left=8mm of usw] (ex23) {EX2300-48P\\lab};
 
   % compute row
-  \node[small,below left=16mm and 26mm of ex34] (pve2) {pve2 · .204\\OPNsense host};
-  \node[small,right=6mm of pve2] (pve3) {pve3 · .201\\6× LXC};
-  \node[small,right=6mm of pve3] (pve4) {pve4 · .202};
-  \node[small,right=6mm of pve4] (pve5) {pve5 · .203};
+  \node[small,below left=16mm and 26mm of ex34] (pve2) {pve2 \textperiodcentered\ .204\\OPNsense host};
+  \node[small,right=6mm of pve2] (pve3) {pve3 \textperiodcentered\ .201\\7 LXC + cp1};
+  \node[small,right=6mm of pve3] (pve4) {pve4 \textperiodcentered\ .202\\cp2};
+  \node[small,right=6mm of pve4] (pve5) {pve5 \textperiodcentered\ .203\\cp3 + DNS2};
 
-  \node[node730,below=16mm of pve3] (quark) {QuarkyLab · .179\\RTX 8000 48GB};
-  \node[node730,right=8mm of quark] (jarvis) {Jarvis · .31\\2× RTX 6000};
-  \node[stor,left=8mm of quark] (randy) {Randy · .187\\PBS · ZFS · 10G};
-  \node[small,left=8mm of randy] (pve1) {pve1 · .193\\Mac Mini\\Pi-hole .177};
+  \node[node730,below=16mm of pve3] (quark) {QuarkyLab \textperiodcentered\ .179\\RTX 8000 48GB};
+  \node[node730,right=8mm of quark] (jarvis) {Jarvis \textperiodcentered\ .31\\2\texttimes\ RTX 6000};
+  \node[stor,left=8mm of quark] (randy) {Randy \textperiodcentered\ .187\\PBS \textperiodcentered\ ZFS \textperiodcentered\ 10G};
+  \node[small,left=8mm of randy] (pve1) {pve1 \textperiodcentered\ .193\\Mac Mini\\Pi-hole .177};
 
-  \draw[lnk] (wan)--(udr); \draw[lnk] (udr)--(opn); \draw[lnk] (opn)--(ex34);
+  \draw[lnk] (wan)--(opn);
+  \draw[lnkbak] (fn)|-(opn.west);
+  \draw[lnk] (opn)--(ex34);
   \draw[lnk] (ex34)--(usw); \draw[lnk] (usw)--(ex23);
   \draw[lnk] (ex34)-- (pve2.north); \draw[lnk] (ex34)--(pve3.north);
   \draw[lnk] (ex34)--(pve4.north); \draw[lnk] (ex34)--(pve5.north);
@@ -155,29 +163,29 @@ A UniFi Dream Router is the WAN edge (\ip{192.168.1.0/24}); \textbf{OPNsense} (V
   \draw[lnk] (usw)|-(pve1.north);
 \end{tikzpicture}
 \end{center}
-\begin{center}\footnotesize Thick green = 10\,GbE (Randy \ip{xe-0/2/0}; Jarvis \ip{xe-0/2/2}). All other links 1\,GbE. \end{center}
+\begin{center}\footnotesize Solid green = 10\,GbE (Randy \ip{xe-0/2/0}; Jarvis \ip{xe-0/2/2}). Dashed orange = 5G backup WAN into OPNsense \texttt{nic2}. All other links 1\,GbE. \end{center}
 
 % ============================ 3. L1 PHYSICAL ============================
-\section{Layer 1 — Physical}
-\subsection{Rack elevation (NetFRAME CS9000, 42U — rear panel removed for R730 depth)}
+\section{Layer 1: Physical}
+\subsection{Rack elevation (NetFRAME CS9000, 42U, rear panel removed for R730 depth)}
 \begin{center}
 \begin{tikzpicture}[x=1cm,y=0.52cm]
   \def\w{9}
   \foreach \y/\c/\lab in {
     20/nfgrey2/{Patch Panels (U41--42)},
-    18.5/nfblue!35/{EX3400-48P core -- U40},
-    17.4/nfslate!25/{UniFi USW-24 -- U39},
-    16.3/nfslate!25/{EX2300-48P -- U38},
-    14.7/nfblue!25/{EliteDesk G4 SFF x2 (pve2, pve3) -- U34--36},
-    13.2/nfblue!25/{EliteDesk G3 Mini x2 (pve4, pve5) -- U31--33},
-    12/nfblue!15/{Mac mini + RPi4 (pve1) -- U30},
-    9.5/nfred!30/{Dell R730 QuarkyLab -- RTX 8000 -- U18--20},
-    8/nfred!30/{Dell R730 Jarvis -- 2x RTX 6000 -- U15--16},
-    6.8/nfamber!30/{SuperMicro Randy CSE-219U -- U13--14},
-    5/nfamber!20/{NetApp DS4246 24-bay JBOD -- U8--12},
-    3.3/nfgrey2/{Furman RP-8 conditioner -- U6},
-    2.2/nfgreen!20/{Tripp Lite 1500VA (UPS B) -- U4--5},
-    0.6/nfgreen!30/{Middle Atlantic 2200R (UPS A) -- U1--2}}
+    18.5/nfblue!35/{EX3400-48P core \textperiodcentered\ U40},
+    17.4/nfslate!25/{UniFi USW-24 \textperiodcentered\ U39},
+    16.3/nfslate!25/{EX2300-48P \textperiodcentered\ U38},
+    14.7/nfblue!25/{EliteDesk G4 SFF x2 (pve2, pve3) \textperiodcentered\ U34--36},
+    13.2/nfblue!25/{EliteDesk G3 Mini x2 (pve4, pve5) \textperiodcentered\ U31--33},
+    12/nfblue!15/{Mac mini + RPi4 (pve1) \textperiodcentered\ U30},
+    9.5/nfred!30/{Dell R730 QuarkyLab \textperiodcentered\ RTX 8000 \textperiodcentered\ U18--20},
+    8/nfred!30/{Dell R730 Jarvis \textperiodcentered\ 2x RTX 6000 \textperiodcentered\ U15--16},
+    6.8/nfamber!30/{SuperMicro Randy CSE-219U \textperiodcentered\ U13--14},
+    5/nfamber!20/{NetApp DS4246 24-bay JBOD \textperiodcentered\ U8--12},
+    3.3/nfgrey2/{Furman RP-8 conditioner \textperiodcentered\ U6},
+    2.2/nfgreen!20/{Tripp Lite 1500VA (UPS B) \textperiodcentered\ U4--5},
+    0.6/nfgreen!30/{Middle Atlantic 2200R (UPS A) \textperiodcentered\ U1--2}}
     {\node[draw=nfslate,fill=\c,minimum width=\w cm,minimum height=0.9cm,font=\scriptsize,anchor=west] at (0,\y) {\lab};}
   \draw[nfslate,thick] (-0.15,-0.1) rectangle (\w+0.15,21);
 \end{tikzpicture}
@@ -185,49 +193,50 @@ A UniFi Dream Router is the WAN edge (\ip{192.168.1.0/24}); \textbf{OPNsense} (V
 
 \subsection{Key physical links}
 \begin{center}\footnotesize
-\begin{tabularx}{\textwidth}{@{}l l l l X@{}}
+\begin{tabularx}{\textwidth}{@{}l l l c X@{}}
 \toprule
 From & Port & To & Speed & Notes \\ \midrule
-EX3400 & \texttt{ge-0/0/46} & UniFi USW-24 P24 & 1G & 802.1Q trunk (native 1 + tagged 20/30/40/50/60/70) \\
+EX3400 & \texttt{ge-0/0/46} & UniFi USW-24 P24 & 1G & 802.1Q trunk, native 1 + tagged 20/30/40/50/60/70 \\
 EX3400 & \texttt{ge-0/0/45} & EX2300 & 1G & Trunk, all VLANs \\
-EX3400 & \texttt{xe-0/2/0} & Randy nic3 (Mellanox) & \textbf{10G} & Storage / NFS data path \\
-EX3400 & \texttt{xe-0/2/2} & Jarvis enp132s0 (ConnectX) & \textbf{10G} & Access VLAN 30 \\
+EX3400 & \texttt{xe-0/2/0} & Randy nic3 (Mellanox) & \textbf{10G} & Storage / NFS / PBS data path \\
+EX3400 & \texttt{xe-0/2/2} & Jarvis ConnectX & \textbf{10G} & Access VLAN 30 \\
 EX3400 & \texttt{ge-0/0/24} & QuarkyLab nic2 & 1G & Trunk native 1 + tagged 30 \\
-EX3400 & \texttt{ge-0/0/22} & Jarvis nic2 & 1G & Native VLAN 1 (mgmt/corosync) \\
-EX3400 & \texttt{ge-0/0/30·32·44} & iDRAC/IPMI OOB & 1G & Tagged VLAN 20 only \\
-EX3400 & \texttt{xe-0/2/3} & UniFi SFP2 DAC & --- & \textbf{DOWN} — 10G/1G EEPROM mismatch \\
+EX3400 & \texttt{ge-0/0/22} & Jarvis nic2 & 1G & Native VLAN 1 (mgmt / corosync) \\
+EX3400 & \texttt{ge-0/0/30,32,44} & iDRAC / IPMI OOB & 1G & Tagged VLAN 20 only \\
+pve2 & \texttt{nic0} onboard & ISP handoff & 1G & Primary WAN, vtnet0, public /19 \\
+pve2 & \texttt{nic2} (I350) & MR7400 5G hotspot & 2.5G & Backup WAN2, vtnet2, direct cable \\
+EX3400 & \texttt{xe-0/2/3} & UniFi SFP2 DAC & -- & \textbf{DOWN}, 10G/1G EEPROM mismatch \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-\subsection{Power — split-bus one-line}
+\subsection{Power: split-bus one-line}
 \begin{center}
 \begin{tikzpicture}[node distance=6mm and 14mm]
   \node[net] (wall) {Wall circuit};
   \node[stor,right=of wall] (furman) {Furman RP-8\\conditioner};
-  \node[fw,above right=4mm and 16mm of furman] (upsb) {UPS B · Tripp Lite\\1500VA/900W};
-  \node[fw,below right=4mm and 16mm of furman] (upsa) {UPS A · Mid-Atlantic\\2200VA/1320W};
-  \node[dev,right=of upsb,fill=nfblue!12] (loadb) {Switches · EliteDesks\\Mac mini · patch};
-  \node[node730,right=of upsa] (loada) {R730 ×2 · Randy\\DS4246 (ML bus)};
+  \node[fw,above right=4mm and 16mm of furman] (upsb) {UPS B \textperiodcentered\ Tripp Lite\\1500VA/900W};
+  \node[fw,below right=4mm and 16mm of furman] (upsa) {UPS A \textperiodcentered\ Mid-Atlantic\\2200VA/1320W};
+  \node[dev,right=of upsb,fill=nfblue!12] (loadb) {Switches \textperiodcentered\ EliteDesks\\Mac mini \textperiodcentered\ patch};
+  \node[node730,right=of upsa] (loada) {R730 \texttimes2 \textperiodcentered\ Randy\\DS4246 (ML bus)};
   \draw[lnk](wall)--(furman); \draw[lnk](furman)--(upsb);\draw[lnk](furman)--(upsa);
   \draw[lnk](upsb)--(loadb);\draw[lnk](upsa)--(loada);
 \end{tikzpicture}
 \end{center}
 \begin{finding}[Capacity watch]
-UPS A carries both GPU R730s. RTX 8000 alone can draw \textasciitilde260\,W under CUDA; with Jarvis's 2× RTX 6000 online, full ML load approaches the 1320\,W continuous rating. Both UPS units are exposed via \textbf{NUT 2.8.1} on \texttt{pve3:3493} (UPS A over SNMP card \ip{192.168.10.180}, UPS B over USB).
+UPS A carries both GPU R730s. The RTX 8000 alone can draw roughly 260\,W under CUDA; with Jarvis's 2\texttimes\ RTX 6000 online, full ML load approaches the 1320\,W continuous rating. Both UPS units are exposed via \textbf{NUT 2.8.1} on \texttt{pve3:3493} (UPS A over SNMP card \ip{192.168.10.180}, UPS B over USB).
 \end{finding}
 
 % ============================ 4. L2 ============================
-\section{Layer 2 — Switching \& VLANs}
+\section{Layer 2: Switching \& VLANs}
 \subsection{Switch fabric}
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l l X@{}}
 \toprule
 Device & Mgmt IP & OS & Role \\ \midrule
-EX3400-48P & \ip{192.168.10.50} & JunOS 23.4R2-S7.4 & \textbf{Core} — 48×1G PoE+, 4×10G SFP+, 2×40G QSFP+, dual PSU, STP root (prio 4096) \\
+EX3400-48P & \ip{192.168.10.50} & JunOS 23.4R2-S7.4 & \textbf{Core}: 48\texttimes1G PoE+, 4\texttimes10G SFP+, 2\texttimes40G QSFP+, dual PSU, STP root (prio 4096) \\
 UniFi USW-24-250W & UniFi-managed & UniFi & Access / AP aggregation; Port 24 trunk \\
 EX2300-48P & via trunk & JunOS & Secondary / lab isolation \\
-UniFi Dream Router & \ip{192.168.1.1} & UniFi & WAN edge (upstream of OPNsense) \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -240,54 +249,70 @@ UniFi Dream Router & \ip{192.168.1.1} & UniFi & WAN edge (upstream of OPNsense) 
    \node[right=2mm of v\i,font=\footnotesize] {\texttt{\net} \quad \lab};}
 \end{tikzpicture}
 \end{center}
-Gateways are OPNsense SVIs (\ip{192.168.X.1}); EX3400 carries the L3 mgmt SVI on \texttt{irb.10}.
+Gateways are OPNsense SVIs (\ip{192.168.X.1}); the EX3400 carries the L3 mgmt SVI on \texttt{irb.10}.
 \begin{note}[JunOS ELS gotcha (live)]
 On this EX3400, \texttt{native-vlan-id} must be set at the \textbf{physical-interface} level, \emph{not} under \texttt{unit 0 family ethernet-switching}. Misplacement previously caused a trunk outage. The tagged trunk to UniFi is \texttt{ge-0/0/46}.
 \end{note}
 
 % ============================ 5. L3 ============================
-\section{Layer 3 — Addressing, Routing, DNS}
+\section{Layer 3: Addressing, Routing, DNS}
+\subsection{WAN uplinks}
+\begin{center}\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule Uplink & OPNsense iface & Addressing & Role \\ \midrule
+WAN (primary) & vtnet0 (nic0) & ISP DHCP, public /19 & Default route; direct ISP handoff (single-NAT) \\
+WAN2 (backup) & vtnet2 (nic2) & \ip{192.168.1.0/24} DHCP & FirstNet 5G MR7400 hotspot; gateway-group failover \\
+\bottomrule
+\end{tabularx}
+\end{center}
+The public WAN address is withheld from this public edition. WAN2 failover is monitor-driven (dpinger against a far target), with LAN and per-VLAN internet rules pointed at the gateway group.
+
 \subsection{Static IP registry (VLAN 1)}
 \begin{center}\footnotesize
-\begin{longtable}{@{}l l p{11cm}@{}}
+\begin{longtable}{@{}l l p{9.3cm}@{}}
 \toprule IP & Host & Role \\ \midrule \endhead
-\ip{.1} & OPNsense & LAN gateway / FW / DHCP (VM100, pve2) \\
+\ip{.1} & OPNsense & LAN gateway / FW / DHCP / dual-WAN (VM100, pve2) \\
 \ip{.2} & UniFi USW-24 & Access switch mgmt \\
 \ip{.31} & Jarvis & R730 LLM node \\
 \ip{.50} & EX3400 & Core switch \\
+\ip{.51--.53} & rke2-cp1/2/3 & RKE2 control-plane VMs (201/202/203) \\
+\ip{.54} & RKE2 API VIP & kube-vip virtual IP (:6443) \\
+\ip{.71--.75} & MetalLB pool & Kubernetes LoadBalancer range (registry on \ip{.72}) \\
 \ip{.100/.199} & Ares & Admin workstation (wired / WiFi) \\
 \ip{.148} & Homepage & LXC 106 \\
-\ip{.177} & Pi-hole & LXC 103 on pve1 (Mac Mini) \\
+\ip{.177} & Pi-hole (primary) & LXC 103 on pve1 (Mac Mini) \\
+\ip{.178} & Pi-hole (secondary) & CT 108 on pve5 (DNS HA mirror) \\
 \ip{.179} & QuarkyLab & R730 ML node \\
 \ip{.180} & UPS A SNMP & Mid-Atlantic OL2200R card \\
 \ip{.181} & Nginx Proxy Mgr & LXC 101 \\
 \ip{.182} & Vaultwarden & LXC 102 \\
-\ip{.183} & Grafana/Prom/Loki/Influx/Scrutiny & LXC 103 \\
+\ip{.183} & Grafana / Prom / Loki / Influx / Scrutiny & LXC 103 \\
 \ip{.184} & Wazuh SIEM & VM 104 (QuarkyLab) \\
 \ip{.185} & Open WebUI & LXC 107 \\
 \ip{.186} & Headscale & LXC 105 \\
-\ip{.187} & Randy & PBS / ZFS / Jellyfin \\
+\ip{.187} & Randy & PBS / ZFS / Jellyfin / RKE2 agent \\
 \ip{.193} & pve1 & Mac Mini standalone (Pi-hole host) \\
-\ip{.201--.204} & pve3/pve4/pve5/pve2 & Cluster nodes \\
+\ip{.201--.204} & pve3 / pve4 / pve5 / pve2 & Cluster nodes \\
 \bottomrule
 \end{longtable}
 \end{center}
 
-\subsection{Routing — per-node default gateway (live)}
+\subsection{Routing: per-node default gateway (live 2026-07-13)}
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l l X@{}}
 \toprule Node & Default GW & Iface & Note \\ \midrule
 pve2 & \ip{192.168.10.1} & vmbr1 & correct (OPNsense) \\
-pve3/4/5 & \ip{192.168.1.1} & vmbr0 & \textbf{onlink to UDR — off-subnet} (finding F-1) \\
+pve3 / 4 / 5 & \ip{192.168.10.1} & vmbr0 & corrected 2026-07-13 (was \ip{192.168.1.1}, F-1 resolved) \\
 QuarkyLab & \ip{192.168.30.1} & vmbr0.30 & VLAN 30 egress \\
 Jarvis & \ip{192.168.30.1} & vmbr1 & VLAN 30 egress (10G) \\
 Randy & \ip{192.168.30.1} & vmbr0.30 & VLAN 30 egress \\
+rke2-cp1/2/3 & \ip{192.168.10.1} & ens18 & verified via hostNetwork pods \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-\subsection{DNS \& OOB / Servers VLANs}
-Pi-hole (\ip{192.168.10.177}, FTL v6, LXC on pve1) is the LAN resolver + ad/tracker sink and serves \texttt{*.netframe.local} (e.g.\ \texttt{llm.}/\texttt{chat.}\ $\rightarrow$ NPM \ip{.181}). Public \texttt{*.kylemason.org} resolves via Cloudflare (grey-cloud) to NPM.
+\subsection{DNS (HA) \& OOB / Servers VLANs}
+DNS is highly available. The primary Pi-hole (\ip{192.168.10.177}, LXC on pve1) and a secondary (\ip{192.168.10.178}, CT 108 on pve5) both resolve \texttt{*.netframe.local} (e.g.\ \texttt{llm.} / \texttt{chat.}\ $\rightarrow$ NPM \ip{.181}) and sink ads/trackers. OPNsense DHCP hands out \emph{both} resolvers on all 7 VLAN scopes, so clients fail over automatically; the secondary is a nebula-sync full mirror of the primary (gravity, adlists, local DNS) refreshed every 15 minutes. Public \texttt{*.kylemason.org} resolves via Cloudflare (grey-cloud) to NPM.
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l X@{}}
 \toprule IP & Host & Note \\ \midrule
@@ -298,77 +323,102 @@ Pi-hole (\ip{192.168.10.177}, FTL v6, LXC on pve1) is the LAN resolver + ad/trac
 \end{center}
 
 % ============================ 6. OVERLAY ============================
-\section{Overlay — Headscale Mesh VPN}
-Self-hosted Headscale v0.29.1 (LXC 105, \ip{192.168.10.186:8080}), tailnet \ip{100.64.0.0/10}.
+\section{Overlay: Headscale Mesh VPN}
+Self-hosted Headscale v0.29.1 (LXC 105, \ip{192.168.10.186:8080}), tailnet \ip{100.64.0.0/10}, replacing the Tailscale SaaS control plane.
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l l l@{}}
-\toprule Tailnet IP & Node & State & \phantom{x} \\ \midrule
-\ip{100.64.0.1} Ares (offline) & \ip{100.64.0.2} Randy & \ip{100.64.0.3} pve5 & \ip{100.64.0.4} pve4 \\
-\ip{100.64.0.5} pve3 & \ip{100.64.0.6} Jarvis & \ip{100.64.0.7} QuarkyLab & \ip{100.64.0.8} pve1 \\
-\ip{100.64.0.9} the researcher-Mac & \multicolumn{3}{l}{tag:ssh; all nodes online except laptops} \\
+\toprule Tailnet IP & Node & Tailnet IP & Node \\ \midrule
+\ip{100.64.0.1} & Ares & \ip{100.64.0.2} & Randy \\
+\ip{100.64.0.3} & pve5 & \ip{100.64.0.4} & pve4 \\
+\ip{100.64.0.5} & pve3 & \ip{100.64.0.6} & Jarvis \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
 % ============================ 7. COMPUTE ============================
-\section{Compute \& Virtualization — km-cluster}
+\section{Compute \& Virtualization: km-cluster}
 \subsection{Node hardware inventory}
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l l l l X@{}}
 \toprule Node & Chassis & CPU & RAM & GPU & Kernel \\ \midrule
-pve2 & EliteDesk 800 G4 & i7-8700 & 31G & --- & 7.0.12-pve \\
-pve3 & EliteDesk 800 G4 & i7-8700 & 46G & --- & 7.0.12-pve \\
-pve4 & EliteDesk 800 G3 Mini & i5-7500T & 31G & --- & 7.0.12-pve \\
-pve5 & EliteDesk 800 G3 Mini & i5-7500T & 31G & --- & 7.0.12-pve \\
-QuarkyLab & Dell R730 & 2× E5-2699v4 & 503G & RTX 8000 48G & \textbf{6.14.11-pve} \\
-Jarvis & Dell R730 & 2× E5-2687Wv4 & 377G & 2× RTX 6000 & \textbf{6.14.11-pve} \\
-Randy & SuperMicro CSE-219U & 2× E5-2690v4 & 125G & RX 580 & 7.0.12-pve \\
-pve1 & Mac Mini (2011) & --- & --- & --- & standalone \\
+pve2 & EliteDesk 800 G4 & i7-8700 & 32G & -- & 7.0.12-pve \\
+pve3 & EliteDesk 800 G4 & i7-8700 & 48G & -- & 7.0.12-pve \\
+pve4 & EliteDesk 800 G3 Mini & i5-7500T & 32G & -- & 7.0.12-pve \\
+pve5 & EliteDesk 800 G3 Mini & i5-7500T & 32G & -- & 7.0.12-pve \\
+QuarkyLab & Dell R730 & 2\texttimes\ E5-2699v4 & 512G & RTX 8000 48G & \textbf{6.14.11-pve} \\
+Jarvis & Dell R730 & 2\texttimes\ E5-2687Wv4 & 384G & 2\texttimes\ RTX 6000 & \textbf{6.14.11-pve} \\
+Randy & SuperMicro CSE-219U & 2\texttimes\ E5-2690v3 & 128G & RX 580 & 7.0.12-pve \\
+pve1 & Mac Mini (standalone) & -- & -- & -- & Pi-hole host \\
 \bottomrule
 \end{tabularx}
 \end{center}
-\begin{finding}[Kernel pinning — do not upgrade]
-QuarkyLab and Jarvis are pinned to \textbf{6.14.11-9-pve} via \texttt{GRUB\_DEFAULT}; 6.17+ breaks the NVIDIA 550.163.01 stack. Never run kernel upgrades or change GRUB default on either GPU node.
+\begin{finding}[Kernel pinning: do not upgrade]
+QuarkyLab and Jarvis are pinned to \textbf{6.14.11-9-pve} via \texttt{GRUB\_DEFAULT}; 6.17+ breaks the NVIDIA 550.163.01 stack. Never run kernel upgrades or change the GRUB default on either GPU node.
 \end{finding}
 
 \subsection{VM / LXC inventory}
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l l l l X@{}}
 \toprule ID & Name & Host & Res & IP & Payload \\ \midrule
-VM100 & OPNsense & pve2 & 4G & \ip{.1} & LAN router/FW/DHCP v25.7 \\
-VM104 & Wazuh & QuarkyLab & 16G & \ip{.184} & SIEM (no guest-agent — see §Security) \\
+VM100 & OPNsense & pve2 & 4G & \ip{.1} & LAN router / FW / DHCP / dual-WAN v25.7 \\
+VM104 & Wazuh & QuarkyLab & 16G & \ip{.184} & SIEM (guest-agent installed) \\
+VM201 & rke2-cp1 & pve3 & -- & \ip{.51} & RKE2 control plane / etcd \\
+VM202 & rke2-cp2 & pve4 & -- & \ip{.52} & RKE2 control plane / etcd \\
+VM203 & rke2-cp3 & pve5 & -- & \ip{.53} & RKE2 control plane / etcd \\
 101 & nginx-proxy & pve3 & 512M/8G & \ip{.181} & Nginx Proxy Manager \\
 102 & vaultwarden & pve3 & 512M/10G & \ip{.182} & Vaultwarden \\
-103 & grafana & pve3 & 2G/20G & \ip{.183} & Grafana+Prom+Loki+Influx+Scrutiny \\
+103 & grafana & pve3 & 2G/20G & \ip{.183} & Grafana + Prom + Loki + Influx + Scrutiny \\
 105 & headscale & pve3 & 512M/4G & \ip{.186} & Mesh VPN control \\
 106 & homepage & pve3 & 512M/8G & \ip{.148} & Homepage + PeaNUT \\
 107 & openwebui & pve3 & 4G/16G & \ip{.185} & Open WebUI \\
+108 & netframe-pihole2 & pve5 & -- & \ip{.178} & Secondary Pi-hole (DNS HA) \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-% ============================ 8. STORAGE ============================
-\section{Storage Architecture}
-\subsection{Randy ZFS \texttt{datastore} — 4× RAIDZ2 (36.7\,TB raw / \textasciitilde23\,TB usable)}
+% ============================ 8. KUBERNETES ============================
+\section{Kubernetes: RKE2 Platform}
+A 3-node HA RKE2 cluster (Phases 1--7 complete, 2026-07-10/11) overlays the Proxmox estate without disturbing existing workloads.
 \begin{center}
-\begin{tikzpicture}[node distance=4mm and 8mm]
-  \node[stor,minimum width=30mm] (pool) {\textbf{datastore}\\pool · ONLINE · 0 err};
-  \node[dev,below left=10mm and 10mm of pool,fill=nfamber!18] (v0) {raidz2-0\\6× Toshiba 1.6T};
-  \node[dev,right=of v0,fill=nfamber!18] (v1) {raidz2-1\\6× Toshiba 1.6T};
-  \node[dev,right=of v1,fill=nfamber!18] (v2) {raidz2-2\\6× Toshiba 1.6T};
-  \node[dev,right=of v2,fill=nfblue!14] (v3) {raidz2-3\\4× Seagate 1.8T};
-  \draw[lnk](pool)--(v0);\draw[lnk](pool)--(v1);\draw[lnk](pool)--(v2);\draw[lnk](pool)--(v3);
+\begin{tikzpicture}[node distance=7mm and 12mm]
+  \node[k8s] (vip) {API VIP \ip{.54:6443}\\kube-vip};
+  \node[k8s,below left=12mm and 6mm of vip] (cp1) {rke2-cp1\\\ip{.51} \textperiodcentered\ pve3};
+  \node[k8s,below=12mm of vip] (cp2) {rke2-cp2\\\ip{.52} \textperiodcentered\ pve4};
+  \node[k8s,below right=12mm and 6mm of vip] (cp3) {rke2-cp3\\\ip{.53} \textperiodcentered\ pve5};
+  \node[stor,right=16mm of vip] (agent) {Randy agent\\\ip{.187} \textperiodcentered\ bare-metal\\tainted: storage};
+  \draw[lnk](vip)--(cp1);\draw[lnk](vip)--(cp2);\draw[lnk](vip)--(cp3);
+  \draw[lnk,dashed](agent)--(vip) node[midway,above,font=\scriptsize] {:9345};
 \end{tikzpicture}
 \end{center}
-Boot: RAID-1 mirror (2× ST200FM0053 SAS) on \textbf{AVAGO 3108 MegaRAID}; data drives on a \textbf{separate LSI 9207-8e in IT mode}. PBS v4.2.2 (\ip{192.168.10.187:8007}) exposes a 24.6\,TB datastore.
-\begin{wow}[Live finding — DS4246 dual-path SAS]
-The NetApp DS4246 shelf's 4\,TB drives enumerate as \textbf{duplicate serial pairs} — dual-path SAS multipath through the shelf's two I/O modules presenting each disk on two paths. Configure \texttt{multipath}/dm before pooling. (This also flags drift: docs list 2\,TB drives; live shelf is 4\,TB-class, buildout in progress.)
+\begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+  \item \textbf{Control plane:} 3 VMs (201/202/203 on pve3/4/5), etcd quorum (2 of 3), Cilium CNI, kube-vip API VIP \ip{192.168.10.54:6443}. CP nodes are schedulable (no dedicated workers, to avoid GPU-server contention).
+  \item \textbf{Storage worker:} Randy joined as a bare-metal agent on the PVE storage host, tainted \texttt{role=\allowbreak storage:\allowbreak NoSchedule} with kubelet reservations so ZFS/PBS are not cgroup-throttled. Agents register on the supervisor port \texttt{:9345}, not the apiserver.
+  \item \textbf{Networking / storage:} MetalLB pool \ip{.71--.75}; Randy \texttt{datastore/k8s} NFS is the default StorageClass (\texttt{nfs-client}).
+  \item \textbf{Registry:} private image registry on Randy local-ZFS (\texttt{registry.netframe.local}, MetalLB \ip{.72}), step-ca TLS with 8-hour auto-renew, trusted by every node's containerd. GPU scheduling is deferred (SLURM and Ollama own the cards).
+\end{itemize}
+
+% ============================ 9. STORAGE ============================
+\section{Storage Architecture}
+\subsection{Randy: two ZFS pools}
+\begin{center}\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l l l X@{}}
+\toprule Pool & Layout & Raw & Usable & Notes \\ \midrule
+\texttt{datastore} & 4\texttimes\ RAIDZ2 (3\texttimes\ 6-wide Toshiba + 1\texttimes\ 4-wide Seagate) & 36.7\,TB & \textasciitilde23\,TB & PBS + primary NFS; ONLINE \\
+\texttt{bulk} & 2\texttimes\ 8-wide RAIDZ2 (DS4246, 16\texttimes\ 4TB SAS) & 58.2\,TB & \textasciitilde41.3\,TiB & Built 2026-07-08, reboot-verified; ONLINE \\
+\bottomrule
+\end{tabularx}
+\end{center}
+Boot: RAID-1 mirror (2\texttimes\ ST200FM0053 SAS) on \textbf{AVAGO 3108 MegaRAID}. \texttt{datastore} data drives hang off a \textbf{separate LSI 9207-8e in IT mode}; the DS4246 shelf reaches Randy through a \textbf{second LSI 9207-8e (IT mode) with dm-multipath} across the shelf's two I/O modules. PBS v4.2.2 (\ip{192.168.10.187:8007}) exposes a 24.6\,TB datastore.
+\begin{wow}[DS4246 buildout complete]
+The NetApp DS4246 shelf's dual-path SAS presented each disk on two paths (duplicate serial pairs). Multipath was configured before pooling, and pool \texttt{bulk} (2\texttimes\ 8-wide RAIDZ2, \textasciitilde41.3\,TiB usable) is now built and auto-imports cleanly across reboots. (v1.0 listed this as ``buildout in progress''.)
 \end{wow}
+\subsection{Jarvis: local ZFS}
+On the onboard LSI SAS-3 3008 (HBA330, IT mode): \texttt{tank} = raidz1 5\texttimes\ 2TB (\textbf{7.2T}, model library and bulk), \texttt{scratch} = 1\texttimes\ 200GB SSD (fast scratch). Ollama's \texttt{OLLAMA\_MODELS} lives on \texttt{tank/models}.
 \begin{finding}[PBS storage pin (F-4, resolved)]
-The VLAN-30 migration silently repointed PBS storage to \ip{.30.187} and stalled VLAN-1 node backups from 2026-07-02; fixed 2026-07-06 back to \ip{192.168.10.187}. \textbf{Keep PBS storage on \ip{.10.187}.}
+The VLAN-30 migration silently repointed PBS storage to \ip{.30.187} and stalled VLAN-1 node backups from 2026-07-02; fixed 2026-07-06 back to \ip{192.168.10.187}. A 10G-only \texttt{randy-pbs-10g} target on \ip{.30.187} serves the GPU nodes. \textbf{Keep the general PBS storage on \ip{.10.187}.}
 \end{finding}
 
-% ============================ 9. SERVICES ============================
+% ============================ 10. SERVICES ============================
 \section{Services \& Application Layer}
 \subsection{Reverse proxy \& published services (NPM, CT101)}
 \begin{center}\footnotesize
@@ -378,21 +428,25 @@ vault.kylemason.org & \ip{.182} & CF DNS-01 & Vaultwarden \\
 grafana.kylemason.org & \ip{.183:3000} & CF DNS-01 & Grafana \\
 homepage.kylemason.org & \ip{.148:3000} & CF DNS-01 & Basic (kyle) \\
 wazuh.kylemason.org & \ip{.184:443} & CF DNS-01 & Wazuh \\
+health.kylemason.org & NetFRAME monitor & CF DNS-01 & Basic (auth) \\
 chat.netframe.local & Open WebUI \ip{.185} & internal & admin \\
 llm.netframe.local & Jarvis \ip{.31:8000} & HTTP & Pi-hole-scoped \\
 \bottomrule
 \end{tabularx}
 \end{center}
 Observability: Prometheus (\ip{.183:9090}, localhost-only, 8 exporters), Grafana v13, Loki, InfluxDB, Scrutiny (\textasciitilde50 drives, collectors on Randy/QuarkyLab/Jarvis), NUT (\ip{pve3:3493}), CrowdSec IPS, step-ca PKI (\ip{pve2:443}).
+\begin{note}[Alerting: Grafana to Discord (no Alertmanager)]
+Grafana Unified Alerting posts to two Discord channels (infra + UPS). Rules cover instance-down, both Pi-holes, ZFS pool degraded, GPU temp/memory, disk/memory pressure, registry cert expiry, a backup-verify dead-man's switch, and \textbf{cluster quorum} (\texttt{node\_pve\_cluster\_quorate} textfile collector on all 7 nodes). Config-as-code lives in a private repo; a nightly Ansible \texttt{backup\_verify} role checks per-guest PBS coverage.
+\end{note}
 
-% ============================ 10. LLM ============================
+% ============================ 11. LLM ============================
 \section{AI / LLM Platform}
 \begin{center}
 \begin{tikzpicture}[node distance=7mm and 16mm]
-  \node[small] (ow) {Open WebUI\\CT107 · chat.netframe.local};
-  \node[fw,below=of ow] (router) {llm\_router · Jarvis :8000\\FastAPI (OpenAI-compatible)};
-  \node[node730,below left=10mm and 6mm of router] (ollama) {Ollama :11434\\2× RTX 6000\\qwen2.5:72b};
-  \node[stor,below=10mm of router] (rag) {RAG index\\vault · 418 chunks\\nomic-embed-text};
+  \node[small] (ow) {Open WebUI\\CT107 \textperiodcentered\ chat.netframe.local};
+  \node[fw,below=of ow] (router) {llm\_router \textperiodcentered\ Jarvis :8000\\FastAPI (OpenAI-compatible)};
+  \node[node730,below left=10mm and 6mm of router] (ollama) {Ollama :11434\\2\texttimes\ RTX 6000\\qwen2.5:72b};
+  \node[stor,below=10mm of router] (rag) {RAG index\\vault \textperiodcentered\ 418 chunks\\nomic-embed-text};
   \node[net,below right=10mm and 6mm of router] (claude) {Claude API\\claude-opus-4-8\\escalation};
   \draw[lnk](ow)--(router);
   \draw[lnk](router)--(ollama) node[midway,left,font=\scriptsize] {local};
@@ -401,41 +455,43 @@ Observability: Prometheus (\ip{.183:9090}, localhost-only, 8 exporters), Grafana
 \end{tikzpicture}
 \end{center}
 \begin{wow}[On-prem, cited answers over your own notes]
-The \texttt{"rag"} model grounds answers on the Home-Lab Obsidian vault (418 chunks, cosine index) with \texttt{[source]} citations — served entirely on GPU on Jarvis, with a one-flag escalation to Claude Opus for hard queries. QuarkyLab's RTX 8000 48\,GB drives a parallel DUNE research RAG agent (the researcher).
+The \texttt{"rag"} model grounds answers on the Home-Lab Obsidian vault (418 chunks, cosine index) with \texttt{[source]} citations, served entirely on GPU on Jarvis, with a one-flag escalation to Claude Opus for hard queries. QuarkyLab's RTX 8000 48\,GB drives a parallel DUNE research RAG agent. Ollama model weights live on the \texttt{tank/models} ZFS dataset.
 \end{wow}
 
-% ============================ 11. SECURITY ============================
+% ============================ 12. SECURITY ============================
 \section{Security Architecture}
 \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
   \item \textbf{OOB isolation (Phase 1):} all three BMCs moved off flat VLAN 1 onto tagged VLAN 20; default credentials rotated to Vaultwarden; reachable only from Ares \texttt{enp0s31f6.20}.
-  \item \textbf{Servers VLAN 30:} GPU/storage nodes dual-homed (NFS/PBS/egress on 30; corosync/mgmt on 1).
+  \item \textbf{Services segmentation (Phases 2--3):} Vaultwarden and Open WebUI on VLAN 30; a VLAN30-to-VLAN1 management clamp; DNS pass-rules verified pass-before-block.
+  \item \textbf{Servers VLAN 30:} GPU / storage nodes dual-homed (NFS/PBS/egress on 30; corosync/mgmt on 1).
   \item \textbf{Ingress chokepoint:} all web traffic via NPM; admin planes localhost- or Ares-bound (pentest F-03/F-05, verified).
+  \item \textbf{Resilience:} OPNsense serial-console DR verified, nightly age-encrypted \texttt{config.xml} backup to a private repo; guest-agent graceful shutdown on OPNsense and Wazuh; CI/CD lint gates on four repos.
   \item \textbf{Defense in depth:} Wazuh SIEM + CrowdSec IPS + step-ca PKI + Vaultwarden secrets.
 \end{itemize}
-\begin{finding}[Operational — Wazuh guest agent (F-5)]
-VM 104 lacks \texttt{qemu-guest-agent}; a QuarkyLab host reboot hard-stops it and \texttt{wazuh-indexer} returns unhealthy. Recovery: \texttt{qm stop 104 \&\& qm start 104}, wait \textasciitilde4\,min (healthy = dashboard 302$\rightarrow$/login).
-\end{finding}
 
-% ============================ 12. DATA FLOWS ============================
+% ============================ 13. DATA FLOWS ============================
 \section{Data-Flow Walkthroughs}
-\textbf{A · Grounded chat:} Browser $\to$ Pi-hole resolves \texttt{chat.netframe.local} $\to$ NPM \ip{.181} $\to$ Open WebUI \ip{.185} $\to$ \texttt{llm\_router} Jarvis \ip{.31:8000} (\texttt{rag}) $\to$ embed + cosine search vault $\to$ Ollama \texttt{qwen2.5:72b} tensor-split $\to$ cited answer.\\[2pt]
-\textbf{B · Nightly backup:} \texttt{pvescheduler} $\to$ \texttt{vzdump} (02:00 CT / 03:00 VM) $\to$ PBS \ip{192.168.10.187:8007} (VLAN 1) $\to$ prune 7d+4w.\\[2pt]
-\textbf{C · Storage:} GPU nodes mount Randy NFS over \textbf{VLAN 30 10G} (\ip{.30.187}, \texttt{xe-0/2/0}); corosync stays on VLAN 1.\\[2pt]
-\textbf{D · BMC access:} Ares tags VLAN 20 (\texttt{enp0s31f6.20}) $\to$ EX3400 \texttt{ge-0/0/30/32/44} $\to$ iDRAC \ip{192.168.20.20-22}.
+\textbf{A \textperiodcentered\ Grounded chat:} Browser $\to$ Pi-hole resolves \texttt{chat.netframe.local} $\to$ NPM \ip{.181} $\to$ Open WebUI \ip{.185} $\to$ \texttt{llm\_router} Jarvis \ip{.31:8000} (\texttt{rag}) $\to$ embed + cosine search vault $\to$ Ollama \texttt{qwen2.5:72b} tensor-split $\to$ cited answer.\\[2pt]
+\textbf{B \textperiodcentered\ Nightly backup:} \texttt{pvescheduler} $\to$ \texttt{vzdump} (02:00 CT / 03:00 VM) $\to$ PBS \ip{192.168.10.187:8007} (VLAN 1) $\to$ prune 7d+4w.\\[2pt]
+\textbf{C \textperiodcentered\ Storage:} GPU nodes mount Randy NFS over \textbf{VLAN 30 10G} (\ip{.30.187}, \texttt{xe-0/2/0}); corosync stays on VLAN 1.\\[2pt]
+\textbf{D \textperiodcentered\ WAN failover:} ISP link drops $\to$ dpinger marks the primary gateway down $\to$ OPNsense gateway group shifts default egress to WAN2 (FirstNet 5G) $\to$ LAN and per-VLAN rules follow the group $\to$ failback when the ISP monitor recovers.\\[2pt]
+\textbf{E \textperiodcentered\ BMC access:} Ares tags VLAN 20 (\texttt{enp0s31f6.20}) $\to$ EX3400 \texttt{ge-0/0/30/32/44} $\to$ iDRAC \ip{192.168.20.20-22}.
 
-% ============================ 13. FINDINGS ============================
+% ============================ 14. FINDINGS ============================
 \section{Observations, Drift \& Recommendations}
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l l X X@{}}
-\toprule \# & Sev & Finding & Recommendation \\ \midrule
-F-1 & Med & Inconsistent default GWs: pve3/4/5 via \ip{192.168.1.1} (off-subnet, bypasses OPNsense) & Repoint to \ip{192.168.10.1} or document intent \\
-F-2 & Low & Ares wired mgmt leg link-down; VLAN 20 reroutes via WiFi & Restore wired leg; verify \texttt{ip route get} \\
-F-3 & Med & DS4246 drift + dual-path duplicates & Configure multipath before pooling; update docs \\
-F-4 & \checkmark & PBS storage was repointed to \ip{.30.187} (broke backups) & Fixed; keep on \ip{.10.187}; monitor backup age \\
-F-5 & Low & Wazuh VM lacks guest-agent & Install \texttt{qemu-guest-agent}; cold start \\
+\toprule \# & State & Finding & Resolution / recommendation \\ \midrule
+F-1 & \checkmark & pve3/4/5 default GW was \ip{192.168.1.1} (off-subnet, stale) & Repointed to \ip{192.168.10.1} on 2026-07-13 \\
+F-3 & \checkmark & DS4246 dual-path duplicates; pool not built & Multipath configured; pool \texttt{bulk} built and reboot-verified \\
+F-4 & \checkmark & PBS storage repointed to \ip{.30.187} (broke backups) & Fixed; general storage on \ip{.10.187}; 10G target split out \\
+F-5 & \checkmark & Wazuh VM lacked guest-agent & Installed 2026-07-10; graceful shutdown confirmed \\
+F-2 & Low & Ares wired mgmt leg has flapped; VLAN 20 reroutes via WiFi & Treat wired as authoritative; verify \texttt{ip route get} \\
 F-6 & Low & \texttt{xe-0/2/3} DAC down (EEPROM mismatch) & Replace SFP or decommission \\
 F-7 & Info & VLANs 40/50/60/70 lightly populated & Populate or prune \\
-F-8 & Low & Amazon Echo (Alexa) on flat mgmt VLAN 1 (\ip{.112}); \texttt{:1080} SOCKS5 advertises no-auth but does \textbf{not} relay (protocol-verified) --- benign firmware artifact & Move to IoT VLAN 40 (egress-only); \textbf{scheduled to move soon} \\
+F-8 & Low & Amazon Echo on flat mgmt VLAN 1; benign non-relaying SOCKS5 artifact & Move to IoT VLAN 40 (egress-only) \\
+F-9 & WIP & RKE2 control-plane VMs lack \texttt{qemu-guest-agent} & Install pinned (channel enabled; package pending host access) \\
+F-10 & WIP & WAN2 gateway-group failover mid-deployment & Finish monitor IP + controlled failover test \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -444,39 +500,41 @@ F-8 & Low & Amazon Echo (Alexa) on flat mgmt VLAN 1 (\ip{.112}); \texttt{:1080} 
 \begin{center}\footnotesize
 \begin{tabularx}{\textwidth}{@{}l X l@{}}
 \toprule Component & If it fails & Mitigation \\ \midrule
-pve2 (OPNsense) & No LAN routing/DHCP/inter-VLAN — whole LAN & onboot; serial-console runbook \\
-pve3 (6 LXCs) & NPM/Vault/Grafana/Homepage/Headscale/OpenWebUI down & PBS backups; migratable CTs \\
-Randy & Backups + GPU NFS + Jellyfin & RAIDZ2 (2-disk/vdev); split HBAs \\
+pve2 (OPNsense) & No LAN routing / DHCP / inter-VLAN, whole LAN & onboot; serial-console + age-encrypted config DR \\
+ISP uplink & Internet egress & FirstNet 5G WAN2 gateway-group failover \\
+pve3 (7 LXCs + cp1) & Core services + one etcd member down & PBS backups; etcd 2-of-3; migratable CTs \\
+Randy & Backups + GPU NFS + Jellyfin + k8s storage & RAIDZ2 (2-disk/vdev); split HBAs; multipath \\
 EX3400 & Entire wired fabric & Dual PSU; UPS B \\
 UPS A & Both R730s + Randy + DS4246 & 2200VA headroom; graceful shutdown \\
-pve1 & LAN DNS / ad-block & Secondary resolver \ip{1.1.1.1} \\
-Corosync & Loss of quorum & 7 votes on stable VLAN-1 L2 \\
+DNS & Name resolution / ad-block & Two Pi-holes (\ip{.177}/\ip{.178}), both in DHCP \\
+Corosync & Loss of quorum & 7 votes on stable VLAN-1 L2; quorum alerting \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-\section{Appendix — Live Port / Service Scan}
-\footnotesize Verified 2026-07-08 (\texttt{nmap -sT -sV}, top-200). \texttt{:9100}=node-exporter, \texttt{:3128}=Proxmox \texttt{pveproxy}. Proxmox \texttt{:8006}, PBS \texttt{:8007}, Jellyfin \texttt{:8096} are outside top-200 but known-live.
+\section{Appendix: Live Port / Service Scan}
+\footnotesize Verified 2026-07-08 (\texttt{nmap -sT -sV}, top-200); RKE2 nodes added 2026-07-13. \texttt{:9100}=node-exporter, \texttt{:3128}=Proxmox \texttt{pveproxy}. Proxmox \texttt{:8006}, PBS \texttt{:8007}, Jellyfin \texttt{:8096}, kube API \texttt{:6443} are outside top-200 but known-live.
 \begin{center}\footnotesize
-\begin{longtable}{@{}l l p{11cm}@{}}
+\begin{longtable}{@{}l l p{9.3cm}@{}}
 \toprule Host & Open ports & Identity \\ \midrule \endhead
-\ip{.1} OPNsense & 53,80,443 & Unbound DNS 1.23.1 + GUI \\
+\ip{.1} OPNsense & 53,80,443 & Unbound DNS + GUI + dual-WAN \\
 \ip{.2} UniFi USW & 53,80,443,8080,8443 & dnsmasq + UniFi \\
-\ip{.31} Jarvis & 22,111,3128,\textbf{8000},9100 & SSH·Proxmox·llm\_router·exporter \\
+\ip{.31} Jarvis & 22,111,3128,\textbf{8000},9100 & SSH \textperiodcentered\ Proxmox \textperiodcentered\ llm\_router \textperiodcentered\ exporter \\
 \ip{.50} EX3400 & 22,830 & SSH + NETCONF \\
-\ip{.100/.199} Ares & 21,22,111,139,445,2049,9090 & FTP·Samba·NFS·Cockpit \\
-\ip{.112} Amazon Echo & 1080,8888 & Alexa; non-relaying SOCKS5 handshake (F-8) \\
-\ip{.148} Homepage & 22,8081 & SSH·PeaNUT \\
-\ip{.177} Pi-hole & 22,53,80,443 & dnsmasq pi-hole v2.92.2 \\
-\ip{.179} QuarkyLab & 22,111,3128,9100 & SSH·Proxmox·exporter \\
-\ip{.180} UPS card & 22,80,443 & CyberPower \\
+\ip{.51--.53} rke2-cp1/2/3 & 22,6443,9345,10250 & RKE2 control plane / etcd \\
+\ip{.100/.199} Ares & 21,22,111,139,445,2049,9090 & FTP \textperiodcentered\ Samba \textperiodcentered\ NFS \textperiodcentered\ Cockpit \\
+\ip{.148} Homepage & 22,8081 & SSH \textperiodcentered\ PeaNUT \\
+\ip{.177} Pi-hole 1 & 22,53,80,443 & dnsmasq / pi-hole (primary) \\
+\ip{.178} Pi-hole 2 & 53,80,443 & pi-hole (secondary, DNS HA) \\
+\ip{.179} QuarkyLab & 22,111,3128,9100 & SSH \textperiodcentered\ Proxmox \textperiodcentered\ exporter \\
+\ip{.180} UPS card & 22,80,443 & SNMP UPS \\
 \ip{.181} NPM & 22,80,81,443 & OpenResty proxy \\
 \ip{.182} Vaultwarden & 22,80 & Vaultwarden \\
-\ip{.183} Observability & 22,3000,8080,9100 & Grafana·Scrutiny·exporter \\
+\ip{.183} Observability & 22,3000,8080,9100 & Grafana \textperiodcentered\ Scrutiny \textperiodcentered\ exporter \\
 \ip{.184} Wazuh & 22,443 & SIEM dashboard \\
 \ip{.185} Open WebUI & 22,8080 & Chat UI \\
 \ip{.186} Headscale & 22,8080 & Mesh VPN control \\
-\ip{.187} Randy & 22,111,2049,3128,9100 & SSH·NFS·Proxmox·exporter (+8007/8096) \\
+\ip{.187} Randy & 22,111,2049,3128,9100 & SSH \textperiodcentered\ NFS \textperiodcentered\ Proxmox \textperiodcentered\ exporter (+8007/8096) \\
 \ip{.201--.204} pve3/4/5/2 & 22,111,3128,9100 & nodes (.204 also 443=step-ca) \\
 \bottomrule
 \end{longtable}
@@ -484,7 +542,7 @@ Corosync & Loss of quorum & 7 votes on stable VLAN-1 L2 \\
 
 \vfill
 \begin{center}\small\color{nfslate}
-Generated 2026-07-08 from live discovery reconciled against the NetFRAME Home-Lab vault.\\ Sanitized public edition. Sanitized edition suitable for the public repo generated alongside.
+Generated 2026-07-13 from live discovery reconciled against the NetFRAME Home-Lab vault.\\ Sanitized public edition. Public IPs, service tags, serials, and secrets omitted.
 \end{center}
 
 \end{document}

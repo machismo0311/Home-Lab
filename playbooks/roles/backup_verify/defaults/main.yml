@@ -16,6 +16,13 @@ backup_verify_pbs_token_secret: "{{ vault_pbs_token_secret | default('') }}"
 backup_verify_pbs_datastores: []               # [] = auto-discover all
 backup_verify_pbs_max_age_hours: 25            # 24h cadence + 1h slack
 
+# Per-guest coverage: every vmid listed here must have a snapshot within
+# max_age_hours somewhere across the PBS datastores. This catches a single
+# guest whose backup job broke or was never created, which the per-datastore
+# freshness check above cannot see (other guests keep the datastore "fresh").
+# [] = skip the per-guest check (backward compatible).
+backup_verify_pbs_expected_guests: [100, 101, 102, 103, 104, 105, 106, 107, 108, 201, 202, 203]
+
 # --- zfs tag: pool health ---------------------------------------------------
 backup_verify_zfs_pools: []                    # [] = every pool on the host
                                                # (covers datastore AND bulk)

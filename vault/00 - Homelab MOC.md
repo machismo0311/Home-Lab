@@ -1,6 +1,6 @@
-# 🖥️ Homelab — Master Map of Content
+# 🖥️ Homelab - Master Map of Content
 > **Operator:** Kyle Mason (`machismo`) · **Location:** Greater Cleveland, OH
-> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-07-11
+> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-07-12
 
 ---
 
@@ -24,6 +24,12 @@ mindmap
       [[Infrastructure/Services & VMs]]
     Kubernetes
       [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]]
+    High Availability
+      [[High Availability/High Availability MOC]]
+    Decisions
+      [[ADR/README]]
+    Operations
+      [[Operations and Onboarding]]
     Projects
       [[Projects/VoIP - FreePBX]]
       [[Projects/IMU Gesture Control]]
@@ -37,7 +43,7 @@ mindmap
 
 ---
 
-## 📦 Quick Reference — Rack Summary
+## 📦 Quick Reference - Rack Summary
 
 | U Position | Device | Role |
 |---|---|---|
@@ -48,18 +54,18 @@ mindmap
 | U36–U34 | HP EliteDesk G4 SFF ×2 (3U shelf) | pve2 (32GB) + pve3 (48GB) |
 | U33–U31 | HP EliteDesk G3 Mini ×2 (3U shelf) | pve4 + pve5 (32GB each) |
 | U30 | Mac mini (pve1) + RPi 4 (1U shelf) | Pi-hole / cluster mgmt |
-| U29–U21 | *Open / cable mgmt* | — |
-| U20–U18 | Dell R730 — Jarvis | LLM node (2× RTX 6000 48GB total, installed 2026-07-04) |
-| U16–U15 | Dell R730 — QuarkyLab | ML node — RTX 8000 48GB, installed 2026-07-01 (the researcher / DUNE) |
-| U14–U13 | SuperMicro CSE-219U — Randy | PBS, Jellyfin, ZFS storage |
+| U29–U21 | *Open / cable mgmt* | - |
+| U20–U18 | Dell R730 - Jarvis | LLM node (2× RTX 6000 48GB total, installed 2026-07-04) |
+| U16–U15 | Dell R730 - QuarkyLab | ML node - RTX 8000 48GB, installed 2026-07-01 (the researcher / DUNE) |
+| U14–U13 | SuperMicro CSE-219U - Randy | PBS, Jellyfin, ZFS storage |
 | U12–U7 | NetApp DS4246 (4U) | JBOD storage shelf |
 | U6 | Furman RP-8 | Power conditioning |
-| U5–U4 | Tripp Lite SMART1500VA | UPS B — top half bus |
-| U2–U1 | Middle Atlantic UPS-OL2200R | UPS A — bottom half / ML bus |
+| U5–U4 | Tripp Lite SMART1500VA | UPS B - top half bus |
+| U2–U1 | Middle Atlantic UPS-OL2200R | UPS A - bottom half / ML bus |
 
 ---
 
-## 🌐 Network (live — OPNsense + VLANs)
+## 🌐 Network (live - OPNsense + VLANs)
 
 > [!NOTE] OPNsense (VM 100 on pve2) is the **live LAN router/firewall/DHCP** for `192.168.10.0/24` (v25.7). The UniFi Dream Router is the **upstream WAN edge** (`192.168.1.x` WiFi/WAN). **VLANs are live** (2026-06-25). See [[Networking/Network Overview]].
 
@@ -91,42 +97,52 @@ mindmap
 
 ## 🔗 Key Links
 
+- [[Architecture Overview]]: top-down system architecture, design principles, and layer map (**start here**)
+- [[Operations and Onboarding]]: how the cluster is run day to day (access, routine, safety rules)
+
 ### Infrastructure
-- [[Rack Layout]] — Physical layout, depth notes, thermal zones
-- [[Power Distribution]] — Dual UPS bus diagram, load calculations
-- [[Networking/Network Overview]] — Topology, VLANs, routing
+- [[Rack Layout]] - Physical layout, depth notes, thermal zones
+- [[Power Distribution]] - Dual UPS bus diagram, load calculations
+- [[Networking/Network Overview]] - Topology, VLANs, routing
 
 ### Compute
-- [[Compute/Dell R730 - ML Node]] — QuarkyLab (iDRAC: 192.168.20.20, RTX 8000 48GB installed 2026-07-01)
-- [[Compute/Dell R730 - General Node]] — Jarvis (iDRAC: 192.168.20.21, LLM, 2× RTX 6000 48GB installed 2026-07-04)
-- [[Compute/Small Node Cluster]] — pve1 (standalone) + pve2–pve5
+- [[Compute/Dell R730 - ML Node]] - QuarkyLab (iDRAC: 192.168.20.20, RTX 8000 48GB installed 2026-07-01)
+- [[Compute/Dell R730 - General Node]] - Jarvis (iDRAC: 192.168.20.21, LLM, 2× RTX 6000 48GB installed 2026-07-04)
+- [[Compute/Small Node Cluster]] - pve1 (standalone) + pve2–pve5
 
 ### Storage & Virtualization
-- [[Infrastructure/Storage]] — NetApp DS4246, drive inventory
-- [[Infrastructure/Proxmox Cluster]] — Cluster config, node table, OPNsense
-- [[Infrastructure/Services & VMs]] — All deployed/planned services
+- [[Infrastructure/Storage]] - NetApp DS4246, drive inventory
+- [[Infrastructure/Proxmox Cluster]] - Cluster config, node table, OPNsense
+- [[Infrastructure/Services & VMs]] - All deployed/planned services
 
 ### VPN
-- [[Projects/Headscale]] — Self-hosted Tailscale control plane (pve3 CT 105)
+- [[Projects/Headscale]] - Self-hosted Tailscale control plane (pve3 CT 105)
 
 ### Kubernetes
-- [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]] — RKE2 cluster (3-node HA CP, Cilium, MetalLB, Randy storage worker, private registry w/ step-ca TLS + auto-renew); manifests in `scripts/rke2/`
+- [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]] - RKE2 cluster (3-node HA CP, Cilium, MetalLB, Randy storage worker, private registry w/ step-ca TLS + auto-renew); manifests in `scripts/rke2/`
+
+### High Availability
+- [[High Availability/High Availability MOC]]: cluster resilience map covering completed HA (DNS, RKE2 control plane, quorum, monitoring) and prioritized projects (compute HA, storage redundancy, switch Virtual Chassis, OPNsense CARP pair, WAN failover)
+
+### Decision Records
+- [[ADR/README]]: architecture decision log with the context, decision, and consequences behind key choices (dedicated router, LXC-first, DNS HA, self-hosted Headscale, compute-HA storage)
 
 ### Switching
-- [[Networking/Juniper EX3400-48P]] — Core switch config & Junos notes
-- [[Networking/UniFi USW-24-250W]] — UniFi switch config
-- [[Networking/Juniper EX2300-48P]] — Secondary switch
+- [[Networking/Juniper EX3400-48P]] - Core switch config & Junos notes
+- [[Networking/UniFi USW-24-250W]] - UniFi switch config
+- [[Networking/Juniper EX2300-48P]] - Secondary switch
 
 ### Projects
-- [[Projects/VoIP - FreePBX]] — CP-8841 phones + VoIP.ms
-- [[Projects/IMU Gesture Control]] — Nordic nRF52 IMU → Home Assistant
-- [[Projects/Server Scraper]] — eBay/TechMikeNY hardware alerter
+- [[Projects/VoIP - FreePBX]] - CP-8841 phones + VoIP.ms
+- [[Projects/IMU Gesture Control]] - Nordic nRF52 IMU → Home Assistant
+- [[Projects/Server Scraper]] - eBay/TechMikeNY hardware alerter
 
 ### Runbook
 - [[Runbook/Daily Operations]]
 - [[Runbook/Network Procedures]]
 - [[Runbook/Recovery Procedures]]
-- [[Runbook/Randy-PCIe-Slot-Recovery-2026-07-01]] — Randy PCIe slot failure & recovery (incident report, 2026-07-01)
+- [[Runbook/Randy-PCIe-Slot-Recovery-2026-07-01]] - Randy PCIe slot failure & recovery (incident report, 2026-07-01)
+- [[Runbook/Cluster-Update-Procedure]] - safe apt/PVE update procedure (quorum-aware order, GPU kernel hold, OPNsense window)
 
 ---
 
@@ -140,10 +156,10 @@ mindmap
 - [x] Core services deployed on pve3: NPM, Vaultwarden, Grafana+Prometheus+Loki, CrowdSec
 - [x] Wildcard SSL cert issued (*.kylemason.org via Let's Encrypt + Cloudflare)
 - [x] vault.kylemason.org and grafana.kylemason.org live
-- [x] Headscale v0.29.1 deployed (pve3 CT 105) — Ares registered, self-hosted VPN control plane live
+- [x] Headscale v0.29.1 deployed (pve3 CT 105) - Ares registered, self-hosted VPN control plane live
 - [x] Add Ares SSH key to pve1 (added via pve2 cluster hop, 2026-06-20)
 - [x] NetFRAME logo deployed to all five Proxmox nodes (pve1–pve5, 2026-06-20)
-- [x] OPNsense cutover — VM 100 (pve2) is the live LAN router (Dream Router now WAN-only)
+- [x] OPNsense cutover - VM 100 (pve2) is the live LAN router (Dream Router now WAN-only)
 - [x] VLAN segmentation live (2026-06-25, EX3400 ge-0/0/46 trunk → UniFi Port 24)
 - [x] Both Dell R730s installed and in km-cluster (QuarkyLab ML / Jarvis LLM)
 - [x] Stand up QuarkyLab + Jarvis + Randy as Proxmox nodes (7-node km-cluster, PVE 9.2.3)
@@ -151,15 +167,16 @@ mindmap
 - [x] All nodes in Grafana/Prometheus monitoring (node exporter, 8 targets)
 - [x] PBS live on Randy (.187:8007); Jellyfin live on Randy (.187:8096)
 - [x] Homepage dashboard live (homepage.kylemason.org); UPS monitoring (NUT→PeaNUT→Grafana→Discord)
-- [x] Jarvis GPU software stack staged (2026-07-01) — kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS, Ollama → /opt/models
-- [x] QuarkyLab RTX 6000 → RTX 8000 48GB swap — installed 2026-07-01
-- [x] Jarvis 2× RTX 6000 install — installed & verified 2026-07-04 (48GB total, Ollama GPU-backed)
-- [x] Security VLAN segmentation — all 3 phases (BMCs→VLAN 20 2026-07-03; services→VLAN 30; VLAN 30→VLAN 1 mgmt clamp 2026-07-10)
-- [x] DNS HA — secondary Pi-hole (.178, pve5 CT 108, nebula-sync mirror of .177) + DHCP failover on all VLANs (2026-07-10)
-- [x] RKE2 Kubernetes — Phases 1-7 (3-node HA CP, Cilium, MetalLB, Randy bare-metal storage worker, private registry w/ step-ca TLS + auto-renew); GPU Operator deferred (2026-07-10/11)
-- [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) — replace DAC with fiber optics
+- [x] Jarvis GPU software stack staged (2026-07-01) - kernel 6.14.11-9-pve pinned, NVIDIA 550.163.01 DKMS, Ollama → /opt/models
+- [x] QuarkyLab RTX 6000 → RTX 8000 48GB swap - installed 2026-07-01
+- [x] Jarvis 2× RTX 6000 install - installed & verified 2026-07-04 (48GB total, Ollama GPU-backed)
+- [x] Security VLAN segmentation - all 3 phases (BMCs→VLAN 20 2026-07-03; services→VLAN 30; VLAN 30→VLAN 1 mgmt clamp 2026-07-10)
+- [x] DNS HA - secondary Pi-hole (.178, pve5 CT 108, nebula-sync mirror of .177) + DHCP failover on all VLANs (2026-07-10)
+- [x] RKE2 Kubernetes - Phases 1-7 (3-node HA CP, Cilium, MetalLB, Randy bare-metal storage worker, private registry w/ step-ca TLS + auto-renew); GPU Operator deferred (2026-07-10/11)
+- [ ] DAC 10G uplink (xe-0/2/3 → UniFi SFP 2) - replace DAC with fiber optics
 - [ ] Headscale Phase 2: fix Ares MagicDNS /etc/resolv.conf permission error
 - [ ] Headscale Phase 3: migrate Kyle + the researcher devices off commercial Tailscale
 - [ ] Headscale Phase 4: move CT 105 to VLAN 30, update login-server URLs
-- [ ] VoIP project (deferred — post core infra)
+- [ ] VoIP project (deferred - post core infra)
 - [ ] CCNA study cadence established
+- [ ] High Availability roadmap: WAN failover (FirstNet 5G) + OPNsense CARP pair, then compute HA (ha-manager + Ceph/ZFS replication), storage redundancy, and switch Virtual Chassis (see [[High Availability/High Availability MOC]])

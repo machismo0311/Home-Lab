@@ -1,6 +1,6 @@
-# Randy /dev/sdb — Monitor Follow-up & Closure (2026-07-08)
+# Randy /dev/sdb - Monitor Follow-up & Closure (2026-07-08)
 
-**Status:** RESOLVED / verified — no action required (watch item noted below)
+**Status:** RESOLVED / verified - no action required (watch item noted below)
 
 ## Trigger
 First run of the new NetFRAME cluster health monitor (deployed on Jarvis 2026-07-08,
@@ -9,7 +9,7 @@ check: `smartd` lines reporting *21–23 Currently unreadable (pending) sectors*
 *previous self-test completed with error (read test element)*.
 
 ## Reconciliation
-Those `smartd` entries are **historical**, timestamped **Jul 07 04:21–07:51** — i.e.
+Those `smartd` entries are **historical**, timestamped **Jul 07 04:21–07:51** - i.e.
 *before* the sdb replacement already recorded in git ("Randy sdb replacement complete").
 The monitor's `journal_errors` check reads the whole current boot journal, so it replays
 pre-replacement noise until Randy's next reboot rotates the boot journal.
@@ -33,11 +33,11 @@ The Jul 7 replacement fixed the failing disk; the new W460W2XM is healthy. The m
 alert was a stale-journal artifact, not a live fault. No replacement needed.
 
 ## Watch item
-Replacement is a used spare — **Power_On_Hours ≈ 52,186 (~6 yr)**. Healthy now (0
+Replacement is a used spare - **Power_On_Hours ≈ 52,186 (~6 yr)**. Healthy now (0
 pending / 0 reallocated) but aged; Scrutiny/this monitor will catch any future
 degradation. Consider a fresher spare if reallocations begin.
 
 ## Note for the monitor
 Consider tightening the `journal_errors` window on Randy to `--since` last boot-of-interest
 or filtering resolved-device noise, so historical pre-replacement `smartd` lines stop
-surfacing until reboot. Low priority — informational only, does not affect verdicts.
+surfacing until reboot. Low priority - informational only, does not affect verdicts.

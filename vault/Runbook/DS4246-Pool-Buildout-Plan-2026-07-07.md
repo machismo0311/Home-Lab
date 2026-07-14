@@ -1,4 +1,4 @@
-# 📄 Build-Out Plan — DS4246 Bulk/Media ZFS Pool (`bulk`)
+# 📄 Build-Out Plan - DS4246 Bulk/Media ZFS Pool (`bulk`)
 
 **Tags:** #plan #storage #zfs #netapp #jbod #multipath #randy
 **Related:** [[Infrastructure/Storage]] · [[Runbook/Cluster-Health-Fixes-2026-07-07]] · [[Infrastructure/Proxmox Cluster]] · [[00 - Homelab MOC]]
@@ -9,13 +9,13 @@
 | **Purpose** | **Bulk / media** storage (large sequential files, archives, media library) |
 | **Topology** | **2× 8-wide RAIDZ2** (all 16 drives), pool name **`bulk`** |
 | **Usable** | **~40 TiB** (~48 TB) · 75% efficiency · tolerates 2 failures per vdev |
-| **Status** | PLAN — not executed. Gated on drive qualification + multipath. |
+| **Status** | PLAN - not executed. Gated on drive qualification + multipath. |
 
-> ⚠️ These are **used, mixed-age enterprise drives**. Do not create the pool until Phase 1 (qualification) passes. Do not build on raw `sdX` — the shelf is **dual-pathed** and needs multipath (Phase 2) first, or ZFS may grab the same disk twice.
+> ⚠️ These are **used, mixed-age enterprise drives**. Do not create the pool until Phase 1 (qualification) passes. Do not build on raw `sdX` - the shelf is **dual-pathed** and needs multipath (Phase 2) first, or ZFS may grab the same disk twice.
 
 ---
 
-## Phase 1 — Qualify the drives (GATE)
+## Phase 1 - Qualify the drives (GATE)
 Long SMART self-tests were started 2026-07-07 (~7–8 h). Before proceeding, confirm **every** drive:
 ```bash
 ssh randy '
@@ -27,11 +27,11 @@ for wwn in 637228f7 637238eb 63724197 6372476b 63725497 637257b7 63725b7f \
         realloc/defects=$(smartctl -x /dev/$d | awk -F: "/grown defect list/{print \$2}")"
 done'
 ```
-**Pass criteria (all 16):** self-test `Completed` (no "read failure"), grown-defect list stable (≤ a few, not climbing), 0 new reallocations. **Reject any drive that fails** — pull it, use one of the 8 empty bays / a spare instead. Do not build a vdev short; keep vdevs at 8.
+**Pass criteria (all 16):** self-test `Completed` (no "read failure"), grown-defect list stable (≤ a few, not climbing), 0 new reallocations. **Reject any drive that fails** - pull it, use one of the 8 empty bays / a spare instead. Do not build a vdev short; keep vdevs at 8.
 
-> ✅ **PHASE 1 PASSED — 2026-07-08 ~03:27.** All 16 long self-tests `Completed` clean (LBA `-`, sense `[- - -]`), **0 failures, 0 new reallocations**; grown defects all 0 except sdx/Z1Z861CF = 1 (stable, passed). Tests ran ~17 h (SAS background, slow). Power-on hours (replacement-priority reference): **sdap/Z1Z862D3 = 60,310 h (oldest)**; Seagates sdao 12,527 · sdaq/sdar/sdan/sdy 22,137 · sdx 22,170; HGSTs — sdac 25,124 · sdab 25,128 · sdad 25,057 · sdag 25,097 · sdal 6,737 · sdas 6,736 · sdam 6,734 · sdaj 6,745 · sdak 6,747. **Cleared to build.** → proceed to Phase 2.
+> ✅ **PHASE 1 PASSED - 2026-07-08 ~03:27.** All 16 long self-tests `Completed` clean (LBA `-`, sense `[- - -]`), **0 failures, 0 new reallocations**; grown defects all 0 except sdx/Z1Z861CF = 1 (stable, passed). Tests ran ~17 h (SAS background, slow). Power-on hours (replacement-priority reference): **sdap/Z1Z862D3 = 60,310 h (oldest)**; Seagates sdao 12,527 · sdaq/sdar/sdan/sdy 22,137 · sdx 22,170; HGSTs - sdac 25,124 · sdab 25,128 · sdad 25,057 · sdag 25,097 · sdal 6,737 · sdas 6,736 · sdam 6,734 · sdaj 6,745 · sdak 6,747. **Cleared to build.** → proceed to Phase 2.
 
-## Phase 2 — Multipath (GATE)
+## Phase 2 - Multipath (GATE)
 The dual IOM6 shelf presents each disk on **2 paths** (32 `sdX` for 16 disks). Install + configure multipath so each disk is a single `/dev/mapper` device.
 ```bash
 ssh randy '
@@ -54,7 +54,7 @@ multipath -ll | grep -E "mpath|status" | head -40'
 ```
 - Result: 16× `/dev/mapper/mpathX`, each aggregating the 2 paths. Confirm `multipath -ll` shows **2 active paths per mpath**.
 
-> ✅ **PHASE 2 DONE — 2026-07-08 ~03:40.** Installed `multipath-tools`; used an **exact-wwid whitelist** (all 16 shelf wwids; `blacklist { wwid ".*" }` + `blacklist_exceptions`), so the internal disks can never be captured. Verified: **16 maps, 2 active paths each; zero datastore/boot disks in any map; `datastore` still ONLINE / no errors.** multipathd enabled (persists reboot). mpath↔drive binding stored in `/etc/multipath/bindings`.
+> ✅ **PHASE 2 DONE - 2026-07-08 ~03:40.** Installed `multipath-tools`; used an **exact-wwid whitelist** (all 16 shelf wwids; `blacklist { wwid ".*" }` + `blacklist_exceptions`), so the internal disks can never be captured. Verified: **16 maps, 2 active paths each; zero datastore/boot disks in any map; `datastore` still ONLINE / no errors.** multipathd enabled (persists reboot). mpath↔drive binding stored in `/etc/multipath/bindings`.
 
 **mpath ↔ drive ↔ POH map (from `multipath -ll` + smartctl):**
 
@@ -79,7 +79,7 @@ multipath -ll | grep -E "mpath|status" | head -40'
 
 Worn-drive spread: 4 highest-hour HGSTs split **2+2**; oldest Seagate (mpathe) and 1-defect Seagate (mpatha) in **different** vdevs. Models balanced 4S+4H / 3S+5H.
 
-## Phase 3 — Create the pool  ← **AWAITING GO-AHEAD**
+## Phase 3 - Create the pool  ← **AWAITING GO-AHEAD**
 ```bash
 ssh randy '
 zpool create -o ashift=12 \
@@ -93,10 +93,10 @@ zpool create -o ashift=12 \
 zpool status bulk'
 ```
 - **ashift=12** (safe/aligned even on 512 B drives).
-- **recordsize=1M** + **lz4** — ideal for large media/archive files (media is largely incompressible; lz4 is near-free and skips uncompressible blocks). Consider `zstd` only for compressible archive datasets.
+- **recordsize=1M** + **lz4** - ideal for large media/archive files (media is largely incompressible; lz4 is near-free and skips uncompressible blocks). Consider `zstd` only for compressible archive datasets.
 - mpath names are persisted in `/etc/multipath/bindings`, so `/dev/mapper/mpathX` is stable across reboots.
 
-## Phase 4 — Datasets & tuning
+## Phase 4 - Datasets & tuning
 ```bash
 ssh randy '
 zfs create bulk/media       # recordsize=1M inherited
@@ -106,7 +106,7 @@ zfs set compression=zstd bulk/archive     # better ratio on compressible archive
 zfs list -r bulk'
 ```
 
-## Phase 5 — Sharing (media/bulk to the cluster)
+## Phase 5 - Sharing (media/bulk to the cluster)
 Export over NFS to the cluster / media server (Jellyfin was the historical intent). Keep it on the **VLAN 30 servers** network per the segmentation model.
 ```bash
 ssh randy '
@@ -115,20 +115,20 @@ zfs set sharenfs="rw=@192.168.30.0/24,no_subtree_check" bulk/media
 exportfs -ra && exportfs -v | grep bulk'
 ```
 
-## Phase 6 — Data protection
+## Phase 6 - Data protection
 - **Scrub:** the distro `zfs-scrub.timer` already scrubs *all* pools monthly (covers `bulk` automatically). Given used drives, optionally add `bulk` to the weekly cron alongside `datastore` (`/etc/cron.d/zfs-scrub-datastore`).
 - **ZED:** already `active` → pool fault emails/events covered. Confirm `/etc/zfs/zed.d/zed.rc` has a notify target.
 - **smartd:** already `active` → **add the 16 shelf drives** to `/etc/smartd.conf` (or `DEVICESCAN`) so pending/reallocated sectors alert like the internal disks did.
 - **Snapshots:** if any dataset holds non-repro data, add `sanoid` (or `zfs-auto-snapshot`) with a sane retention (e.g. media: light; archive: daily+weekly).
 
 ## Expansion path
-- 8 empty bays remain. Grow by **adding another 8-wide RAIDZ2 vdev** (keep vdev geometry uniform) — never widen an existing vdev.
+- 8 empty bays remain. Grow by **adding another 8-wide RAIDZ2 vdev** (keep vdev geometry uniform) - never widen an existing vdev.
 - Keep pool **< ~80% full** for performance/CoW headroom (~32 TiB practical on this layout).
 
-## ✅ BUILD COMPLETE — 2026-07-08 ~03:40
+## ✅ BUILD COMPLETE - 2026-07-08 ~03:40
 Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **0 errors**, 58.2 T raw / **~41.3 TiB usable**. `datastore` untouched throughout.
 - **Datasets:** `bulk/media` (movies, 1M/lz4), `bulk/fernanda` (1M/lz4), `bulk/archive` (1M/zstd), `bulk/misc` (128k/lz4). All writable.
-- **NFS:** `bulk/fernanda` → `192.168.30.179` (rw,sync,no_subtree_check,no_root_squash), mirrors the `/datastore/quarkylab` convention. **`bulk/media` needs NO NFS** — Jellyfin runs *natively on Randy* (`:8096`), so it reads `/mnt/bulk/media` off the local FS. Structure `movies/tv/music` created, owned `jellyfin:jellyfin`, RW-verified. Remaining: add `/mnt/bulk/media/*` as library folders in the Jellyfin UI (old `/datastore/media` was empty — nothing to migrate).
+- **NFS:** `bulk/fernanda` → `192.168.30.179` (rw,sync,no_subtree_check,no_root_squash), mirrors the `/datastore/quarkylab` convention. **`bulk/media` needs NO NFS** - Jellyfin runs *natively on Randy* (`:8096`), so it reads `/mnt/bulk/media` off the local FS. Structure `movies/tv/music` created, owned `jellyfin:jellyfin`, RW-verified. Remaining: add `/mnt/bulk/media/*` as library folders in the Jellyfin UI (old `/datastore/media` was empty - nothing to migrate).
 - **Protection:** weekly scrub cron added (`bulk` Sun 02:30); smartd monitoring all 16 shelf drives (per-serial state files); ZED active (emails root); initial `scrub bulk` = 0 errors.
 
 ## Validation checklist (post-build)
@@ -136,18 +136,18 @@ Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **
 - [x] `multipath -ll` → 16 maps, 2 active paths each
 - [x] **Reboot Randy** → **PASSED 2026-07-08.** After reboot: multipath re-formed (16 maps), `bulk` auto-imported ONLINE (16/16 mpath members), all datasets mounted, NFS/Jellyfin/PBS/sanoid back, cluster rejoined 7/7. `datastore` unaffected. Pool is reboot-safe.
 - [x] Initial `zpool scrub bulk` → 0 errors
-- [ ] NFS mount from QuarkyLab (`bulk/fernanda`) — write/read test *(pending the researcher use)*
+- [ ] NFS mount from QuarkyLab (`bulk/fernanda`) - write/read test *(pending the researcher use)*
 - [x] smartd/ZED alerting confirmed on the new drives
 
 ## Remaining / follow-ups
-- [x] **`bulk/media`** — no NFS needed (Jellyfin native on Randy). Folders `movies/tv/music` created, jellyfin-owned, RW-verified. **Left to do: add them as libraries in Jellyfin UI** (Dashboard → Libraries → Add Media Library → folder `/mnt/bulk/media/movies` etc.).
-- [x] **Snapshots** — **sanoid 2.2.0 configured 2026-07-08** for `bulk/fernanda`: policy 36 hourly / 30 daily / 8 weekly / 6 monthly, autoprune on; `sanoid.timer` every 15 min. Config `/etc/sanoid/sanoid.conf` (+ `sanoid.defaults.conf`). First snapshots taken. *(To also snapshot `bulk/media`/`archive`, add a `[bulk/media]` stanza — currently fernanda-only. Note: snapshots are same-pool protection, NOT an off-box backup.)*
-- [ ] **Quota/reservation** — optional: reservation on `bulk/fernanda` and/or quota on `bulk/media` so one can't starve the other. Set once footprints known.
+- [x] **`bulk/media`** - no NFS needed (Jellyfin native on Randy). Folders `movies/tv/music` created, jellyfin-owned, RW-verified. **Left to do: add them as libraries in Jellyfin UI** (Dashboard → Libraries → Add Media Library → folder `/mnt/bulk/media/movies` etc.).
+- [x] **Snapshots** - **sanoid 2.2.0 configured 2026-07-08** for `bulk/fernanda`: policy 36 hourly / 30 daily / 8 weekly / 6 monthly, autoprune on; `sanoid.timer` every 15 min. Config `/etc/sanoid/sanoid.conf` (+ `sanoid.defaults.conf`). First snapshots taken. *(To also snapshot `bulk/media`/`archive`, add a `[bulk/media]` stanza - currently fernanda-only. Note: snapshots are same-pool protection, NOT an off-box backup.)*
+- [ ] **Quota/reservation** - optional: reservation on `bulk/fernanda` and/or quota on `bulk/media` so one can't starve the other. Set once footprints known.
 - [ ] **Reboot-persistence test** (see checklist).
-- [x] **Off-box backup — DONE 2026-07-08** (see §7). `bulk/fernanda` replicates to QuarkyLab every 6 h via syncoid. ⚠️ **Off-box only, NOT off-site** (both in the same rack) — user has no off-site target yet; add cloud/remote (restic/borg) later for disaster protection.
+- [x] **Off-box backup - DONE 2026-07-08** (see §7). `bulk/fernanda` replicates to QuarkyLab every 6 h via syncoid. ⚠️ **Off-box only, NOT off-site** (both in the same rack) - user has no off-site target yet; add cloud/remote (restic/borg) later for disaster protection.
 
-## 7. Off-box backup — `bulk/fernanda` → QuarkyLab (2026-07-08)
-ZFS replication (`syncoid`, ships with sanoid) from Randy to QuarkyLab's `workspace` pool (9 TB free) — a separate R730, so it survives a Randy chassis/pool failure.
+## 7. Off-box backup - `bulk/fernanda` → QuarkyLab (2026-07-08)
+ZFS replication (`syncoid`, ships with sanoid) from Randy to QuarkyLab's `workspace` pool (9 TB free) - a separate R730, so it survives a Randy chassis/pool failure.
 
 - **Auth:** dedicated ed25519 key `/root/.ssh/id_syncoid` on Randy → QuarkyLab root `authorized_keys`, restricted `from="192.168.30.187"` (Randy's VLAN30 IP).
 - **Target:** `workspace/backup/randy-fernanda` on QuarkyLab, **readonly=on**. Carries the sanoid snapshot history.
@@ -155,7 +155,7 @@ ZFS replication (`syncoid`, ships with sanoid) from Randy to QuarkyLab's `worksp
 - **Target pruning:** sanoid **prune-only** on QuarkyLab (`autosnap=no, autoprune=yes`, 36h/30d/8w/6m) so replicated snapshots don't accumulate forever.
 - **Restore:** `syncoid` back the other way, or read files directly at `/workspace/backup/randy-fernanda` on QuarkyLab.
 
-> ⚠️ **Off-box, not off-site.** QuarkyLab is in the same rack — this protects against Randy hardware failure, NOT site loss (fire/theft/flood). No off-site target exists yet. **Next tier planned:** restic → Backblaze B2 — see [[Runbook/Offsite-Backup-restic-B2-Plan-2026-07-08]] (pricing compared, B2 chosen; needs a B2 key to execute).
+> ⚠️ **Off-box, not off-site.** QuarkyLab is in the same rack - this protects against Randy hardware failure, NOT site loss (fire/theft/flood). No off-site target exists yet. **Next tier planned:** restic → Backblaze B2 - see [[Runbook/Offsite-Backup-restic-B2-Plan-2026-07-08]] (pricing compared, B2 chosen; needs a B2 key to execute).
 > Also: only `bulk/fernanda` is replicated (media/archive are re-acquirable). Add stanzas if other datasets need off-box copies.
 
 ## Rollback
@@ -163,5 +163,5 @@ Nothing destructive until `zpool create`. To undo pre-data: `zpool destroy bulk`
 
 ## Risks & notes
 - **Used drives:** expect a higher near-term failure rate than new disks; RAIDZ2 + prompt resilience + weekly scrub mitigate. Keep 1–2 qualified drives ready as replacements (use empty bays).
-- **Multipath blacklist correctness is critical** — a wrong blacklist could pull `datastore` members into multipath. Verify device letters / prefer WWN-based whitelist at run time.
-- **Not a backup of `datastore`** — same chassis/host. If `bulk` holds anything important, it still needs an off-box copy.
+- **Multipath blacklist correctness is critical** - a wrong blacklist could pull `datastore` members into multipath. Verify device letters / prefer WWN-based whitelist at run time.
+- **Not a backup of `datastore`** - same chassis/host. If `bulk` holds anything important, it still needs an off-box copy.

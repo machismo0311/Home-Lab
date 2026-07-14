@@ -1,6 +1,6 @@
-# QuarkyLab — Relocate containerd image store to ZFS pool
+# QuarkyLab - Relocate containerd image store to ZFS pool
 
-**Status:** ✅ **COMPLETE 2026-07-11 (Option A) — relocated, reboot-validated, reclaimed.** `/` **82% → 16%** (73 G → 14 G). `.old` deleted after a full cold-reboot proved the ZFS mount + NVIDIA pin hold.
+**Status:** ✅ **COMPLETE 2026-07-11 (Option A) - relocated, reboot-validated, reclaimed.** `/` **82% → 16%** (73 G → 14 G). `.old` deleted after a full cold-reboot proved the ZFS mount + NVIDIA pin hold.
 **Raised:** 2026-07-10 (disk WARN: `/` at 82%).
 
 ---
@@ -9,18 +9,18 @@
 Ran **Option A**. Node was idle (0 system containers, GPU 0%, no SLURM, no interactive users; kieron's *rootless* stack independent + untouched). Steps 1–5 as written. Results:
 - rsync moved **62.5 GB / 341,680 files** → `workspace/containerd` (dataset, `xattr=sa`, mountpoint `/var/lib/containerd`, `mounted yes`).
 - **Smoke tests PASS:** pure overlayfs container runs (`overlay-OK`); `--gpus all` → RTX 8000 detected; **real `quarkylab-ml:latest` → `torch 2.5.1+cu121 cuda_available=True`**. overlayfs-on-ZFS works → no Option B fallback needed.
-- ⚠️ **Runbook smoke-test bug fixed:** step-6's `docker run ... nvidia/cuda ... nvidia-smi` **needs `--gpus all`** or it errors `nvidia-smi: not found` (that's a *missing-flag* error, NOT an overlay failure — the container still started).
-- **Reboot-safety hardening added** (containerd had no ordering vs the ZFS mount): drop-in `/etc/systemd/system/containerd.service.d/10-zfs-mount.conf` with `After=/Wants=zfs-mount.service` + `RequiresMountsFor=/var/lib/containerd`. Verified `After=` now includes `zfs-mount.service` + auto-generated `var-lib-containerd.mount`. **This is a required step — add it to Option A above for next time.**
+- ⚠️ **Runbook smoke-test bug fixed:** step-6's `docker run ... nvidia/cuda ... nvidia-smi` **needs `--gpus all`** or it errors `nvidia-smi: not found` (that's a *missing-flag* error, NOT an overlay failure - the container still started).
+- **Reboot-safety hardening added** (containerd had no ordering vs the ZFS mount): drop-in `/etc/systemd/system/containerd.service.d/10-zfs-mount.conf` with `After=/Wants=zfs-mount.service` + `RequiresMountsFor=/var/lib/containerd`. Verified `After=` now includes `zfs-mount.service` + auto-generated `var-lib-containerd.mount`. **This is a required step - add it to Option A above for next time.**
 
-### Reclaim — DONE (2026-07-11, reboot-validated)
+### Reclaim - DONE (2026-07-11, reboot-validated)
 Rather than a passive soak, did a **controlled reboot** to validate durability, then reclaimed:
 1. Pre-flight verified GRUB pinned to `6.14.11-9-pve` (NVIDIA) + VM 104 `onboot=1,agent=1`.
-2. **Graceful VM 104 shutdown via agent** (`qm shutdown 104` rc=0) — validated today's guest-agent fix.
+2. **Graceful VM 104 shutdown via agent** (`qm shutdown 104` rc=0) - validated today's guest-agent fix.
 3. `systemctl reboot` (R730 POST ~4 min).
 4. **Post-boot ALL GREEN:** kernel `6.14.11-9-pve`; GPU `550.163.01`/RTX 8000; **containerd auto-mounted from `workspace/containerd` on boot** (drop-in held) → 63 G image intact; `quarkylab-ml` → `torch cuda True`; VM 104 auto-started `running`.
 5. `rm -rf /var/lib/containerd.old` → **`/` 82% → 16%** (14 G used, 76 G free). Image intact on pool.
 
-(kieron's rootless dockerd came back via linger; his `arid` containers are down — `restart:no` — he must `docker compose up`.)
+(kieron's rootless dockerd came back via linger; his `arid` containers are down - `restart:no` - he must `docker compose up`.)
 
 ---
 
@@ -38,7 +38,7 @@ Root cause: Docker 29.6 uses the **containerd image store**, and containerd's ro
 `quarkylab-ml:latest` is **63 GB** (`docker system df`: 63.36 GB image, 63.02 GB unique),
 so one image nearly fills the OS disk.
 
-Meanwhile the **`workspace` ZFS pool is 9.09 TB with only ~2 TB used** — the big
+Meanwhile the **`workspace` ZFS pool is 9.09 TB with only ~2 TB used** - the big
 storage is sitting idle because containers don't live on it.
 
 **This is a placement misconfiguration, not a capacity problem.** A `docker builder
@@ -56,7 +56,7 @@ TB to grow into. Expected result: `/` drops from ~73 G → ~13 G used (**82% →
 
 ## Pre-flight (safe to do anytime, no outage)
 
-1. Announce the window to QuarkyLab students/researchers — **no containers may be
+1. Announce the window to QuarkyLab students/researchers - **no containers may be
    launched during the move.**
 2. Confirm nothing is running:
    ```bash
@@ -68,32 +68,32 @@ TB to grow into. Expected result: `/` drops from ~73 G → ~13 G used (**82% →
    ssh quarkylab 'df -h / ; sudo du -xsh /var/lib/containerd ; sudo docker images'
    ```
 
-## ✅ Scope clarification (verified 2026-07-11) — rootless docker is UNAFFECTED
+## ✅ Scope clarification (verified 2026-07-11) - rootless docker is UNAFFECTED
 This move targets the **system** docker/containerd only (`/var/lib/docker` + `/var/lib/containerd`,
 where the 63 GB `quarkylab-ml:latest` lives on the OS root). Researcher **kieron** runs a
 **rootless** docker daemon (`arid` stack: `arid-app`/`arid-ollama`/`arid-qdrant`) whose data-root is
-`/workspace/researchers/kieron/.local/share/docker` — **already on the pool, its own user-level
+`/workspace/researchers/kieron/.local/share/docker` - **already on the pool, its own user-level
 containerd**. Stopping the system daemons does **not** stop his stack; it keeps running through the move.
-(At verification time his stack was idle — no interactive login since Jul 8, GPU 0%, only compose
-health-poll traffic — and his 3 containers are `restart: no`, so *if* they ever stop he must
+(At verification time his stack was idle - no interactive login since Jul 8, GPU 0%, only compose
+health-poll traffic - and his 3 containers are `restart: no`, so *if* they ever stop he must
 `docker compose up` them himself; not triggered by this operation.)
 
-## ⚠️ overlayfs-on-ZFS caveat — DECIDE FIRST
+## ⚠️ overlayfs-on-ZFS caveat - DECIDE FIRST
 
 containerd uses the **overlayfs snapshotter**. overlayfs on top of a ZFS *dataset*
 works on modern kernels but historically needs `xattr=sa` and can be fragile. Two
-storage layouts — **pick one before the window**:
+storage layouts - **pick one before the window**:
 
-- **Option A — ZFS dataset (thin, simplest).** Create `workspace/containerd` mounted
+- **Option A - ZFS dataset (thin, simplest).** Create `workspace/containerd` mounted
   at `/var/lib/containerd`, set `xattr=sa`. Verify overlayfs works after restart
   (pull/run a small image). Preferred if it passes the smoke test.
-- **Option B — zvol + ext4 (guaranteed identical behavior).** Create a zvol, format
+- **Option B - zvol + ext4 (guaranteed identical behavior).** Create a zvol, format
   ext4, mount at `/var/lib/containerd`. overlayfs behaves exactly as today. Use this
   if Option A's smoke test fails. Trade-off: fixed-size, not thin.
 
 ---
 
-## Procedure — Option A (ZFS dataset)
+## Procedure - Option A (ZFS dataset)
 
 ```bash
 ssh quarkylab
@@ -102,7 +102,7 @@ ssh quarkylab
 sudo systemctl stop docker.socket docker.service
 sudo systemctl stop containerd
 
-# 2. Move the existing store aside (do NOT delete yet — it is the rollback)
+# 2. Move the existing store aside (do NOT delete yet - it is the rollback)
 sudo mv /var/lib/containerd /var/lib/containerd.old
 
 # 3. Create a dedicated dataset mounted at the containerd path
@@ -115,7 +115,7 @@ sudo rsync -aHAXP --numeric-ids /var/lib/containerd.old/ /var/lib/containerd/
 sudo systemctl start containerd
 sudo systemctl start docker.service docker.socket
 
-# 6. SMOKE TEST — verify overlayfs snapshotter works on ZFS
+# 6. SMOKE TEST - verify overlayfs snapshotter works on ZFS
 sudo docker images                      # quarkylab-ml + nvidia/cuda must list
 sudo docker run --rm nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi   # GPU + overlay OK
 sudo docker run --rm quarkylab-ml:latest python -c 'import torch; print(torch.cuda.is_available())'
@@ -151,17 +151,17 @@ sudo rsync -aHAXP --numeric-ids /var/lib/containerd.old/ /var/lib/containerd/
    sudo rm -rf /var/lib/containerd.old      # reclaims the OS-root space for good
    ```
 2. Persist the mount:
-   - Option A (dataset): ZFS mounts it automatically — no fstab needed. Confirm
+   - Option A (dataset): ZFS mounts it automatically - no fstab needed. Confirm
      `zfs get mountpoint workspace/containerd`.
    - Option B (zvol): the `/etc/fstab` line above.
 3. Update the alert baseline / NetFRAME expectation for QuarkyLab `/`.
 
 ## Notes
 - Docker version 29.6.0, containerd v2.2.5. NVIDIA runtime (`nvidia` in
-  `/etc/docker/daemon.json`) is unaffected — this is purely a storage move.
+  `/etc/docker/daemon.json`) is unaffected - this is purely a storage move.
 - If you later prefer, the same effect is achievable by setting `root =
   "/workspace/containerd"` in `/etc/containerd/config.toml` instead of mounting at the
-  default path — but mounting at `/var/lib/containerd` keeps behavior identical and
+  default path - but mounting at `/var/lib/containerd` keeps behavior identical and
   survives package upgrades that rewrite the config.
 - Related: [[Network-Performance-and-Upgrade-Path-2026-07-09]] (VLAN30/10G context),
   QuarkyLab-Operations.md.

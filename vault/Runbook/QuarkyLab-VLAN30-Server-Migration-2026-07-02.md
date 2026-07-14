@@ -1,4 +1,4 @@
-# 🔀 Server VLAN 30 Migration — QuarkyLab · Randy · Jarvis
+# 🔀 Server VLAN 30 Migration - QuarkyLab · Randy · Jarvis
 **Tags:** #runbook #network #vlan #proxmox #corosync #security #quarkylab
 **Related:** [[Compute/Dell R730 - ML Node]] · [[Compute/Dell R730 - General Node]] · [[Infrastructure/Proxmox Cluster]] · [[Infrastructure/QuarkyLab Storage]] · [[Runbook/QuarkyLab-Operations]] · [[00 - Homelab MOC]]
 
@@ -8,21 +8,21 @@ Created **2026-07-02**. Migrates the three "enterprise" compute servers onto the
 
 ## Objective & hard constraints
 - Move **QuarkyLab (.179)**, **Randy (.187)**, **Jarvis (.31)** onto VLAN 30 (`servers`).
-- **Stay full km-cluster members** — corosync must remain healthy.
+- **Stay full km-cluster members** - corosync must remain healthy.
 - **Wazuh (VM 104, 192.168.10.184) keeps monitoring every node.**
 - **Pi-hole (192.168.10.177)** keeps serving DNS, including hosts on the new VLANs.
 - **All monitoring VMs** (Prometheus/Grafana on pve3 `.183`, Scrutiny hub `.183:8080`, Wazuh) keep seeing the nodes.
 - **Lowest possible downtime**; every step reversible. Nothing unrecoverable.
 
 ## Design decision (why this shape)
-The three nodes are **corosync cluster members**. Proxmox's own docs say corosync needs a **dedicated, low-latency (<5 ms) network** and that you must **never hot-swap an active link's IP** ("add a new interface then remove the old — changing an active corosync interface causes split-brain"). Routing corosync between VLAN 1 and VLAN 30 through OPNsense would put the firewall in the cluster's critical path.
+The three nodes are **corosync cluster members**. Proxmox's own docs say corosync needs a **dedicated, low-latency (<5 ms) network** and that you must **never hot-swap an active link's IP** ("add a new interface then remove the old - changing an active corosync interface causes split-brain"). Routing corosync between VLAN 1 and VLAN 30 through OPNsense would put the firewall in the cluster's critical path.
 
-**Therefore corosync stays exactly where it is — on VLAN 1, untouched.** We **dual-home**: VLAN 1 becomes the *cluster + management + monitoring* network (directly connected, no changes), and VLAN 30 is **added** as the *servers' service + data + egress* network. Because VLAN 1 is retained as a directly-connected subnet, **every monitoring flow keeps working with zero config changes** (Prometheus/Wazuh/Scrutiny reach the nodes on their `.10.x` exactly as today; the nodes still reach Pi-hole `.10.177` directly).
+**Therefore corosync stays exactly where it is - on VLAN 1, untouched.** We **dual-home**: VLAN 1 becomes the *cluster + management + monitoring* network (directly connected, no changes), and VLAN 30 is **added** as the *servers' service + data + egress* network. Because VLAN 1 is retained as a directly-connected subnet, **every monitoring flow keeps working with zero config changes** (Prometheus/Wazuh/Scrutiny reach the nodes on their `.10.x` exactly as today; the nodes still reach Pi-hole `.10.177` directly).
 
 **What actually rides each VLAN after migration:**
 | Traffic | VLAN | Notes |
 |---|---|---|
-| Corosync / cluster (all 7 nodes) | **1** | untouched — zero cluster risk |
+| Corosync / cluster (all 7 nodes) | **1** | untouched - zero cluster risk |
 | Proxmox mgmt / SSH / iDRAC | **1** | `.10.x` retained (directly connected) |
 | Wazuh agent→manager, Prometheus scrape, Scrutiny | **1** | unchanged, still works |
 | Node → Pi-hole DNS | **1** | `.10.177` directly connected |
@@ -43,8 +43,8 @@ The three nodes are **corosync cluster members**. Proxmox's own docs say corosyn
 | Randy | `XX:XX:XX:XX:XX:XX` | **xe-0/2/0** | 10G |
 | Jarvis | `XX:XX:XX:XX:XX:XX` | **ge-0/0/22** | 1G |
 
-- **Wazuh VM 104** (`XX:XX:XX:XX:XX:XX`) is learned on QuarkyLab's port `ge-0/0/24` — it rides that port's **native** VLAN, so keeping native VLAN 1 on the trunk keeps VM 104 on VLAN 1 unchanged.
-- QuarkyLab has a **spare 10G link up on `xe-0/2/3`** (OS NIC down) — future option, not used here.
+- **Wazuh VM 104** (`XX:XX:XX:XX:XX:XX`) is learned on QuarkyLab's port `ge-0/0/24` - it rides that port's **native** VLAN, so keeping native VLAN 1 on the trunk keeps VM 104 on VLAN 1 unchanged.
+- QuarkyLab has a **spare 10G link up on `xe-0/2/3`** (OS NIC down) - future option, not used here.
 - Existing couplings to re-point: Randy exports `/datastore/quarkylab` → `192.168.10.179`; QuarkyLab fstab mounts `192.168.10.187:/datastore/quarkylab`; QuarkyLab PBS storage `randy-pbs` → `server 192.168.10.187` (fingerprint unchanged on re-IP).
 
 ## Target addressing (static, same host octet)
@@ -56,14 +56,14 @@ The three nodes are **corosync cluster members**. Proxmox's own docs say corosyn
 | Gateway | (removed from vmbr0) | **192.168.30.1** (default) |
 
 ## Safety nets (always available)
-1. **iDRAC/IPMI on VLAN 1** — QuarkyLab `.10.20`, Jarvis `.10.21`, Randy `.10.22`. On-site console survives any OS-network change.
-2. **Tailscale up on all three** — QuarkyLab `100.x.x.x`, Randy `100.64.0.2`, Jarvis `100.64.0.6`. Survives LAN re-IP as long as egress works.
+1. **iDRAC/IPMI on VLAN 1** - QuarkyLab `.10.20`, Jarvis `.10.21`, Randy `.10.22`. On-site console survives any OS-network change.
+2. **Tailscale up on all three** - QuarkyLab `100.x.x.x`, Randy `100.64.0.2`, Jarvis `100.64.0.6`. Survives LAN re-IP as long as egress works.
 3. **Admin SSH is same-subnet** (from VLAN 1 `.199`) → reaches nodes' `.10.x` **directly**, so the default-gateway swap can never lock us out.
 4. **Corosync untouched** → the cluster is never at risk at any step.
 
 ---
 
-## Phase 0 — Pre-flight (read-only, no downtime)
+## Phase 0 - Pre-flight (read-only, no downtime)
 Run and record baselines; do not proceed unless all green.
 ```bash
 # Cluster healthy + quorate
@@ -76,7 +76,7 @@ ping -c1 192.168.10.20 && ping -c1 192.168.10.21 && ping -c1 192.168.10.22   # i
 for h in quarkylab randy jarvis; do ssh $h 'tailscale status | head -1'; done
 # VLAN 30 gateway reachable, subnet ready in OPNsense
 ping -c2 192.168.30.1
-# Fresh backup of QuarkyLab workspace exists (daily 01:30) — or run now:
+# Fresh backup of QuarkyLab workspace exists (daily 01:30) - or run now:
 ssh quarkylab 'systemctl start pbs-workspace-backup.service; journalctl -u pbs-workspace-backup -n5 --no-pager'
 # Note Wazuh baseline
 ssh quarkylab 'curl -sk -o /dev/null -w "wazuh_dash=%{http_code}\n" https://192.168.10.184/'
@@ -85,7 +85,7 @@ ssh quarkylab 'curl -sk -o /dev/null -w "wazuh_dash=%{http_code}\n" https://192.
 
 ---
 
-## Phase 1 — Switch: trunk VLAN 30 to the three node ports (additive)
+## Phase 1 - Switch: trunk VLAN 30 to the three node ports (additive)
 Keeps native VLAN 1 (mgmt/corosync/Wazuh-VM stay untagged on VLAN 1) and adds tagged VLAN 30. Uses **`commit confirmed`** so the switch auto-reverts if we lose the nodes.
 ```
 # ssh mason@192.168.10.50 ; then: configure
@@ -106,7 +106,7 @@ set interfaces ge-0/0/22 native-vlan-id 1
 # Commit with a 5-minute dead-man switch:
 commit confirmed 5
 ```
-**Verify (from admin box, within 5 min):** all three still reachable on VLAN 1 —
+**Verify (from admin box, within 5 min):** all three still reachable on VLAN 1 -
 ```bash
 for ip in 192.168.10.179 192.168.10.187 192.168.10.31; do ping -c2 $ip; done
 ssh quarkylab 'pvecm status | grep -i quorate'   # still Quorate: Yes
@@ -114,14 +114,14 @@ ssh quarkylab 'pvecm status | grep -i quorate'   # still Quorate: Yes
 - **Good →** back on the switch: `commit` (or `commit check` then `commit`) to make it permanent.
 - **Bad / no output →** do nothing; the switch **auto-rolls back in 5 min**. Or `rollback 0; commit`.
 
-**Rollback (manual):** `configure; rollback 1; commit` — or delete the added `interface-mode trunk` / `servers` member and restore access.
+**Rollback (manual):** `configure; rollback 1; commit` - or delete the added `interface-mode trunk` / `servers` member and restore access.
 
 ---
 
-## Phase 2 — Nodes: add VLAN 30 interface + move default gateway (additive)
+## Phase 2 - Nodes: add VLAN 30 interface + move default gateway (additive)
 For each node, append a `vmbr0.30` stanza and **remove only the `gateway` line from `vmbr0`** (the `.10.x` address stays; VLAN 1 is directly connected so it keeps working without a default route). Admin SSH is same-subnet → the gateway swap cannot drop the session.
 
-**QuarkyLab** `/etc/network/interfaces` — remove `gateway 192.168.10.1` from vmbr0, then add:
+**QuarkyLab** `/etc/network/interfaces` - remove `gateway 192.168.10.1` from vmbr0, then add:
 ```
 auto vmbr0.30
 iface vmbr0.30 inet static
@@ -131,7 +131,7 @@ iface vmbr0.30 inet static
 **Randy** → `address 192.168.30.187/24`, gw `192.168.30.1`.
 **Jarvis** → `address 192.168.30.31/24`, gw `192.168.30.1`.
 
-Apply (per node), lowest-downtime — VLAN 1 address is untouched so mgmt stays up:
+Apply (per node), lowest-downtime - VLAN 1 address is untouched so mgmt stays up:
 ```bash
 ssh <node> 'ifreload -a && ip -br a | grep vmbr0 && ip r | grep default'
 ```
@@ -143,7 +143,7 @@ for h in quarkylab randy jarvis; do ssh $h 'ip -br a | grep "vmbr0.30"; ip r | g
 ssh quarkylab 'ping -c2 192.168.30.187; ping -c2 192.168.30.31; ping -c2 192.168.30.1'
 # egress + DNS still work (Pi-hole on VLAN 1 is directly connected)
 ssh quarkylab 'getent hosts github.com; ping -c2 1.1.1.1'
-# monitoring plane untouched — still reachable on VLAN 1
+# monitoring plane untouched - still reachable on VLAN 1
 for ip in 192.168.10.179 192.168.10.187 192.168.10.31; do ping -c1 $ip; done
 ```
 **Rollback (per node):** delete the `vmbr0.30` stanza, restore `gateway 192.168.10.1` on vmbr0, `ifreload -a`. (If ever unreachable: iDRAC console or `ssh <tailscale-ip>`.)
@@ -152,24 +152,24 @@ for ip in 192.168.10.179 192.168.10.187 192.168.10.31; do ping -c1 $ip; done
 
 ---
 
-## Phase 3 — Pi-hole / DNS for VLAN 30 (OPNsense GUI)
+## Phase 3 - Pi-hole / DNS for VLAN 30 (OPNsense GUI)
 The **nodes** already resolve via Pi-hole over VLAN 1 (direct). This covers **other** hosts that live on VLAN 30.
 - OPNsense → Services → DHCPv4 → **VLAN 30**: set DNS server = **192.168.10.177**; exclude `.179/.187/.31` from the pool (static).
 - OPNsense → Firewall → Rules → **VLAN 30**: allow `VLAN30 net → 192.168.10.177  proto UDP/TCP  port 53`.
 - **Verify** from a VLAN 30 host: `dig @192.168.10.177 example.com +short`.
 
-## Phase 4 — Move inter-server storage & backup onto VLAN 30 (low-downtime cutover)
+## Phase 4 - Move inter-server storage & backup onto VLAN 30 (low-downtime cutover)
 Both endpoints (Randy + QuarkyLab) are now on VLAN 30 → this traffic stays on the switch L2 (no routing). Add-new-then-remove-old.
 
-**Randy — add VLAN 30 export (keep old line until verified):**
+**Randy - add VLAN 30 export (keep old line until verified):**
 ```bash
 ssh randy 'printf "/datastore/quarkylab 192.168.30.179(rw,sync,no_subtree_check,no_root_squash)\n" >> /etc/exports && exportfs -ra && exportfs -v | grep quarkylab'
 ```
-**QuarkyLab — repoint the mount** (base.sif runs from the LOCAL copy, so a brief `/data` gap is safe; ensure no job is mid-read of `/data`):
+**QuarkyLab - repoint the mount** (base.sif runs from the LOCAL copy, so a brief `/data` gap is safe; ensure no job is mid-read of `/data`):
 ```bash
 ssh quarkylab 'sed -i "s#192.168.10.187:/datastore/quarkylab#192.168.30.187:/datastore/quarkylab#" /etc/fstab && umount /data && mount /data && mount | grep /data'
 ```
-**QuarkyLab — repoint PBS** (fingerprint unchanged — same cert):
+**QuarkyLab - repoint PBS** (fingerprint unchanged - same cert):
 ```bash
 ssh quarkylab 'sed -i "s/server 192.168.10.187/server 192.168.30.187/" /etc/pve/storage.cfg && pvesm status | grep randy-pbs'
 ssh quarkylab 'systemctl start pbs-workspace-backup.service; journalctl -u pbs-workspace-backup -n8 --no-pager'   # test backup over VLAN 30
@@ -180,7 +180,7 @@ ssh randy 'sed -i "\#192.168.10.179(rw,sync#d" /etc/exports && exportfs -ra && e
 ```
 **Rollback:** revert fstab to `192.168.10.187:...` + `umount/mount /data`; revert `storage.cfg` server to `.10.187`; the `.10.179` export line is still present until the retire step.
 
-## Phase 5 — Verify monitoring end-to-end (no changes expected — just confirm)
+## Phase 5 - Verify monitoring end-to-end (no changes expected - just confirm)
 ```bash
 # Wazuh VM 104 still on VLAN 1, healthy, agents for all nodes reporting
 ssh quarkylab 'curl -sk -o /dev/null -w "dash=%{http_code}\n" https://192.168.10.184/'      # expect 302
@@ -209,11 +209,11 @@ Monitoring stays on VLAN 1 (pull to nodes' `.10.x`, directly connected) → **no
 1. **Storage:** revert fstab + `storage.cfg` to `.10.187`; restore Randy `.10.179` export.
 2. **Nodes:** delete `vmbr0.30`, restore `gateway 192.168.10.1` on `vmbr0`, `ifreload -a`.
 3. **Switch:** `configure; rollback 1; commit` (ports back to access VLAN 1).
-4. **Corosync/cluster:** never touched — nothing to undo.
+4. **Corosync/cluster:** never touched - nothing to undo.
 5. **If locked out:** iDRAC console (`.10.20/.21/.22`) or `ssh <tailscale-ip>`.
 
 ## Post-migration follow-ups
 - Update vault: [[Compute/Dell R730 - ML Node]], [[Compute/Dell R730 - General Node]], [[Infrastructure/QuarkyLab Storage]], [[Runbook/QuarkyLab-Operations]] with the new `.30.x` service IPs (keep `.10.x` mgmt IPs documented).
 - Update memory `project-quarkylab-student-env` / `project-homelab` with dual-home layout + storage now on VLAN 30.
 - Update `~/.ssh/config` if any host alias hard-codes `.10.x` for a service that moved (mgmt aliases stay `.10.x`).
-- Consider (future, out of scope): full isolation removing the VLAN 1 footprint would require moving corosync via the documented *add-link-then-remove-link* dance — a separate, gated change.
+- Consider (future, out of scope): full isolation removing the VLAN 1 footprint would require moving corosync via the documented *add-link-then-remove-link* dance - a separate, gated change.

@@ -3,7 +3,7 @@
 [![netlab (virtual network)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml)
 
 A [containerlab](https://containerlab.dev) topology that boots **real routers**, applies
-IOS-style routing config, and is validated **end-to-end in CI** — every push spins the
+IOS-style routing config, and is validated **end-to-end in CI**  every push spins the
 network up, checks it, and tears it down. The green badge above means the routing
 actually works (and *survives a link failure*), not just that a YAML file parses.
 

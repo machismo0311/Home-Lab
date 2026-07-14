@@ -1,7 +1,7 @@
-# ☎️ VoIP — FreePBX + Cisco CP-8841
+# ☎️ VoIP - FreePBX + Cisco CP-8841
 **Tags:** #projects #voip #cisco #freepbx  
 **Related:** [[Infrastructure/Services & VMs]] · [[Infrastructure/Proxmox Cluster]] · [[Networking/Network Overview]]  
-**Status:** ⏸️ Deferred — pending core infrastructure stability
+**Status:** ⏸️ Deferred - pending core infrastructure stability
 
 ---
 
@@ -16,7 +16,7 @@ Five Cisco CP-8841 SIP phones integrated with a FreePBX VM on Proxmox, using VoI
 | Item | Qty | Notes |
 |---|---|---|
 | Cisco CP-8841 | 5 | SIP-capable (not SCCP-locked) |
-| PoE source | — | [[Networking/UniFi USW-24-250W]] or EX3400 |
+| PoE source | - | [[Networking/UniFi USW-24-250W]] or EX3400 |
 
 > [!NOTE] Phone Firmware
 > CP-8841 ships with SCCP firmware by default. Must convert to SIP firmware via TFTP provisioning before registering with FreePBX. See procedure below.
@@ -27,7 +27,7 @@ Five Cisco CP-8841 SIP phones integrated with a FreePBX VM on Proxmox, using VoI
 
 ```mermaid
 flowchart LR
-    PHONES[Cisco CP-8841 ×5\nVLAN 60 — VOIP]
+    PHONES[Cisco CP-8841 ×5\nVLAN 60 - VOIP]
     PBX[FreePBX VM\n10.0.60.5\npve-r730-gen]
     VOIPMS[VoIP.ms\nSIP Trunk]
     PSTN[PSTN / Regular calls]
@@ -121,7 +121,7 @@ Block → all other inter-VLAN traffic from VOIP
 
 ## Runbook
 
-See [[Runbook/Daily Operations]] — "VoIP troubleshooting" section.
+See [[Runbook/Daily Operations]] - "VoIP troubleshooting" section.
 
 ---
 

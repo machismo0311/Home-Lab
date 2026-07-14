@@ -1,18 +1,18 @@
-# Monitoring & Alerting — Grafana → Discord (2026-07-10)
+# Monitoring & Alerting - Grafana → Discord (2026-07-10)
 
 **Tags:** #runbook #monitoring #alerting #grafana #prometheus #discord
 **Related:** [[Infrastructure/Services & VMs]] · [[Runbook/DNS-HA-OPNsense-Resilience-2026-07-10]]
 **Config-as-code:** private repo `machismo0311/netframe-monitoring-stack` (secrets redacted → Vaultwarden)
 
-Added real alerting on top of the existing (metrics-only) Prom/Grafana/Loki stack. Metrics were collected but **nothing paged** — now they do.
+Added real alerting on top of the existing (metrics-only) Prom/Grafana/Loki stack. Metrics were collected but **nothing paged** - now they do.
 
 ## Architecture
-- Stack: `pve3 CT 103` (`.183`), docker-compose project `grafana` — Grafana `:3000`, Prometheus `:9090`, Loki `:3100`, InfluxDB, Scrutiny, **blackbox `:9115`** (added 2026-07-10).
+- Stack: `pve3 CT 103` (`.183`), docker-compose project `grafana` - Grafana `:3000`, Prometheus `:9090`, Loki `:3100`, InfluxDB, Scrutiny, **blackbox `:9115`** (added 2026-07-10).
 - **Alerting = Grafana v13 Unified Alerting → native Discord contact points.** No Alertmanager (fewer moving parts; Grafana has native Discord).
 - **Two Discord channels:**
   - `discord-alerts` ← infra alerts (routed by label `notify=infra`)
   - `discord-ups` ← UPS alerts (root receiver; pre-existing, verified delivering)
-- Grafana admin + InfluxDB creds: **moved to `600` `/opt/grafana/.env` (2026-07-10)**, compose uses `${VAR}` (repo `ct103/.env.example`). Discord webhook lives in Grafana's DB + Vaultwarden. Still inline: peanut-ups basic-auth in `prometheus.yml` (Prometheus can't env-interpolate scrape secrets — keep file `600`/use `password_file`).
+- Grafana admin + InfluxDB creds: **moved to `600` `/opt/grafana/.env` (2026-07-10)**, compose uses `${VAR}` (repo `ct103/.env.example`). Discord webhook lives in Grafana's DB + Vaultwarden. Still inline: peanut-ups basic-auth in `prometheus.yml` (Prometheus can't env-interpolate scrape secrets - keep file `600`/use `password_file`).
 
 ## Alert rules (8)
 | Rule | Fires | Sev | Channel |
@@ -25,8 +25,8 @@ Added real alerting on top of the existing (metrics-only) Prom/Grafana/Loki stac
 | GpuMemoryHigh | GPU mem >90% 10m | warn | discord-alerts |
 | DiskAlmostFull | root FS >90% 10m | warn | discord-alerts |
 | LowMemory | avail <8% 10m | warn | discord-alerts |
-| UPS battery low | charge <50% 2m | — | discord-ups |
-| UPS runtime low | runtime <300s 1m | — | discord-ups |
+| UPS battery low | charge <50% 2m | - | discord-ups |
+| UPS runtime low | runtime <300s 1m | - | discord-ups |
 
 Verified end-to-end: test alerts delivered to both channels; all rules `health=ok`.
 
