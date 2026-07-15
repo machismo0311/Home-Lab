@@ -1,7 +1,8 @@
 flowchart TB
-    wan["WAN / ISP"]
-    udr["UniFi Dream Router<br/>WAN edge · 192.168.1.x"]
-    opnsense["OPNsense (VM 100, pve2)<br/>192.168.10.1 · router / firewall / DHCP"]
+    wan1["WAN1 · Spectrum<br/>public /19 · primary"]
+    wan2["WAN2 · FirstNet 5G<br/>192.168.1.0/24 · failover"]
+    opnsense["OPNsense (VM 100, pve2)<br/>192.168.10.1 · edge + router / firewall / DHCP · dual-WAN"]
+    udr["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]
     ex3400["Juniper EX3400-48P<br/>192.168.10.50 · JunOS 23.4R2 · core"]
     usw["UniFi USW-24-250W<br/>trunk on Port 24"]
     ex2300["Juniper EX2300-48P"]
@@ -14,9 +15,10 @@ flowchart TB
     randy["Randy<br/>.187 · PBS · Jellyfin · storage"]
     pve1["pve1 (Mac Mini)<br/>.193 · standalone · Pi-hole .177"]
 
-    wan --> udr
-    udr --> opnsense
+    wan1 -->|primary| opnsense
+    wan2 -->|failover| opnsense
     opnsense -->|trunk| ex3400
+    ex3400 -->|VLAN 1 wifi| udr
     ex3400 -->|ge-0/0/46| usw
     ex3400 -->|1G trunk| ex2300
     ex3400 --> pve2
@@ -33,8 +35,8 @@ flowchart TB
     classDef switch fill:#1a1a2e,color:#eee
     classDef node fill:#20143a,color:#eee
     classDef standalone fill:#2b2b2b,color:#cccccc
-    class wan,udr edge
+    class wan1,wan2 edge
     class opnsense firewall
+    class udr,pve2,pve3,pve4,pve5,quarkylab,jarvis,randy node
     class ex3400,usw,ex2300 switch
-    class pve2,pve3,pve4,pve5,quarkylab,jarvis,randy node
     class pve1 standalone

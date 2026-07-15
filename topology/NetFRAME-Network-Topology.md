@@ -7,7 +7,7 @@
 | **Document** | NetFRAME Network Topology & Systems Reference |
 | **Owner** | Kyle Mason (`machismo0311`) — Greater Cleveland, OH |
 | **Classification** | Public / Sanitized (MACs → vendor only; serials omitted) |
-| **Version** | 1.0 |
+| **Version** | 2.0 (2026-07-14: dual-WAN edge correction, single-NAT, UDR reclassified, F-1 closed) |
 | **Generated** | 2026-07-08 |
 | **Method** | Live discovery (nmap, Proxmox API, SSH host facts, Headscale, ZFS/StorCLI) reconciled against the Home-Lab Obsidian vault |
 | **Scope** | Every host, VLAN, subnet, link, service, storage pool, and overlay path on the `192.168.10.0/24` estate and its segmented VLANs |
@@ -58,7 +58,7 @@ At a glance:
 | Overlay VPN nodes | 9 (Headscale `100.64.0.0/10`) |
 | UPS units | 2 (split-bus, ~2220 W combined) |
 
-**Edge model:** a UniFi Dream Router is the WAN edge (upstream `192.168.1.0/24`); **OPNsense** (a VM on `pve2`) is the LAN router / firewall / DHCP for `192.168.10.0/24` and inter-VLAN gateway. This is a deliberate **double-NAT** design isolating the lab LAN behind its own firewall.
+**Edge model:** **OPNsense** (VM 100 on `pve2`) is the network edge. Its **primary WAN terminates the ISP public assignment directly** (Spectrum, a routable `/19` on `vtnet0`), so the lab is **single-NAT, not double-NAT**. A **second WAN** (`vtnet2`) carries a **FirstNet 5G hotspot** (`192.168.1.0/24`) as an automatic **failover** uplink via an OPNsense gateway group. OPNsense is also the LAN router / firewall / DHCP for `192.168.10.0/24` and the inter-VLAN gateway. The UniFi Dream Router is now a **VLAN 1 wireless controller / AP** (`192.168.10.2`), not the WAN edge.
 
 ---
 
@@ -167,7 +167,7 @@ Both are exposed by **NUT 2.8.1** on `pve3` (`MODE=netserver`, TCP `3493`) and s
 | **EX3400-48P** | `192.168.10.50` | Juniper EX3400 | JunOS **23.4R2-S7.4** | U40 | **Core** — 48× 1G PoE+, 4× 10G SFP+, 2× 40G QSFP+, dual PSU, STP root |
 | UniFi USW-24-250W | (UniFi-managed) | Ubiquiti | UniFi | U39 | Access / AP aggregation; Port 24 trunk |
 | EX2300-48P | (via trunk) | Juniper EX2300 | JunOS | U38 | Secondary / lab isolation |
-| UniFi Dream Router | `192.168.1.1` | Ubiquiti UDR | UniFi | — | **WAN edge** (upstream of OPNsense) |
+| UniFi Dream Router | `192.168.10.2` | Ubiquiti UDR | UniFi | — | **Wireless controller / AP** on VLAN 1 (not the WAN edge) |
 
 **Core switch details (EX3400):**
 - Management via `irb.10` → `192.168.10.50/24`, static default `0.0.0.0/0 → 192.168.10.1` (OPNsense).
@@ -234,13 +234,15 @@ Client/IoT devices also seen: Samsung (`.111`), Amazon (`.112`), Intel (`.191`),
 ### 5.1 Edge / WAN
 
 ```
-Internet ─▶ ISP ─▶ UniFi Dream Router (WAN edge, 192.168.1.0/24) ─▶ OPNsense VM100 (192.168.10.1) ─▶ LAN 192.168.10.0/24 + VLANs
-                              │                                            │
-                              └── provides WiFi + upstream NAT             └── LAN firewall / DHCP / inter-VLAN routing (double-NAT)
+ISP (Spectrum) ─▶ public /19 ─┐
+                              ├─▶ OPNsense VM100 (edge + LAN 192.168.10.1) ─▶ LAN 192.168.10.0/24 + VLANs
+FirstNet 5G hotspot ──────────┘   dual-WAN gateway group (WAN1 primary / WAN2 failover)
+(192.168.1.0/24, backup)          LAN firewall / DHCP / inter-VLAN routing (single-NAT)
 ```
 
-- **OPNsense v25.7** (VM 100 on pve2) is the authoritative LAN router/firewall/DHCP and inter-VLAN gateway. `onboot=1`.
-- The **UDR** remains the WAN edge and WiFi provider on `192.168.1.x`; the lab sits behind a second NAT/firewall boundary.
+- **OPNsense v25.7** (VM 100 on pve2) is the network **edge** and the authoritative LAN router/firewall/DHCP and inter-VLAN gateway. `onboot=1`.
+- **WAN1 (primary)** terminates the ISP public IP directly on `vtnet0` (single-NAT). **WAN2 (failover)** is a FirstNet 5G hotspot on `vtnet2` (`192.168.1.0/24`); an OPNsense gateway group fails over automatically (proven).
+- The **UDR** is now a wireless controller / AP on VLAN 1 (`192.168.10.2`), not the WAN edge.
 
 ### 5.2 Static IP registry — VLAN 1 (`192.168.10.0/24`)
 
@@ -284,15 +286,15 @@ Internet ─▶ ISP ─▶ UniFi Dream Router (WAN edge, 192.168.1.0/24) ─▶ 
 | Node | Default gateway | Egress iface | Note |
 |---|---|---|---|
 | pve2 | `192.168.10.1` | vmbr1 | ✅ correct (OPNsense) |
-| pve3 | `192.168.1.1` | vmbr0 | ⚠️ **onlink to UDR** — off-subnet, see §14-F1 |
-| pve4 | `192.168.1.1` | vmbr0 | ⚠️ same |
-| pve5 | `192.168.1.1` | vmbr0 | ⚠️ same |
+| pve3 | `192.168.10.1` | vmbr0 | ✅ correct (OPNsense) — F-1 resolved |
+| pve4 | `192.168.10.1` | vmbr0 | ✅ correct (OPNsense) — F-1 resolved |
+| pve5 | `192.168.10.1` | vmbr0 | ✅ correct (OPNsense) — F-1 resolved |
 | QuarkyLab | `192.168.30.1` | vmbr0.30 | ✅ VLAN 30 egress |
 | Jarvis | `192.168.30.1` | vmbr1 | ✅ VLAN 30 egress (10G) |
 | Randy | `192.168.30.1` | vmbr0.30 | ✅ VLAN 30 egress |
 | Ares | `192.168.10.1` | wlp2s0 (WiFi) | wired leg down → WiFi is active default |
 
-> **Split-personality routing is by design at the storage tier** (GPU/storage nodes egress via VLAN 30) but **inconsistent at the small-node tier** (pve3/4/5 point at the UDR `192.168.1.1` directly rather than OPNsense `192.168.10.1`). See finding **F-1**.
+> **Split-personality routing is by design at the storage tier** (GPU/storage nodes egress via VLAN 30). The former small-node inconsistency (pve3/4/5 defaulting off-subnet) is **resolved**: all EliteDesk nodes now default via OPNsense `192.168.10.1`. Finding **F-1 closed**.
 
 ### 5.5 DNS architecture
 
