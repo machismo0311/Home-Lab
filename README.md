@@ -47,6 +47,17 @@ I'm a U.S. Marine Corps aviator (EC-135/145 Instructor Pilot, FOQA Officer) tran
 
 ---
 
+## 🔒 Security & Reliability Engineering
+
+NETFRAME is treated as a system to be *assessed and operated*, not just stood up. Redacted, public editions of that work:
+
+- **[Security assessment](https://github.com/machismo0311/netframe-security-assessment-public)** — an authorized, defensive assessment: rules of engagement, evidence-driven findings ranked by severity, attack-chain analysis, confirmed positive controls, and a prioritized remediation roadmap.
+- **[SRE reliability assessment](https://github.com/machismo0311/netframe-reliability-assessment-public)** — availability posture from live telemetry, a 12-mode FMEA, MTTR/MTBF reasoning, a 3-2-1 backup gap analysis, an RTO/RPO disaster-recovery plan, and a four-horizon reliability roadmap.
+
+Every change to the estate is recorded in an **append-only change log with a stated rollback**, and incidents are written up as formal **RCAs and after-action reports**. Full unredacted editions, a Fortune-100 operational benchmark, and a 30+ document operations library are kept private.
+
+---
+
 ## Cluster Nodes
 
 | Hostname | Role | IP | CPU | RAM | GPU | PVE | Kernel |
