@@ -6,17 +6,22 @@
 site: NETFRAME
 
 nodes:
-  - id: wan
-    label: "WAN / ISP"
+  - id: wan1
+    label: "WAN1 · Spectrum"
     role: edge
-  - id: udr
-    label: "UniFi Dream Router"
+    note: "public /19 · primary"
+  - id: wan2
+    label: "WAN2 · FirstNet 5G"
     role: edge
-    note: "WAN edge · 192.168.1.x"
+    note: "192.168.1.0/24 · failover"
   - id: opnsense
     label: "OPNsense (VM 100, pve2)"
     role: firewall
-    note: "192.168.10.1 · router / firewall / DHCP"
+    note: "192.168.10.1 · edge + router / firewall / DHCP · dual-WAN"
+  - id: udr
+    label: "UniFi Dream Router"
+    role: node
+    note: "192.168.10.2 · VLAN 1 wireless controller / AP"
   - id: ex3400
     label: "Juniper EX3400-48P"
     role: switch
@@ -63,9 +68,10 @@ nodes:
 
 # links: [from, to] or [from, to, "edge label"]
 links:
-  - [wan, udr]
-  - [udr, opnsense]
+  - [wan1, opnsense, "primary"]
+  - [wan2, opnsense, "failover"]
   - [opnsense, ex3400, "trunk"]
+  - [ex3400, udr, "VLAN 1 wifi"]
   - [ex3400, usw, "ge-0/0/46"]
   - [ex3400, ex2300, "1G trunk"]
   - [ex3400, pve2]
