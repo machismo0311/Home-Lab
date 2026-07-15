@@ -87,17 +87,21 @@ Every change to the estate is recorded in an **append-only change log with a sta
 
 ```mermaid
 flowchart TB
-    WAN["🌍 WAN / ISP"] --> UDR["UniFi Dream Router<br/>WAN edge · 192.168.1.x WiFi"]
-    UDR --> OPN["OPNsense VM 100 (pve2)<br/>192.168.10.1<br/>LAN router / firewall / DHCP"]
+    WAN1["WAN1 · Spectrum<br/>public /19 · primary"] -->|primary| OPN
+    WAN2["WAN2 · FirstNet 5G<br/>192.168.1.0/24 · failover"] -->|failover| OPN
+    OPN["OPNsense VM 100 (pve2)<br/>192.168.10.1 · edge<br/>router / firewall / DHCP · dual-WAN"]
     OPN <-->|trunk| EX3400
 
     subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
-        EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4"]
+        EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4 · STP root"]
         USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
         EX2300["Juniper EX2300-48P<br/>U38"]
         EX3400 <-->|ge-0/0/46 trunk| USW
         EX3400 <-->|1G trunk| EX2300
     end
+
+    UDR["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]
+    EX3400 -->|VLAN 1 wifi| UDR
 
     subgraph PVE["km-cluster — Proxmox nodes"]
         PVE2["pve2 · .204<br/>OPNsense host"]
@@ -105,15 +109,16 @@ flowchart TB
         PVE4["pve4 · .202"]
         PVE5["pve5 · .203"]
         QUARK["QuarkyLab · .179<br/>RTX 8000 48GB · Wazuh VM 104 ·184"]
-        JARVIS["Jarvis · .31<br/>LLM node · 2× RTX 6000 48GB installed 2026-07-04"]
+        JARVIS["Jarvis · .31<br/>LLM node · 2× RTX 6000 48GB"]
         RANDY["Randy · .187<br/>PBS · Jellyfin · storage"]
     end
 
-    PVE1["pve1 · .193<br/>Mac Mini — standalone<br/>Pi-hole .177"]
+    PVE1["pve1 · .193<br/>Mac Mini standalone<br/>Pi-hole .177"]
 
     EX3400 --> PVE2 & PVE3 & PVE4 & PVE5 & QUARK & JARVIS & RANDY & PVE1
 
-    style UDR fill:#cc4400,color:#fff
+    style WAN1 fill:#cc4400,color:#fff
+    style WAN2 fill:#cc4400,color:#fff
     style OPN fill:#163016,color:#eee
     style EX3400 fill:#1a1a2e,color:#eee
 ```
