@@ -3,15 +3,16 @@ name: CI
 # Lint/syntax checks for the Python services (llm_router, jarvis-oncall) and bash scripts.
 # CI only — deployment to physical infra stays manual (SSH/systemd), per infra-safety policy.
 
+# Deliberately NOT path-filtered. Both job names below ("Python lint + syntax" and
+# "ShellCheck (bash)") are required status checks in main's branch protection, and a
+# required check that never runs stays pending forever — a docs/vault-only PR was
+# therefore unmergeable except via admin bypass. Running these on every PR costs a few
+# seconds against an unchanged scripts/ and keeps the merge gate honest.
+# diagram.yml and netlab.yml stay path-filtered: they are expensive and not required checks.
+
 on:
   push:
-    paths:
-      - 'scripts/**'
-      - '.github/workflows/**'
   pull_request:
-    paths:
-      - 'scripts/**'
-      - '.github/workflows/**'
 
 permissions:
   contents: read
