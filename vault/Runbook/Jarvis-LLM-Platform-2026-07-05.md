@@ -104,7 +104,32 @@ Source of truth for the router + RAG code: **`Home-Lab/scripts/llm_router/`** (`
 | Name | DNS | Front | Backend |
 |---|---|---|---|
 | `llm.netframe.local` | Pi-hole → .181 | NPM host id 5 (HTTP) | Jarvis `.31:8000` (router) |
-| `chat.netframe.local` | Pi-hole → .181 | NPM host id 6 (HTTP) | LXC 107 `.185:8080` (Open WebUI) |
+| `chat.netframe.local` | Pi-hole → .181 | NPM host id 6 (HTTP) | LXC 107 `192.168.30.185:8080` (Open WebUI) |
+
+> [!warning] `llm_router` MUST bind `0.0.0.0` - loopback silently breaks Open WebUI (2026-07-14 → fixed 2026-07-15)
+> Open WebUI is **on another host** (LXC 107, **VLAN 30 only**, `192.168.30.185`) and reaches the router at `OPENAI_API_BASE_URL=http://192.168.30.31:8000/v1`. If `LLM_ROUTER_HOST` is `127.0.0.1`, the router is unreachable from anywhere but Jarvis itself.
+>
+> **This fails in the worst way: silently.** `systemctl is-active llm_router` says **active**, `curl 127.0.0.1:8000/v1/models` returns **200**, and the log looks healthy - while `llm.netframe.local` serves **502** and Open WebUI's chat is dead. It sat broken for a day.
+>
+> Live `/etc/llm_router.env` had drifted from the repo's `llm_router.env.example` (which correctly says `0.0.0.0`, as does the code default). **The repo was right; the host was wrong.** Rollback anchor: `/etc/llm_router.env.bak-bind-20260715`.
+>
+> **Diagnose:** `ss -tlnp | grep :8000` - if it shows `127.0.0.1:8000` instead of `0.0.0.0:8000`, that's it. Never trust a localhost probe for this service.
+
+**`:8000` allowlist (2026-07-15).** `llm_router` has **no authentication**, so the `0.0.0.0` bind is paired with an iptables allowlist rather than left open - the same pattern as `netframe-8808-lock` / `netframe-console-lock` on this node. Installed as `/opt/llm_router/llm-router-lock.sh` + **`llm-router-lock.service`** (oneshot, enabled, idempotent, re-applies on boot; `Before=llm_router.service` so `:8000` is never briefly open during boot). Source in `scripts/llm_router/`.
+
+| Source | Why |
+|---|---|
+| `127.0.0.1` | local callers on Jarvis (`netframe_*`, CLI probes) |
+| `192.168.30.185` | Open WebUI (LXC 107, VLAN 30 only) |
+| `192.168.10.181` | NPM VLAN 1 leg (host id 5 targets `.10.31:8000`) |
+| `192.168.30.181` | NPM VLAN 30 leg (if host id 5 is ever repointed to `.30.31`) |
+
+Everything else is DROPped. Verified: Open WebUI → 200, NPM → 200, Ares and Randy → blocked.
+
+> [!info] Why not just bind `192.168.30.31`?
+> Considered and rejected: binding a specific VLAN-30 address makes the service **fail to start at boot if `vmbr1` isn't up yet**, and it would still let *any* VLAN-30 host use the unauthenticated LLM. `0.0.0.0` + allowlist has no boot-ordering dependency and actually restricts callers.
+
+**Monitored since 2026-07-15** (`netframe-monitor` PR #32): an `llm_router` check probes `http://llm.netframe.local/v1/models` **through NPM, deliberately not localhost** - a localhost probe reports 200 through exactly this outage. OK on 200, WARN on 502 (backend unreachable from NPM) or 000 (DNS/NPM down).
 
 - **`netframe.local` is internal-only** - records live in **Pi-hole v6** local DNS (not Cloudflare). They resolve for any client using Pi-hole (`192.168.10.177`) as its resolver.
 - **NPM admin** (`:81`) is firewalled to Ares `.199` (F-05); manage it by binding `curl --interface 192.168.10.199`. Login `kyle@kylemason.org`.
