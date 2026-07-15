@@ -1,0 +1,15 @@
+[Unit]
+Description=llm_router :8000 iptables lockdown (localhost + Open WebUI + NPM only)
+Documentation=file:/opt/llm_router/llm-router-lock.sh
+After=network-online.target
+Wants=network-online.target
+# Lock before the router can accept traffic, so :8000 is never briefly open to all.
+Before=llm_router.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /opt/llm_router/llm-router-lock.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
