@@ -23,6 +23,7 @@ import discord
 from router_client import complete
 from prompts import system_prompt
 from tools import TOOL_SCHEMAS, render_call, is_mutating
+from policy_bridge import screen_llm, audit_mutation
 from executors import run_readonly
 from registry import registry
 import ssh
@@ -114,7 +115,7 @@ class OnCallClient(discord.Client):
             tool_calls = reply.get("tool_calls") or []
 
             if not tool_calls:
-                await _send(channel, reply.get("content") or "(no response)")
+                await _send(channel, screen_llm(reply.get("content")) or "(no response)")
                 return
 
             # Record the assistant's tool request so the follow-up turn has context.
@@ -147,7 +148,7 @@ class OnCallClient(discord.Client):
         messages.append({"role": "user",
                          "content": "Stop calling tools. Give your best diagnosis and recommendation now."})
         final = await complete(messages, tools=None)
-        await _send(channel, final.get("content") or "(no further analysis)")
+        await _send(channel, screen_llm(final.get("content")) or "(no further analysis)")
 
     async def _confirm_and_restart(self, message: discord.Message, args: dict) -> str:
         """Confirm-then-execute for restart_service. Returns a tool-result string
@@ -183,7 +184,8 @@ class OnCallClient(discord.Client):
                         f"🔴 **Confirm restart** — run `sudo {cmd}` on **{node.name}**"
                         f" ({node.ssh_host})?\nReply `yes` / `do it` to proceed — anything"
                         f" else cancels. Waiting {CONFIRM_TIMEOUT}s.")
-            audit.record("await_confirm", user=user, node=node.name, unit=unit)
+            audit_mutation("await_confirm", approver_id=user,
+                           approver_name=str(message.author), node=node.name, unit=unit)
 
             def _check(m: discord.Message) -> bool:
                 return m.author.id == ALLOWED_USER_ID and m.channel.id == channel.id
@@ -191,7 +193,8 @@ class OnCallClient(discord.Client):
             try:
                 resp = await self.wait_for("message", check=_check, timeout=CONFIRM_TIMEOUT)
             except asyncio.TimeoutError:
-                audit.record("confirm_timeout", user=user, node=node.name, unit=unit)
+                audit_mutation("confirm_timeout", approver_id=user,
+                               approver_name=str(message.author), node=node.name, unit=unit)
                 await _send(channel, f"⌛ No confirmation in {CONFIRM_TIMEOUT}s — **cancelled**, nothing ran.")
                 return f"CANCELLED (timeout): {cmd} on {node.name} was NOT run."
         finally:
@@ -199,15 +202,18 @@ class OnCallClient(discord.Client):
 
         answer = resp.content.strip().lower()
         if answer not in AFFIRMATIVE:
-            audit.record("cancelled", user=user, node=node.name, unit=unit, reply=answer)
+            audit_mutation("cancelled", approver_id=user, approver_name=str(message.author),
+                       node=node.name, unit=unit, reply=answer)
             await _send(channel, "🚫 **Cancelled** — nothing ran.")
             return f"CANCELLED (operator said '{answer}'): {cmd} on {node.name} was NOT run."
 
         # --- execute ---
-        audit.record("confirmed", user=user, node=node.name, unit=unit)
+        audit_mutation("confirmed", approver_id=user, approver_name=str(message.author),
+                       node=node.name, unit=unit, reply=answer)
         rc, out, err = await ssh.run(node, argv, sudo=True, timeout=60)
-        audit.record("executed_mutation", user=user, node=node.name, unit=unit,
-                     rc=rc, output=(out + err)[:2000])
+        audit_mutation("executed_mutation", approver_id=user,
+                       approver_name=str(message.author), node=node.name, unit=unit,
+                       rc=rc, output=(out + err)[:2000])
         body = (out or "").strip() or (err or "").strip() or "(no output)"
         if rc == 0:
             await _send(channel, f"✅ `sudo {cmd}` on **{node.name}** — done.")
