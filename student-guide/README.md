@@ -1,50 +1,58 @@
-# QuarkyLab Student User Guide (LaTeX)
+# QuarkyLab User Guides (LaTeX)
 
-Professional, step-by-step onboarding guide for students using the QuarkyLab GPU
-cluster — from generating an SSH key and joining the Headscale VPN, through
-submitting their first SLURM GPU job, plus a tools list and a SLURM/career primer.
+Professional, step-by-step onboarding guides for the QuarkyLab GPU cluster.
+Remote access is via **Cloudflare Tunnel** (`quarkylab.kylemason.org`) + per-account
+SSH keys — there is **no VPN**; students and researchers install `cloudflared` and
+SSH through the tunnel. (Headscale is the internal admin mesh only and does not
+appear in these guides.)
 
 ## Files
-| File | Purpose |
-|---|---|
-| `QuarkyLab-Student-Guide.tex` | Source (edit this) |
-| `QuarkyLab-Student-Guide.pdf` | Compiled guide to hand to students |
-| `README.md` | This file |
+| File | Audience | Purpose |
+|---|---|---|
+| `QuarkyLab-Student-Guide.tex` / `.pdf` | Students (`studentNN`) | Zero-assumed-knowledge walkthrough: SSH key → cloudflared → first SLURM GPU job |
+| `QuarkyLab-Researcher-Guide.tex` / `.md` / `.pdf` | Researchers | Access + direct GPU/Apptainer workflow (no SLURM required) |
+| `README.md` | Admin | This file |
+
+Companion admin runbooks (vault): `Runbook/QuarkyLab-Cloudflare-Access.md` (tunnel),
+`Runbook/QuarkyLab-Account-Onboarding.md` (key onboarding), `Runbook/QuarkyLab-Student-Quickstart.md`
+(short on-box version at `/data/shared/QUICKSTART.md`).
 
 ## Build
-Recommended — [Tectonic](https://tectonic-typesetting.github.io/) (self-contained, no TeX install):
 ```bash
-tectonic QuarkyLab-Student-Guide.tex
+latexmk -pdf QuarkyLab-Student-Guide.tex      # TeX Live (installed on Ares)
+latexmk -pdf QuarkyLab-Researcher-Guide.tex
 ```
-Or with a normal TeX Live install:
-```bash
-latexmk -pdf QuarkyLab-Student-Guide.tex
-```
-Or paste the `.tex` into [Overleaf](https://overleaf.com) and download the PDF.
+[Tectonic](https://tectonic-typesetting.github.io/) or [Overleaf](https://overleaf.com) also work.
+**Recompile the PDF whenever the `.tex` changes — the committed PDFs are what get distributed.**
 
 ## Editing — the CONFIGURATION block
-All site-specific values are `\newcommand`s at the top of the `.tex` (the
-`CONFIGURATION` block). Change a value once, recompile, and it updates everywhere
-(prose, code examples, quick-reference card). Key variables:
+All site-specific values are `\newcommand`s at the top of each `.tex` (the
+`CONFIGURATION` block). Change a value once, recompile, and it updates everywhere.
+Key variables (student guide):
 
 | Macro | Meaning | Current value |
 |---|---|---|
 | `\LabName` | Cluster display name | `QuarkyLab` |
-| `\LabHost` | SSH target over the VPN | `quarkylab` |
-| `\HeadscaleURL` | Headscale login server | `https://headscale.kylemason.org` |
-| `\AdminEmail` | Where students send their public key | `kyle@kylemason.org` |
+| `\LabHost` | SSH alias users define in `~/.ssh/config` | `quarkylab` |
+| `\AccessHost` | Cloudflare tunnel hostname | `quarkylab.kylemason.org` |
+| `\ContactVia` | Where users send keys / get help | our shared Discord channel |
 | `\GPUName`, `\ShardMem`, `\MaxTime`, `\HomeQuota`, `\ScratchPurge` | Limits shown in tables | — |
 
-## ⚠ Confirm before distributing to students
-These were set to best-guess defaults — verify they match the live setup:
-1. **`\HeadscaleURL`** — the public Headscale login-server URL students' Tailscale
-   clients point at. (`headscale.kylemason.org` is assumed; the internal server is
-   pve3 LXC 105 / `192.168.10.186`.)
-2. **`\LabHost`** — QuarkyLab's address over Headscale: a MagicDNS name (assumed
-   `quarkylab`) or its `100.64.0.x` overlay IP. **Note:** QuarkyLab is currently on
-   commercial Tailscale; Headscale enrollment (Phase 2, with the researcher's Mac) is
-   pending, so confirm the name/IP once it's on Headscale.
-3. **`\AdminEmail`** — the address students email their SSH public key to (set to
-   `kyle@kylemason.org`).
-4. Onboarding still requires the admin to run `add-cluster-key.sh <studentNN> "<pubkey>"`
-   on QuarkyLab after receiving each student's key.
+## Onboarding flow (admin side)
+1. Student/researcher sends their **public** key on Discord.
+2. On QuarkyLab (as root): `add-cluster-key.sh studentNN "<pubkey>"`
+   (named researcher accounts like `kieron` need the key added manually — the helper
+   only accepts `student##`/`researcher##`).
+3. Tell them their username. They follow the guide; no further admin steps.
+
+## Verified working
+The student guide's exact flow (key → `add-cluster-key.sh` → tunnel SSH → `scp` →
+the example `train.py`/`train.sh` sbatch job) was dry-run end-to-end 2026-07-15:
+job COMPLETED, `GPU: Quadro RTX 8000 / CUDA available: True`.
+
+## Known limitation (deliberate)
+**VS Code Remote-SSH does not work for students/researchers** — the group sshd
+policy sets `AllowTcpForwarding no` (see `Runbook/QuarkyLab-Account-Onboarding.md`).
+Per-user exemptions are possible (precedent: `kieron`, `40-kieron-vscode.conf`);
+grant case-by-case, never group-wide, and the guides tell users editing happens
+on the cluster (nano) or via `scp`/`rsync`.
