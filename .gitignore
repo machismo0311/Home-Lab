@@ -10,8 +10,13 @@ id_ed25519*
 known_hosts
 
 # ── Obsidian per-machine state (editor noise, not portfolio content) ──
-**/.obsidian/workspace.json
+**/.obsidian/
 **/.trash/
+
+# ── Syncthing markers (vault is mirrored to a phone via Syncthing) ──
+**/.stfolder/
+**/.stignore
+**/.stversions/
 
 # ── LaTeX build intermediates ──
 *.aux
