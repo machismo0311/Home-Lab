@@ -26,7 +26,7 @@
 \newcommand{\ScratchPurge}{14 days}                    % scratch auto-purge age
 \newcommand{\MaxRunning}{1}                            % concurrent running jobs
 \newcommand{\MaxQueued}{3}                             % additional queued jobs
-\newcommand{\GuideVersion}{1.0}
+\newcommand{\GuideVersion}{1.1}
 \newcommand{\GuideOwner}{NetFRAME Home Lab}
 %------------------------------------------------------------------------------
 
@@ -342,13 +342,19 @@ scp studentNN@(*@\texttt{\LabHost}@*):~/myjob-1234.out .
 \end{lstlisting}
 
 \subsubsection*{Copy an entire folder (upload)}
+\osbadge{macOS / Linux}
 \begin{lstlisting}
 rsync -av myproject/ studentNN@(*@\texttt{\LabHost}@*):~/myproject/
 \end{lstlisting}
+\osbadge{Windows (PowerShell)}
+Windows has no built-in \code{rsync} --- use \code{scp} with \code{-r} instead:
+\begin{lstlisting}
+scp -r myproject studentNN@(*@\texttt{\LabHost}@*):~/
+\end{lstlisting}
 
-\begin{notebox}
-Prefer a graphical editor? \textbf{Visual Studio Code} with the \emph{Remote --- SSH} extension lets you edit files on \LabName{} as if they were local, using the same \code{studentNN@\LabHost} address. It is optional but popular.
-\end{notebox}
+\begin{warnbox}
+\textbf{VS Code ``Remote --- SSH'' does not work on \LabName.} Student accounts have SSH port-forwarding disabled by policy, which that extension requires --- it will fail with a connection error, and that is expected, not a problem with your setup. Edit files directly on the cluster with \code{nano}, or edit locally and upload with \code{scp}/\code{rsync} as shown above.
+\end{warnbox}
 
 %==============================================================================
 \section{Step 5 --- Run your first GPU job}

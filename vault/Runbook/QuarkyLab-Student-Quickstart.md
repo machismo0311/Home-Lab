@@ -9,18 +9,33 @@
 Welcome to the QuarkyLab GPU cluster. You share **one NVIDIA RTX 8000 (48 GB)** with other students via the SLURM scheduler. This guide is everything you need to run GPU jobs.
 
 ## 1. Get access & log in
-**First time only** - make an SSH key **on your own computer** and send the admin the **public** part:
+**First time only** - three quick steps on **your own computer**:
+
+**a) Make an SSH key** and send the admin the **public** part:
 ```bash
 ssh-keygen -t ed25519 -C "yourname@quarkylab"   # Enter for defaults, set a passphrase
 cat ~/.ssh/id_ed25519.pub                        # send THIS line to the admin (never the private key)
 ```
 *(Windows PowerShell: `ssh-keygen -t ed25519` then `type $env:USERPROFILE\.ssh\id_ed25519.pub`.)*
 
-Once the admin adds your key:
-```bash
-ssh studentNN@192.168.10.179     # key-only; password login is off
+**b) Install `cloudflared`** (the secure tunnel helper you connect through - not a VPN, nothing runs in the background):
+- Windows: `winget install --id Cloudflare.cloudflared`
+- macOS: `brew install cloudflared`
+- Linux: package or binary from `https://github.com/cloudflare/cloudflared/releases/latest`
+
+**c) Add this to your SSH config** (`~/.ssh/config`; Windows: `%USERPROFILE%\.ssh\config` - create the file if needed):
 ```
-You land on the login node. **Don't run heavy GPU code here directly** - submit it with `sbatch` (below). Interactive `srun`/`salloc` is **disabled** for students.
+Host quarkylab
+    HostName quarkylab.kylemason.org
+    ProxyCommand cloudflared access ssh --hostname %h
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Once the admin confirms your key is added:
+```bash
+ssh studentNN@quarkylab          # key-only; password login is off
+```
+Works from anywhere with internet. You land on the login node. **Don't run heavy GPU code here directly** - submit it with `sbatch` (below). Interactive `srun`/`salloc` is **disabled** for students, and VS Code Remote-SSH is **not supported** (port-forwarding is off) - edit with `nano` on the cluster or upload with `scp`.
 
 ## 2. Your storage
 | Path | What | Notes |
