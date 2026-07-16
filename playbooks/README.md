@@ -121,7 +121,18 @@ itself is Ares-local state — reproduce it with:
 
 ```cron
 0 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-backup-verify.sh >> /home/machismo/.config/netframe-backup-verify/run.log 2>&1
+30 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-hardening-drift-check.sh >> /home/machismo/.config/netframe-backup-verify/hardening-drift.log 2>&1
 ```
+
+The 06:30 job is the **hardening drift check** (`run-hardening-drift-check.sh`):
+it runs the hardening desired-state in **`--check` mode (read-only, never
+enforces)** and writes a world-readable JSON report to Randy at
+`/var/log/netframe-monitor/hardening-drift.json`. `netframe_monitor` ingests it
+as a `hardening_drift` check (WARN if any node drifted from the hardened baseline,
+or if the report goes stale = a dead cron). Enforcement stays a deliberate manual
+`ansible-playbook desired-state.yml` (without `--check`). Note: the `Update APT
+cache` task is `changed_when: false` so a clean fleet reports `changed=0`, making
+real drift unambiguous.
 
 06:00 is after the nightly backups (LXC 02:00 / VM 03:00) and the 03:17
 opnsense backup, so the newest snapshot is well inside the 25h window. The

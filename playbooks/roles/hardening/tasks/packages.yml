@@ -7,6 +7,10 @@
   ansible.builtin.apt:
     update_cache: true
     cache_valid_time: "{{ hardening_apt_cache_valid_time }}"
+  # Refreshing the cache is not a configuration change, so it must not report
+  # "changed" - otherwise a --check drift audit always shows changed=1 and real
+  # drift (SSH/sysctl/repo) can't be told apart from a routine cache refresh.
+  changed_when: false
 
 - name: Ensure baseline packages are present
   ansible.builtin.apt:
