@@ -32,7 +32,7 @@
 | RKE2 Kubernetes | 3× VM (HA CP) | 🟢 Active | pve3/4/5 (VMs 201-203) | 192.168.10.54 (VIP) | v1.35.6+rke2r1; Cilium + MetalLB (.71-.75); Randy = bare-metal storage worker; kubectl from Ares (~/.kube/config-rke2). Phases 1-7 (2026-07-10/11); GPU Operator deferred |
 | Container registry | k8s (on Randy) | 🟢 Active | Randy (RKE2 worker) | 192.168.10.72 | https://registry.netframe.local (MetalLB LB); registry:2, step-ca TLS + 8h auto-renew CronJob, node-local ZFS PV. See `scripts/rke2/registry/` |
 | Uptime Kuma | k8s | 🟢 Active | RKE2 CP nodes | 192.168.10.71 | http://status.netframe.local (MetalLB LB); RKE2 Phase 3 pilot |
-| Home Assistant | VM 110 (HAOS) | 🟢 Active | pve5 | 192.168.10.153 (DHCP) | http://homeassistant.netframe.local:8123 - HAOS 18.1 appliance (Supervisor + add-on store); installed 2026-07-16, onboarding pending. See [[Runbook/Home-Assistant-Install-2026-07-16]] |
+| Home Assistant | VM 110 (HAOS) | 🟢 Active | pve5 | 192.168.10.60 (DHCP static map) | http://homeassistant.netframe.local:8123 - HAOS 18.1 appliance (Supervisor + add-on store); installed 2026-07-16, onboarding pending. See [[Runbook/Home-Assistant-Install-2026-07-16]] |
 | FreePBX | VM | ⏸️ Deferred | TBD | - | - |
 
 ---
