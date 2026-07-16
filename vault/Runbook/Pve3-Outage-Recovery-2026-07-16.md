@@ -65,7 +65,7 @@ network without re-IP hacks. Cached Bitwarden clients keep working offline.
    `lvremove pve/vm-101-disk-0 pve/vm-103-disk-0` (old pre-crash disks, superseded by
    the restores; only after confirming the restored CTs are good).
 6. Remove `/root/pve3-recovery-20260716/` on pve4 once settled.
-7. Grafana/Loki have a metrics/logs gap 06:00-~16:45 UTC (restore ran ~12:45 UTC;
+7. Grafana/Loki have a metrics/logs gap 06:00-12:52 UTC (restore LVs created 12:48/12:52 UTC;
    history restored from the 06:00 backup). Expect a burst of Discord alerts as rules
    re-evaluate - triage, they may include a *legitimate* pve3-down alert.
 
@@ -92,6 +92,22 @@ disk was untouched (no writes were possible all day). Outcome: cp2/cp3/randy Rea
 VIP .54 answering, registry 200, uptime-kuma up, 45 pods Running, cp1 NotReady
 (expected until pve3 revives - it should rejoin the now-healthy quorum on boot).
 
-**Follow-up filed:** why does rke2-server fatal-loop instead of waiting for etcd
-quorum? Deliberate single-node-loss failover test needed once pve3 is back
-(tracked in OPEN-ITEMS).
+**Root cause (confirmed from journals, same evening):** the crash was NOT caused by
+losing cp1 - etcd ran fine on 2/3 members for two hours. The trigger was the
+**emergency PBS restores of CT 101/103 onto pve4 (12:48-12:52 UTC, LV timestamps)**:
+the 20GB restore stream + grafana-stack cold start saturated pve4's thin pool, which
+also backs rke2-cp2's VM disk. etcd on cp2 logged 1,096 "apply request took too
+long" (5-10s vs 100ms budget); with only 2 members a single stalled member =
+leaderless. At 12:56:00 BOTH survivors' rke2 leader leases (renewed via the
+apiserver -> etcd) expired and rke2-server fatal-exited by design on both
+simultaneously ("leaderelection lost for rke2/rke2-etcd"). The restart then
+deadlocked: bootstrap needs a quorate etcd read, but the crash killed containerd,
+orphaning zombie etcd containers that never re-elected.
+
+**Lessons:**
+1. `pct restore --bwlimit` (or schedule restores off-peak) when the target node
+   hosts etcd or other latency-critical VMs - recovery IO is a failure vector.
+2. A 2-member etcd has zero stall tolerance: any single-member IO pause = leaderless.
+3. rke2 v1.35.6 fatal-on-lost-lease + containerd-zombie deadlock amplifies a ~60s
+   stall into a permanent outage - the OPEN-ITEMS failover test now has a repro
+   recipe (IO-stall a CP node's disk while a member is already down).
