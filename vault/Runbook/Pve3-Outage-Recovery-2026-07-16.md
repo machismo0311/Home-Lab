@@ -74,3 +74,24 @@ network without re-IP hacks. Cached Bitwarden clients keep working offline.
 - OPEN-ITEMS (netframe-monitor): collector UNREACHABLE verdict gap; pve3 revival item.
 - Consider: alerting SPOF (Grafana on one node) is now demonstrated, not theoretical -
   feeds the Compute HA roadmap item.
+
+## Addendum (same day, ~22:40 UTC): RKE2 control-plane cascade + recovery
+
+The evening health check found the "HA" control plane had NOT survived losing one
+node. When cp1 (VM 201, pve3) died, etcd lost its leader; `rke2-server` on cp2 and
+cp3 then hit a startup-fatal ("failed to reconcile with local datastore: context
+deadline exceeded") and **crash-looped ~2,000+ times each for ~12h**, taking
+containerd down with it and leaving zombie apiserver/etcd containers under orphaned
+shims (they answered TLS, logs frozen, no leader electable, VIP .54 unclaimed,
+kubectl dead). Peer network was fine - pure process-state wedge.
+
+**Fix (owner-approved, verified):** on cp2 AND cp3: `systemctl stop rke2-server`,
+`rke2-killall.sh` (clears shims/zombies), then `systemctl start rke2-server` on both
+near-simultaneously so the two surviving etcd members form 2/3 quorum. etcd data on
+disk was untouched (no writes were possible all day). Outcome: cp2/cp3/randy Ready,
+VIP .54 answering, registry 200, uptime-kuma up, 45 pods Running, cp1 NotReady
+(expected until pve3 revives - it should rejoin the now-healthy quorum on boot).
+
+**Follow-up filed:** why does rke2-server fatal-loop instead of waiting for etcd
+quorum? Deliberate single-node-loss failover test needed once pve3 is back
+(tracked in OPEN-ITEMS).
