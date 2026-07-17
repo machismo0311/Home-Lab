@@ -111,3 +111,34 @@ orphaning zombie etcd containers that never re-elected.
 3. rke2 v1.35.6 fatal-on-lost-lease + containerd-zombie deadlock amplifies a ~60s
    stall into a permanent outage - the OPEN-ITEMS failover test now has a repro
    recipe (IO-stall a CP node's disk while a member is already down).
+
+## Resolution (evening 2026-07-16): actual root cause = e1000e NIC hang, NOT power
+
+The "power/UPS fault" suspicion above was WRONG. Boot forensics after revival:
+pve3 **never lost power** - boot -1 ran continuously from Jul 06 to 19:28 EDT.
+At **06:55:04 the onboard Intel I219 NIC (00:1f.6) hit the classic
+`e1000e Detected Hardware Unit Hang`** and stayed wedged for 12.5h (22,605
+kernel messages): box up, guests running, network dead. That is why WoL did
+nothing all day (the box was never off) and why corosync saw an instant drop
+(link died, not the host). The UPS was online at 100% the whole time; NUT was
+fine. Recovery: power button pressed 19:27 (clean shutdown reset the NIC),
+then WoL woke it 19:46 (answered on the 2nd magic packet).
+
+**Fix applied + persisted:** `ethtool -K nic0 tso off gso off` (the standard
+e1000e unit-hang mitigation; offloads were on = the known trigger), persisted
+as a `post-up` on `iface nic0` in `/etc/network/interfaces`
+(backup: `interfaces.bak-e1000e-20260716`). Confdrift re-blessed (it correctly
+flagged the change). If hangs recur even with offloads off, next steps are
+`InterruptThrottleRate` tuning or a discrete NIC.
+
+**Closing state (all verified):** guests 102/105/106/107 + VM 201 autostarted;
+cp1 rejoined etcd (RKE2 3/3 + randy, all Ready); orphaned LVs vm-101/103-disk-0
+removed; **NPM (101) and Grafana (103) migrated back to pve3** (`pct migrate
+--restart --bwlimit 51200`, applying the day's IO lesson) - vault.kylemason.org
+200 again (needs NPM's VLAN30 leg, which pve4 lacked); grafana-prometheus-1
+container needed a manual `docker start` (Exited 255, restart policy didn't
+recover it); all fronts + chat.netframe.local serving; netframe cycle green;
+recovery DM delivered by the new deterministic alerter. Original topology fully
+restored. Follow-ups that remain: RKE2 failover test (OPEN-ITEMS), consider
+BIOS "power on after AC loss" for headless recovery, and watch for e1000e
+recurrence.
