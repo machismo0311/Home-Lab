@@ -161,14 +161,14 @@ dependency between the credential store and the infrastructure it describes.
 | 9 | e1000e recurrence watch; escalate to InterruptThrottleRate or discrete NIC if it repeats | Mitigation, not cure |
 | 10 | Restore/migrate `--bwlimit` policy near etcd or latency-critical VMs | Recovery IO is a failure vector |
 
-**Recommended (not yet filed as builds; owner decision):**
+**Recommendations 11–14: IMPLEMENTED same day (owner-directed, evening):**
 
-| # | Recommendation | Addresses |
+| # | Recommendation | Status |
 |---|---|---|
-| 11 | Break the credential circular dependency: break-glass copies of switch/firewall/BMC creds outside Vaultwarden (e.g. age-encrypted file on Ares + printed copy, like the OPNsense age key pattern) | Wrong-diagnosis lock-in, §6.5–6.6 |
-| 12 | De-concentrate pve3: distribute NPM/Vaultwarden/Grafana/Headscale across nodes, or accelerate the Compute HA roadmap item (ha-manager + replication) so placement stops mattering | §6.1, the entire incident |
-| 13 | Switch-port link-state check in triage runbooks (and possibly netframe): distinguishes "host down" from "NIC/link down" in seconds | §6.5 |
-| 14 | Add pve3 (or wherever NUT lands) UPS state to the netframe collector so UPS monitoring outlives its host | §4 NUT row |
+| 11 | Break-glass credentials outside Vaultwarden | **Built + verified** (`scripts/break-glass/`): `breakglass-refresh.sh` snapshots named Vaultwarden items into an age-encrypted file (existing DR key; plaintext never on disk) on Ares + off-host copy on Randy; `breakglass-read.sh` needs only age + the local key. Round-trip tested with the real key. **One owner action remains: run the refresh once with an unlocked bw session** (`export BW_SESSION="$(bw unlock --raw)" && ./breakglass-refresh.sh`), and re-run after any rotation. |
+| 12 | De-concentrate pve3 | **Done (distribution arm):** Grafana stack (103) → pve4, Headscale (105) → pve5, both `--bwlimit`, verified serving. Alerting no longer shares a node with NPM/Vaultwarden; tailnet control plane on a third node. NPM/Vaultwarden/OpenWebUI stay pinned to pve3 by the VLAN 30 trunk (only pve3 among the EliteDesks is trunked); un-pinning them = EX3400 port change, deferred to the Compute HA item. Collector followed: prometheus wrapper + guests check on pve4, sudoers pins updated (netframe-monitor PR #64). |
+| 13 | Switch-port link-state triage | **Done:** `Runbook/Triage-Node-Unreachable.md` — decision tree (host-down vs NIC-down), the exact Junos commands, WoL limits, and a node→MAC table for all 7 nodes collected while healthy. Depends on break-glass for EX3400 creds when Vaultwarden is down. |
+| 14 | UPS state in the collector | **Done + live** (netframe-monitor PR #64): Jarvis polls both UPSes (tripplite, midatlantic) via pve3's LAN-listening NUT every cycle; WARN on on-battery/low-battery AND when fewer than both report — losing UPS monitoring itself now alarms instead of dying silently with its host. First cycle: both OL, 100%. |
 
 ## 8. Lessons learned
 
