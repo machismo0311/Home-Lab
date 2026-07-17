@@ -1,8 +1,11 @@
 # Runbook: VLAN 20 (BMC) Egress Clamp — Segmentation Phase 1.5
 
-**Status: BLOCKED — DO NOT APPLY YET (2026-07-17).** A pre-flight contingency review
-found two blockers; the scripts are corrected for the first but the second must clear
-first. Details in "Pre-flight findings" below.
+**Status: READY — awaiting go/no-go (2026-07-17).** Both pre-flight blockers cleared:
+the floating-rule defect is fixed in the scripts (validated), and the guest agent was
+revived (`qm agent 100 ping` responds). Final validations done: corrected PHP `php -l`
+clean; `configctl filter reload` = `rc.filter_configure` confirmed; report-only dry-run
+confirms it removes 3 interface passes, prepends 1 floating block, appends 1 interface
+block, and leaves the failover rule's interface list untouched. Details below.
 **Source:** AAR-2026-07-16 recommendation; the un-done half of `Security-VLAN-Segmentation-Phased-2026-07-03.md`.
 
 ## Pre-flight findings (2026-07-17) — adversarial failure-mode review
