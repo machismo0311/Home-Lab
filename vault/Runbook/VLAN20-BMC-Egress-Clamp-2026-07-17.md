@@ -1,8 +1,44 @@
 # Runbook: VLAN 20 (BMC) Egress Clamp — Segmentation Phase 1.5
 
-**Status:** PREPPED, awaiting go/no-go (2026-07-17). Scripts staged, dry-run validated,
-nothing applied.
+**Status: BLOCKED — DO NOT APPLY YET (2026-07-17).** A pre-flight contingency review
+found two blockers; the scripts are corrected for the first but the second must clear
+first. Details in "Pre-flight findings" below.
 **Source:** AAR-2026-07-16 recommendation; the un-done half of `Security-VLAN-Segmentation-Phased-2026-07-03.md`.
+
+## Pre-flight findings (2026-07-17) — adversarial failure-mode review
+
+**PASSED (verified against live state):**
+- BMC management is L2-safe: Ares reaches every BMC on-link via `enp0s31f6.20` (no
+  firewall hop); confirmed `ip route get` = `dev enp0s31f6.20`, BMC .22 pingable.
+- No live VLAN 20 egress dependency: 0 BMC through-firewall states; the one .20.100
+  state was a STALE Discord connection (Discord is actually bound to Ares' .10.199).
+- Ares has no internet fallback via .20.100: both default routes go via .10.1 (wired +
+  WiFi), none via .20.1 — so the clamp can't break Ares internet even on a leg failover.
+- Blast radius contained: dry-run selects exactly the 3 opt1 pass rules, 0 of 17
+  other-interface rules.
+
+**BLOCKER 1 (design defect — FIXED in the scripts):** a **quick** floating rule
+`Mulit-WAN failover: internet-bound via Failover group` (`<quick>1</quick>`, interfaces
+include opt1) passes VLAN 20 → internet BEFORE any interface rule is evaluated. The
+original clamp (remove interface pass + default-deny) would therefore have left BMC
+internet egress WIDE OPEN — failing its primary goal. **Fix:** the apply now PREPENDS a
+dedicated **floating quick block** for opt1 internet-bound (dest !Local_Nets) that
+precedes the failover rule; it does NOT edit the shared failover rule (that rule serves
+6 other interfaces and is part of the in-progress WAN-failover work).
+
+**BLOCKER 2 (mechanism — MUST CLEAR before apply):** the OPNsense qemu guest agent —
+which BOTH the apply and the rollback drive — **went unresponsive mid-review** (`qm agent
+100 ping` = "not running", though `agent: enabled=1`). OPNsense itself is fully healthy
+(gateway/internet/DNS/API/fronts/BMC all green — only the management channel is down).
+A firewall change whose rollback path is unavailable must not proceed. The apply/rollback
+scripts now GATE on `qm agent 100 ping` and abort if it is down. **Revive the agent first**
+(serial console `qm terminal 100` from pve2, or GUI: restart the os-qemu-guest-agent
+service / `service qemu-guest-agent restart`). This also matters independently: with the
+agent down, OPNsense will NOT shut down gracefully on a pve2 reboot (config-corruption risk).
+
+**Residual to re-validate once the agent is back (before apply):** `php -l` lint of the
+corrected apply PHP, and a report-only dry-run confirming it prepends 1 floating block,
+removes 3 interface passes, adds 1 interface block, and leaves the failover rule untouched.
 
 ## Why
 
