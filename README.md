@@ -27,7 +27,7 @@ The same RTX 8000 is shared with **~15 university computer-science students per 
 ## 📊 At a glance
 
 - **7-node Proxmox VE 9.2.3 cluster** · ~140 CPU cores · ~1.4 TB aggregate RAM
-- **3 GPUs / 104 GB VRAM** - RTX 8000 48 GB + 2× RTX 6000 (48 GB) + RX 580 8 GB
+- **3 GPU cards / 96 GB VRAM** - RTX 8000 48 GB (QuarkyLab) + 2× RTX 6000 (48 GB, Jarvis); RX 580 planned for Randy transcode
 - **~95 TB raw ZFS storage** across the fleet · ~50 drives under health monitoring
 - **On-prem 72-billion-parameter LLM** + RAG over the full documentation base
 - **Multi-tenant GPU** - 20 student + 6 researcher seats, hard per-tenant VRAM caps + preemption
@@ -66,14 +66,15 @@ Every change to the estate is recorded in an **append-only change log with a sta
 |---|---|---|---|---|---|---|---|
 | **QuarkyLab** | DUNE research + student AI/ML (SLURM) | 192.168.10.179 | 2× E5-2699 v4 (44c/88t) | 512 GB | RTX 8000 48GB† | 9.2.3 | 6.14.11-9-pve† |
 | **Jarvis** | LLM inference platform | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | 2× RTX 6000 (48GB total)‡ | 9.2.3 | 6.14.11-9-pve‡ |
-| **Randy** | Storage / PBS backup | 192.168.10.187 | 2× E5-2690 v3 (24c/48t) | 128 GB | RX 580 8GB | 9.1.1 | 7.0.12-1 |
+| **Randy** | Storage / PBS backup | 192.168.10.187 | 2× E5-2690 v3 (24c/48t) | 128 GB | RX 580 8GB (planned)◊ | 9.1.1 | 7.0.12-1 |
 | **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 32 GB | - | 9.2.3 | 7.0.12-1 |
 | **pve3** | Core services / RKE2 CP | 192.168.10.201 | i7-8700 | 48 GB | - | 9.2.3 | 7.0.12-1 |
 | **pve4** | Cluster node / RKE2 CP | 192.168.10.202 | i5-7500T | 32 GB | - | 9.2.3 | 7.0.12-1 |
 | **pve5** | Cluster node / RKE2 CP | 192.168.10.203 | i5-7500T | 32 GB | - | 9.2.3 | 7.0.12-1 |
 
 †QuarkyLab: RTX 8000 48GB installed & verified 2026-07-01 (nvidia-smi reports 48GB on NVIDIA 550.163.01; driver-free Turing swap). Kernel pinned - NVIDIA 550.163.01 requires 6.14.11-9-pve.  
-‡Jarvis: **2× RTX 6000 installed & verified 2026-07-04** - 24GB each / 48GB total (driver 550.163.01, kernel 6.14.11-9-pve). Required a nouveau blacklist on first boot; fans managed by the `gpu-fan-control` daemon. Ollama GPU-backed, qwen2.5:72b pulled.
+‡Jarvis: **2× RTX 6000 installed & verified 2026-07-04** - 24GB each / 48GB total (driver 550.163.01, kernel 6.14.11-9-pve). Required a nouveau blacklist on first boot; fans managed by the `gpu-fan-control` daemon. Ollama GPU-backed, qwen2.5:72b pulled.  
+◊Randy: RX 580 8GB is seated but **not yet powered** (pending a PCIe aux power cable), so the OS does not enumerate it - Jellyfin transcoding is currently CPU-only. Intended for display/transcode (ROCm), not compute.
 
 ---
 
