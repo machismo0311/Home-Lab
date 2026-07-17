@@ -122,8 +122,34 @@ exportfs -ra && exportfs -v | grep bulk'
 - **Snapshots:** if any dataset holds non-repro data, add `sanoid` (or `zfs-auto-snapshot`) with a sane retention (e.g. media: light; archive: daily+weekly).
 
 ## Expansion path
-- 8 empty bays remain. Grow by **adding another 8-wide RAIDZ2 vdev** (keep vdev geometry uniform) - never widen an existing vdev.
-- Keep pool **< ~80% full** for performance/CoW headroom (~32 TiB practical on this layout).
+- Grow by **adding another RAIDZ2 vdev** (never widen an existing vdev). Vdev geometry ideally uniform, but a smaller-width vdev is fine (see 2026-07-17 below — a 6-wide was added alongside the 8-wide vdevs).
+- Keep pool **< ~80% full** for performance/CoW headroom.
+
+---
+
+## ✅ EXPANSION 2026-07-17 — 3rd vdev, 6× 4 TB (6-wide RAIDZ2)
+
+Added **6× Seagate ST4000NM0023 4 TB SAS** (Dell-pulled, near-zero POH 10–85 h) into 6 of the 8 empty bays. Pool `bulk`: **58.2 T → 80.0 T raw**, now **3 vdevs (8+8+6-wide RAIDZ2)**, ONLINE, 0 errors. 2 bays remain free.
+
+**Result — new vdev `raidz2-2`:**
+
+| mpath | wwid | serial | POH | defects |
+|---|---|---|---|---|
+| mpathq | 35000c500631a206b | Z1Z7DLE4 | 85 | 0 |
+| mpathr | 35000c500631a1a07 | Z1Z7DTP7 | 25 | 0 |
+| mpaths | 35000c500631a1bcb | Z1Z7DTMH | 50 | 0 |
+| mpatht | 35000c500631a1053 | Z1Z7DV0K | 20 | 0 |
+| mpathu | 35000c500631a1a43 | Z1Z7DTNV | 77 | 0 |
+| mpathv | 35000c500631a54fb | Z1Z7DSB7 | 10 | 0 |
+
+**Steps (reusable for the last 2 bays):**
+1. **Seat drives + rescan** — `for h in /sys/class/scsi_host/host*/scan; do echo "- - -" > "$h"; done`. (First rescan showed only 5/6; the 6th needed the rescan to appear — always confirm the drive count before proceeding.)
+2. **Multipath allow-list** — this shelf uses a strict `blacklist { wwid ".*" }` + `blacklist_exceptions` whitelist (protects the internal `datastore`/boot disks absolutely). Get each new WWID with `/lib/udev/scsi_id -g -u -d /dev/sdX`, add a `wwid "…"` line to `blacklist_exceptions` in `/etc/multipath.conf` (**back up first**), then `multipathd reconfigure`. Verify each new `mpathX` has **2 active ready running** paths.
+3. **Wipe foreign RAID metadata** — these Dell-pulled drives carried a stale **`ddf_raid_member`** (DDF hardware-RAID) anchor at offset `0x3a3817d5e00`. ZFS refuses (`invalid vdev specification … contains a filesystem of type 'ddf_raid_member'`). Do **not** `-f` past it — clear it: `wipefs -a /dev/mapper/mpathX` (verify `wipefs` shows nothing after). No md/dmraid array was assembled, so a plain signature wipe was sufficient.
+4. **Dry-run then add** — `zpool add -n bulk raidz2 /dev/mapper/mpath{q..v}` to confirm topology, then drop `-n`.
+5. **Verify** — `zpool status bulk` (raidz2-2 ONLINE, 6 members) + `zpool scrub bulk` (came back 0-repaired/0-errors in 32 s on the near-empty pool).
+
+> ⚠️ **No hot spare** — all 6 went to capacity (the original 16 had none either). If resilience is later preferred over space, a future add could be 5-wide RAIDZ2 + 1 spare. Config backup: `/etc/multipath.conf.bak-20260717-*` on Randy.
 
 ## ✅ BUILD COMPLETE - 2026-07-08 ~03:40
 Phases 3–6 executed. Pool **`bulk`** ONLINE, 2× 8-wide RAIDZ2, 16 members, **0 errors**, 58.2 T raw / **~41.3 TiB usable**. `datastore` untouched throughout.

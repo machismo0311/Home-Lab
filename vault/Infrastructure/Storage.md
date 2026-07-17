@@ -13,11 +13,11 @@
 | Rack Position | U8–U12 |
 | Bay Count | 24 bays |
 | Interface | SAS (dual IOM6 modules) |
-| Currently Populated | **16× 4 TB SAS** (9× HGST HUS724040ALS641 + 7× Seagate ST4000NM0063); 8 bays empty |
-| Total Raw (current) | **~64 TB** |
+| Currently Populated | **22× 4 TB SAS** (9× HGST HUS724040ALS641 + 7× Seagate ST4000NM0063 + **6× Seagate ST4000NM0023 added 2026-07-17**); 2 bays empty |
+| Total Raw (current) | **~88 TB** (`bulk` = 80.0 T raw / ~55 TiB usable) |
 | Sector format | **512 B native** - *not* NetApp 520 B, so usable without reformatting |
 | Attached to | **Randy** (SuperMicro) via **LSI SAS2308** HBA (PCI `85:00.0`, `mpt2sas`, SCSI host11) |
-| Pathing | Dual IOM6 → every disk on **2 paths** (32× `sdX` for 16 disks); **multipath configured 2026-07-08** (exact-wwid whitelist → 16 maps) |
+| Pathing | Dual IOM6 → every disk on **2 paths** (44× `sdX` for 22 disks); **multipath configured 2026-07-08, expanded to 22 maps 2026-07-17** (exact-wwid whitelist in `/etc/multipath.conf`) |
 | Enclosure SES id | `0x500a098005bb7186` (vendor NETAPP, product DS424IOM6) |
 | Max Capacity | 24× drives |
 | Weight (populated) | ~45 lbs - mount before drives above |
@@ -41,9 +41,32 @@
 
 ---
 
-## Current State & Next Steps (as of 2026-07-07)
+## Expansion 2026-07-17 — 3rd vdev (6× 4 TB)
 
-- **Status:** in ZFS pool **`bulk`** (2× 8-wide RAIDZ2, ~41.3 TiB usable, **ONLINE** - built 2026-07-08). *(Was blank/unallocated at the 2026-07-07 qualification below.)*
+Added **6× Seagate ST4000NM0023 4 TB SAS** (Dell-pulled, near-zero POH: 10–85 h) as a **third vdev, 6-wide RAIDZ2** → `bulk` grew **58.2 T → 80.0 T raw** (~+14.5 TiB usable). Pool now **3 vdevs (8+8+6 wide RAIDZ2)**, ONLINE, 0 errors; post-add scrub clean (32 s).
+
+Procedure (each drive dual-pathed, so multipath first — never `zpool add` raw `sdX`):
+1. Drives seated; SCSI rescan surfaced all 6 (5 enumerated first, 6th `Z1Z7DSB7` needed `echo "- - -" > /sys/class/scsi_host/host*/scan`).
+2. Added the 6 WWIDs to `blacklist_exceptions` in `/etc/multipath.conf` (backup `.bak-20260717-*`) → `multipathd reconfigure` → 6 new maps `mpathq`–`mpathv`, 2 active paths each.
+3. **Wiped stale Dell DDF hardware-RAID signature** off each (`wipefs -a`; ZFS refused until clean — `ddf_raid_member` anchor at offset `0x3a3817d5e00`).
+4. `zpool add -n` dry-run, then `zpool add bulk raidz2 /dev/mapper/mpath{q,r,s,t,u,v}`.
+
+| mpath | wwid | serial | model | POH | vdev |
+|---|---|---|---|---|---|
+| mpathq | …631a206b | Z1Z7DLE4 | Seagate ST4000NM0023 | 85 | 2 |
+| mpathr | …631a1a07 | Z1Z7DTP7 | Seagate ST4000NM0023 | 25 | 2 |
+| mpaths | …631a1bcb | Z1Z7DTMH | Seagate ST4000NM0023 | 50 | 2 |
+| mpatht | …631a1053 | Z1Z7DV0K | Seagate ST4000NM0023 | 20 | 2 |
+| mpathu | …631a1a43 | Z1Z7DTNV | Seagate ST4000NM0023 | 77 | 2 |
+| mpathv | …631a54fb | Z1Z7DSB7 | Seagate ST4000NM0023 | 10 | 2 |
+
+> ℹ️ **No hot spare** in `bulk` (all 6 used for capacity). 2 shelf bays remain free. New vdev is 6-wide (existing are 8-wide) — width mismatch is cosmetic, redundancy (any 2 per vdev) is uniform. Full session: [[Runbook/DS4246-Pool-Buildout-Plan-2026-07-07]] §Expansion 2026-07-17.
+
+---
+
+## Current State & Next Steps (as of 2026-07-17)
+
+- **Status:** ZFS pool **`bulk`** = **3× RAIDZ2 (8+8+6 wide), 80.0 T raw / ~55 TiB usable, ONLINE**, 0 errors (2× 8-wide built 2026-07-08; 3rd 6-wide vdev added 2026-07-17).
 - **Long SMART self-tests running** on all 16 (started 07-07 ~10:3x; SAS extended ≈ 7–8 h) to qualify the used drives.
 - **Before building any pool:** configure `multipathd` (or deliberately single-path) - the dual IOM6 shelf presents each disk on 2 paths, so ZFS must not be pointed at raw `sdX` or it may grab the same disk twice.
 - **Pool BUILT 2026-07-08 → `bulk`, 2× 8-wide RAIDZ2, ~41.3 TiB usable, ONLINE.** All 16 drives passed long self-tests; multipath (exact-wwid whitelist) → 16 maps; datasets `media`/`fernanda`/`archive`/`misc`; `bulk/fernanda` NFS→QuarkyLab .179; weekly scrub + smartd + ZED. `bulk/media` export still pending a media-server target. Full record: [[Runbook/DS4246-Pool-Buildout-Plan-2026-07-07]].
@@ -106,6 +129,7 @@ zfs set sharenfs="rw=@10.0.30.0/24,no_root_squash" datastore/vms
 
 ## Future Expansion
 
-- DS4246 has 18 empty bays - room to grow
-- HGST Ultrastar drives are enterprise-grade, compatible with ZFS
+- DS4246 has **2 empty bays** (22/24 populated as of 2026-07-17) - near full
+- To add drives: allow-list WWID in `/etc/multipath.conf` → `multipathd reconfigure` → `wipefs -a` any foreign RAID signature → `zpool add bulk raidz2 …`. Never `zpool add` raw `sdX` (dual-pathed shelf); never widen an existing vdev.
+- HGST Ultrastar / Seagate Constellation drives are enterprise-grade, compatible with ZFS
 - Monitor drive health via `zpool status` and Grafana/SMART dashboard
