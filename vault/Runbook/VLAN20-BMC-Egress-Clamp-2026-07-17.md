@@ -1,6 +1,6 @@
 # Runbook: VLAN 20 (BMC) Egress Clamp — Segmentation Phase 1.5
 
-**Status: READY — awaiting go/no-go (2026-07-17).** Both pre-flight blockers cleared:
+**Status: APPLIED + VERIFIED (2026-07-17).** Both pre-flight blockers cleared then applied via checkpointed steps (backup / write_config / filter reload separately, so an agent drop mid-op stays recoverable). VERIFIED in running pf: floating internet-block (pfctl line 97) precedes the failover pass (line 103), both quick -> VLAN20->internet dropped first-match; internal block (line 130) confirmed actively matching in the filter log; all 3 BMCs still reachable from Ares (L2); estate healthy; failover rule interface list untouched. Pre-clamp rollback point on the box: /conf/config.xml.bak-vlan20clamp-20260717-121952. NOTE: the guest agent crashed twice during this work (see the agent-revive item) - apply succeeded on the checkpointed retry. Original prep notes:
 the floating-rule defect is fixed in the scripts (validated), and the guest agent was
 revived (`qm agent 100 ping` responds). Final validations done: corrected PHP `php -l`
 clean; `configctl filter reload` = `rc.filter_configure` confirmed; report-only dry-run
