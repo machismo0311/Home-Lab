@@ -101,3 +101,14 @@ errors: No known data errors
 
 - **Monitoring:** the Grafana `ZfsPoolDegraded` alert + ZFS textfile collector already cover `workspace`; the hot spare and wider vdev need no config change.
 - **Watch item (minor):** slot 7 has two historical `phy bad` CRIT log entries from the paper episode. It is healthy now and, being a spare bay, any future glitch there is non-destructive - but it is the one bay with a blemished history.
+
+## Post-swap step discovered 2026-07-17: restart smartd
+
+After ANY drive add/swap/remove, `systemctl restart smartmontools`. smartd only
+enumerates devices at startup (DEVICESCAN), so after the 07-13 swap it kept
+probing the new `/dev/sdc` (2TB SAS) with the OLD registration (1TB SATA Hitachi,
+SAT protocol) - every SMART read failed and it nagged Discord daily for 4 days
+("FailedReadSmartErrorLog ... JPW9K0N13BHTVL"). Not a failing drive: a stale
+device table + protocol mismatch on shifted device letters. Restart -> clean
+re-enumeration (8/8 drives, correct SAS/SATA protocols, zero errors). Add the
+restart to this procedure's checklist whenever bays change.
