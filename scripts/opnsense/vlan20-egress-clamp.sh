@@ -24,13 +24,25 @@ BAK="/conf/config.xml.bak-vlan20clamp-${STAMP}"
 if [ "${1:-}" != "--apply" ]; then
 	cat <<EOF
 DRY: this would, on OPNsense VM ${VMID} (via pve2 guest agent):
+  0. PRECHECK the guest agent responds (else abort — apply+rollback both need it)
   1. back up /conf/config.xml -> ${BAK}
-  2. remove the 3 opt1 (VLAN20) PASS rules (->management, ->servers, ->internet)
-  3. add a block+log catch-all on opt1
-  4. configctl filter reload
+  2. PREPEND a FLOATING quick BLOCK for opt1 internet-bound (dest !Local_Nets) — this
+     is REQUIRED: a quick multi-WAN-failover floating rule already passes VLAN20 ->
+     internet, so removing the interface pass alone does NOT block it (found 2026-07-17)
+  3. remove the 3 opt1 (VLAN20) interface PASS rules (->management, ->servers, ->internet)
+  4. add an opt1 interface block+log for internal attempts
+  5. configctl filter reload
 Re-run with --apply to execute. Rollback: vlan20-egress-rollback.sh ${BAK}
 EOF
 	exit 0
+fi
+
+# GATE: the guest agent must be alive — both this apply AND the rollback drive it.
+# It has proven flaky on this OPNsense (down 2026-07-17). Never apply a firewall
+# change whose rollback channel is unavailable.
+if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE2" "qm agent $VMID ping" >/dev/null 2>&1; then
+	echo "$(date -Is) ABORT: OPNsense guest agent not responding — rollback channel unavailable. Revive it (console/GUI) first." >&2
+	exit 1
 fi
 
 read -r -d '' PHP <<'PHP' || true
@@ -38,23 +50,32 @@ read -r -d '' PHP <<'PHP' || true
 require_once("config.inc");
 require_once("util.inc");
 global $config;
-$new = array(); $removed = 0;
+// (2) floating quick BLOCK for opt1 internet-bound, PREPENDED so it precedes the
+// existing quick "Multi-WAN failover" floating pass rule (which would otherwise pass
+// VLAN20 -> internet before any interface rule is evaluated).
+$fblock = array(
+    'type' => 'block', 'interface' => 'opt1', 'ipprotocol' => 'inet',
+    'floating' => 'yes', 'quick' => '1', 'direction' => 'in', 'statetype' => 'keep state',
+    'log' => '1', 'source' => array('any' => '1'),
+    'destination' => array('address' => 'Local_Nets', 'not' => '1'),
+    'descr' => 'VLAN20 BMC internet block+log (AAR 2026-07-17)'
+);
+$new = array($fblock); $removed = 0;
 foreach ($config['filter']['rule'] as $r) {
-    if (($r['interface'] ?? '') === 'opt1' && ($r['type'] ?? '') === 'pass') { $removed++; continue; }
+    // (3) drop the opt1 interface pass rules (NOT the floating failover rule)
+    if (($r['interface'] ?? '') === 'opt1' && ($r['type'] ?? '') === 'pass' && empty($r['floating'])) { $removed++; continue; }
     $new[] = $r;
 }
+// (4) interface block+log for VLAN20 -> internal attempts (visibility)
 $new[] = array(
-    'type' => 'block',
-    'interface' => 'opt1',
-    'ipprotocol' => 'inet',
-    'source' => array('network' => 'opt1'),
+    'type' => 'block', 'interface' => 'opt1', 'ipprotocol' => 'inet',
+    'log' => '1', 'source' => array('network' => 'opt1'),
     'destination' => array('any' => ''),
-    'log' => '1',
-    'descr' => 'VLAN20 BMC egress clamp: block+log all (AAR 2026-07-17)'
+    'descr' => 'VLAN20 egress clamp: block+log internal (AAR 2026-07-17)'
 );
 $config['filter']['rule'] = $new;
-write_config("VLAN20 BMC egress clamp: remove trusted-pass rules + block/log (AAR 2026-07-17)");
-echo "removed=$removed opt1 pass rules; block+log appended; total rules=" . count($config['filter']['rule']) . "\n";
+write_config("VLAN20 BMC egress clamp v2: floating internet-block + interface clamp (AAR 2026-07-17)");
+echo "removed=$removed opt1 interface pass rules; +1 floating internet-block; +1 interface block; total=" . count($config['filter']['rule']) . "\n";
 PHP
 
 b64="$(printf '%s' "$PHP" | base64 -w0)"
