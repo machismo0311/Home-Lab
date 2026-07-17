@@ -41,6 +41,36 @@
 
 ---
 
+## Passthrough / Multipath Health Check — 2026-07-17 ✅
+
+Verified after the 6-drive expansion — the DS4246 passthrough (LSI SAS2308 IT-mode HBA + dual IOM6) is fully healthy:
+
+| Check | Result |
+|---|---|
+| Multipath | **22/22 maps with both paths `active ready running`** — every disk dual-pathed across both IOM6 modules |
+| Failed / faulty / ghost paths | **None** |
+| `zpool status -x bulk` | **"pool is healthy"** — 0 read/write/checksum errors |
+| Last scrub | 0 repaired, 0 errors (2026-07-17) |
+| HBA | LSI SAS2308 (9207-8e class, PCI `85:00.0`) present, clean |
+| SAS kernel events | No `mpt`/SAS resets, aborts, or link errors |
+
+> The only kernel-log noise is `ataN: SATA link down (SStatus 0)` — those are **empty onboard motherboard SATA ports** (nothing plugged in), NOT the shelf. The DS4246 rides the SAS2308, which is silent. Harmless — do not chase it.
+
+**Reusable health-check (run on Randy):**
+```bash
+# 1. every mpath must show 2 active ready running paths
+for m in /dev/mapper/mpath*; do n=$(basename $m); \
+  echo "$n: $(multipath -ll $n | grep -c 'active ready running') paths"; done
+multipath -ll | grep -iE 'failed|faulty|offline|ghost'   # expect no output
+# 2. pool health + errors
+zpool status -x bulk        # want: "pool 'bulk' is healthy"
+# 3. HBA + SAS kernel events (ignore ataN SATA-link-down = empty onboard ports)
+lspci | grep -iE 'SAS2308'
+dmesg -T | grep -iE 'mpt|sas.*reset|abort|I/O error' | tail
+```
+
+---
+
 ## Expansion 2026-07-17 — 3rd vdev (6× 4 TB)
 
 Added **6× Seagate ST4000NM0023 4 TB SAS** (Dell-pulled, near-zero POH: 10–85 h) as a **third vdev, 6-wide RAIDZ2** → `bulk` grew **58.2 T → 80.0 T raw** (~+14.5 TiB usable). Pool now **3 vdevs (8+8+6 wide RAIDZ2)**, ONLINE, 0 errors; post-add scrub clean (32 s).
