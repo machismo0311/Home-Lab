@@ -35,7 +35,10 @@ backup_verify_scrutiny_url: "http://192.168.10.183:8080"
 # HBA/passthrough fault even while the pool still reads ONLINE). The shelf is
 # dual-pathed, so each physical disk shows as two `disk` paths — we dedup by
 # WWN to count physical disks. Best-effort: whole disks in the ~4 TB band.
-backup_verify_ds4246_expected: 16
+# 2026-07-17: 3rd vdev added (6x 4TB, 6-wide raidz2) -> 16 + 6 = 22. The shelf
+# now runs 3 vdevs (8+8+6). Bump this whenever drives are added, or this check
+# fails and BackupVerifyFailing fires on a healthy shelf.
+backup_verify_ds4246_expected: 22
 backup_verify_ds4246_count_cmd: >-
   lsblk -dnb -o TYPE,SIZE,WWN |
   awk '$1=="disk" && $2 > 3.5e12 && $2 < 4.6e12 {print $3}' |
