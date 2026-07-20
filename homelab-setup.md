@@ -13,7 +13,7 @@
 
 | Node | Hardware | CPU | RAM | Storage | IP | Role |
 |------|----------|-----|-----|---------|-----|------|
-| pve1 | Apple Mac Mini (2011) | Core i5 | — | Internal SSD | 192.168.10.193 | Stand alone PI-Hole |
+| pve1 | Apple Mac Mini (2011) | Core i5 | — | Internal SSD | 192.168.10.193 | Standalone **Proxmox VE** host (own web UI `:8006`, not in km-cluster) — runs Pi-hole primary as **LXC 103** (`192.168.10.177`) + homepage LXC 104. Not headless macOS. |
 | pve2 | HP EliteDesk 800 G4 SFF | i7-8700 | 32GB | — | 192.168.10.204 | Services |
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 256GB NVMe + 1TB SATA | 192.168.10.201 | Primary services node |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | — | 192.168.10.202 | Services |
@@ -53,7 +53,7 @@
 
 | Device/Service | IP | Notes |
 |---------------|----|-------|
-| pve1 (Mac Mini) | 192.168.10.193 | Tailscale: 100.x.x.x |
+| pve1 (Mac Mini, Proxmox VE host) | 192.168.10.193 | Tailscale: 100.116.237.31. Web UI `https://192.168.10.193:8006`. Key-based SSH from Ares (host sshd is publickey-only). Recover Pi-hole: `pct start 103` / `pct reboot 103`. |
 | pve2 | 192.168.10.204 | |
 | pve3 | 192.168.10.201 | |
 | pve4 | 192.168.10.202 | |
@@ -65,8 +65,8 @@
 | Nginx Proxy Manager | 192.168.10.181 | CT 101 on pve3, admin port 81 |
 | Vaultwarden | 192.168.10.182 | CT 102 on pve3 |
 | Grafana | 192.168.10.183 | CT 103 on pve3 |
-| Pi-hole (primary) | 192.168.1.47 | Proxmox LXC on pve1, admin: http://192.168.1.47/admin |
-| Pi-hole (backup) | 192.168.1.170 | Raspberry Pi 4 |
+| Pi-hole (primary) | 192.168.10.177 | Proxmox LXC 103 on pve1, admin: http://192.168.10.177/admin |
+| Pi-hole (secondary) | 192.168.10.178 | pve5 CT 108 `netframe-pihole2`, full nebula-sync mirror of .177 (DNS HA, 2026-07-10) |
 
 ---
 
@@ -413,7 +413,7 @@ systemctl restart crowdsec
 
 ## Pi-hole DNS
 
-Originally running on pve1 (Mac Mini). Two instances for redundancy.
+Primary runs as **LXC 103 on pve1** (`192.168.10.177`) — pve1 is a standalone Proxmox VE host (Mac Mini hardware), not headless macOS. Secondary is **pve5 CT 108** (`192.168.10.178`, `netframe-pihole2`), a full nebula-sync mirror for DNS HA (2026-07-10). OPNsense DHCP hands out both `.177` and `.178` on all VLAN scopes for automatic client failover.
 
 | Role | IP | Admin URL |
 |------|----|-----------|
