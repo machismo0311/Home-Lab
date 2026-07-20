@@ -52,7 +52,7 @@ one wrong hypothesis (a "pve2 NIC failure") was investigated and disproven.
 | 07-20 ~12:xx | **Kea rebuilt to mirror ISC** via API: 7 subnets + pools + gateways + reservations. Owner approved the Kea-rebuild path over further ISC attempts. Kea comes up **running**. |
 | 07-20 ~13:00 | Ares reverted to DHCP → pulls **`192.168.10.152`** (its original IP), gateway via DHCP, DNS `.177`. **Wi-Fi restored.** NM profile restored to pre-incident state. |
 | 07-20 ~13:xx | Cross-check against Home-Lab docs caught two rebuild gaps: DNS-HA `.178` (parser bug) and the Home Assistant `.60` static-map (stale snapshot). **Both fixed**; Ares re-leased and now receives **both** DNS servers. |
-| 07-20 ~13:xx | "pve2 NIC down" hypothesis disproven: pve2 mgmt IP `.204` is UP; the real issue is a stale `/etc/pve/.members` entry (`.200`). Filed as follow-up. **Incident closed.** |
+| 07-20 ~13:xx | "pve2 NIC down" hypothesis disproven: pve2 mgmt IP `.204` is UP and correct; the anomaly is a stale `192.168.10.200` in pve2's local `/etc/hosts` (a pre-renumber leftover — `.200` is OPNsense's own mgmt IP), which propagates into `/etc/pve/.members`. **Cosmetic / management-plane only; deliberately left as-is** (see §7). **Incident closed.** |
 
 ## 3. Root cause analysis
 
@@ -135,9 +135,10 @@ functionally identical for every client.
    freshness check.
 6. **Rebuild parser dropped multi-value options.** Reading only the first `<dnsserver>`
    silently halved DNS-HA in the first pass.
-7. **Initial misdiagnosis of pve2.** `.200` (a wrong guess for pve2's IP) was probed and
-   read as a NIC failure; pve2 is actually `.204` and healthy. Corrected with evidence, but
-   it briefly pointed at the wrong subsystem.
+7. **Initial misdiagnosis of pve2.** `/etc/pve/.members` reports pve2 at the stale `.200`,
+   so cross-node proxying failed there and it was briefly read as a NIC failure; pve2 is
+   actually `.204` and healthy (the `.200` is a pre-renumber `/etc/hosts` leftover, and is
+   OPNsense's mgmt IP). Corrected with evidence before it reached a conclusion.
 
 ## 7. Corrective actions
 
@@ -156,7 +157,7 @@ functionally identical for every client.
 
 | # | Action | Rationale |
 |---|---|---|
-| 7 | **Fix pve2 `.members` address (`.200` → `.204`)** | Cross-node API proxy + web-UI management of pve2/OPNsense VM 100 is broken; console DR path depends on it. *(Next task.)* |
+| 7 | **(Optional, low priority — DEFERRED) pve2 `/etc/hosts` stale `.200` → `.204`** | pve2 is `.204` and fully healthy; only *cross-node* management (pvesh / web-UI from another node) proxies to the dead `.200` and fails — pve2/OPNsense are manageable **directly** at `.204` (SSH or its own `:8006`). **Deliberately left alone:** touching pve2 addressing caused the June-14 house-internet outage, so this low-value cleanup isn't worth the risk outside a planned window with console staged. `.200` is OPNsense's mgmt IP — never assign it to pve2. |
 | 8 | **Monitor DHCP/Kea** — alert on Kea service down **and** on "0 subnets / not leasing" (an empty-but-enabled Kea reads as "service present") | This outage went undetected by design |
 | 9 | **Decide ISC vs Kea and make it deliberate** — the box is now on Kea; either keep and remove the stale ISC `<dhcpd>` config, or restore ISC intentionally (needs console/shell). Don't leave two half-configured backends | Prevent a repeat empty-backend switch |
 | 10 | **Update CLAUDE.md**: DHCP backend is now **Kea** (not ISC); OPNsense reports **25.1.12** (docs say 25.7 — reconcile); note the `.members` pve2 anomaly | Docs must match reality |
