@@ -1,0 +1,38 @@
+# NETFRAME scheduled automation on Ares (the control node).
+#
+# Install with:  crontab playbooks/scheduling/ares.crontab
+# Inspect with:  crontab -l
+#
+# WHY THIS FILE EXISTS
+# The crontab is Ares-local state and lived nowhere else. The 2026-07-18 Ares
+# rebuild wiped it, silently killing every scheduled job below. Nothing failed
+# loudly - the jobs simply stopped, and the only signal was a Grafana staleness
+# alert on a report that had quietly stopped being written
+# (BackupVerifyReportStale, see NF-INC-2026-07-19). Keep this file in sync with
+# the crontab so a rebuild is a one-command restore.
+#
+# PREREQUISITES on a rebuilt Ares (none of these are in this repo):
+#   - ~/.ansible-venv           python venv with ansible-core >= 2.15
+#                               (needs the python3-venv system package)
+#   - ~/.config/ansible/vault-pass          ansible-vault password (Vaultwarden)
+#   - playbooks/group_vars/all/vault.yml    PBS token, gitignored (Vaultwarden)
+#   - ~/.config/netframe-backup-verify/     run-log directory
+#   - SSH key trusted by every inventory host as root
+
+# --- 06:00 backup + storage-health verification -----------------------------
+# Writes backup-report.json + backup_verify.prom on Randy. 06:00 is after the
+# nightly backups (LXC 02:00 / VM 03:00) and the 03:17 OPNsense backup, so the
+# newest snapshot is well inside the 25h freshness window.
+0 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-backup-verify.sh >> /home/machismo/.config/netframe-backup-verify/run.log 2>&1
+
+# --- 06:30 hardening drift check (NOT YET REINSTATED) -----------------------
+# Runs desired-state.yml in --check mode (read-only, never enforces) and writes
+# hardening-drift.json to Randy. Still commented out as of 2026-07-19: the
+# playbook has never run for real against any node, and it wants verifying under
+# --check on ansible-core 2.19 before being put back on a timer.
+# 30 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-hardening-drift-check.sh >> /home/machismo/.config/netframe-backup-verify/hardening-drift.log 2>&1
+
+# --- 03:17 OPNsense config backup (NOT YET REINSTATED) ----------------------
+# The sibling automation this scheduling pattern was modelled on. Its script and
+# config live outside this repo (~/.config/opnsense-backup, ~/.config/opnsense-api)
+# and were lost with the rebuild; restore and review them before re-enabling.

@@ -28,7 +28,7 @@ The same RTX 8000 is shared with **~15 university computer-science students per 
 
 - **7-node Proxmox VE 9.2.3 cluster** · ~140 CPU cores · ~1.4 TB aggregate RAM
 - **3 GPU cards / 96 GB VRAM** - RTX 8000 48 GB (QuarkyLab) + 2× RTX 6000 (48 GB, Jarvis); RX 580 planned for Randy transcode
-- **~95 TB raw ZFS storage** across the fleet · ~50 drives under health monitoring
+- **~127 TB raw ZFS storage** across the fleet · ~56 drives under health monitoring
 - **On-prem 72-billion-parameter LLM** + RAG over the full documentation base
 - **Multi-tenant GPU** - 20 student + 6 researcher seats, hard per-tenant VRAM caps + preemption
 - **Production ops** - HA DNS, tested PBS backups, Grafana→Discord alerting, Wazuh SIEM on all nodes, RKE2 Kubernetes, self-hosted Headscale VPN, Juniper EX3400 + 7-VLAN segmentation, 10 GbE fabric, CI/CD
@@ -163,8 +163,8 @@ QuarkyLab's single RTX 8000 is safely shared between production research and a c
 
 ### DS4246 - External JBOD
 
-- 16× 4TB SAS, dual-path via LSI 9207-8e HBA (IT mode) + multipath, SFF-8644→SFF-8088 cables
-- **Pool `bulk` - built & online 2026-07-08:** 2× 8-wide RAIDZ2, 58.2TB raw / ~41.3 TiB usable, reboot-verified (auto-imports cleanly)
+- 22× 4TB SAS, dual-path via LSI 9207-8e HBA (IT mode) + multipath, SFF-8644→SFF-8088 cables (2 bays free)
+- **Pool `bulk` - built 2026-07-08, expanded 2026-07-17:** 3× RAIDZ2 vdevs (8+8+6-wide), 80.0TB raw / ~55 TiB usable, reboot-verified (auto-imports cleanly)
 
 ### QuarkyLab - Local ZFS workspace pool
 
@@ -228,9 +228,9 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [x] Multi-tenant SLURM + Apptainer + MPS GPU sharing on QuarkyLab ✅ validated 2026-07-02 (research preemption + per-job VRAM caps)
 - [x] Backup schedules configured - daily to randy-pbs, 7d+4w retention
 - [x] Wazuh SIEM + Promtail→Loki on all 8 nodes ✅ 2026-06-25
-- [x] DS4246 → Randy - pool `bulk` built & online 2026-07-08 (2× 8-wide RAIDZ2, ~41.3 TiB usable, reboot-verified)
+- [x] DS4246 → Randy - pool `bulk` built 2026-07-08, 3rd vdev added 2026-07-17 (8+8+6-wide RAIDZ2, 80.0TB raw / ~55 TiB usable, reboot-verified)
 - [x] VLAN activation ✅ 2026-06-25 - EX3400 ge-0/0/46 trunk live, verified end-to-end. Fix: native-vlan-id at interface level (ELS)
-- [x] Scrutiny - drive health UI live (~50 drives, collectors on Randy + QuarkyLab, 6h) ✅
+- [x] Scrutiny - drive health UI live (~56 drives, collectors on Randy + QuarkyLab, 6h) ✅
 - [x] RKE2 Kubernetes ✅ Phases 1-7 (2026-07-10/11) - HA control plane (VMs 201-203, VIP .54), Cilium, MetalLB (.71-.75), Randy NFS StorageClass + bare-metal storage worker, private registry (step-ca TLS + auto-renew). **NVIDIA GPU Operator deferred** (SLURM/Ollama own the cards). See `vault/Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10.md`
 - [x] Headscale Phase 1 - pve3/4/5/Jarvis migrated to self-hosted (2026-06-22)
 - [ ] Large-scale DUNE dataset landing + offsite restic→B2 backup tier (parked pending data)
@@ -247,12 +247,14 @@ Home-Lab/
 ├── README.md
 ├── CLAUDE.md                     # Cluster context for Claude Code (canonical)
 ├── index.html                    # Personal landing page (kylemason.org)
+├── homelab-setup.md              # Bare-metal build notes
 ├── docs/                         # Runbooks, incident reports, LaTeX sources (.tex)
 ├── runbooks/                     # Session runbooks (EX3400, VLAN, Homepage)
 ├── vault/                        # Obsidian knowledge base - canonical runbooks & topic docs
 │   └── Compute/ Infrastructure/ Networking/ Runbook/ Projects/
 ├── scripts/                      # llm_router (FastAPI), jarvis-oncall bot, SLURM, gpu-fan-control
-├── services/                     # homepage/ + netframe-monitor/ configs & systemd units
+├── playbooks/                    # Ansible: backup-verify, hardening desired-state + cron wrappers
+├── .githooks/                    # pre-commit (secret scanning) + installer
 ├── netlab/                       # containerlab virtual network (FRR/OSPF) + CI reachability tests
 ├── topology/                     # Network topology reference + diagram-as-code (inventory → Mermaid)
 ├── student-guide/                # QuarkyLab student & researcher onboarding guides
