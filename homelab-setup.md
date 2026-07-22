@@ -453,7 +453,7 @@ sudo nmcli --ask con up "YourWiFiName"
 
 ### EX3400 trunk fix
 - ge-0/0/32 is currently access-only (default VLAN) — VLANs not trunked to UniFi
-- Need to configure proper trunk without `native-vlan-id` (not supported on EX3400)
+- Configure the trunk with `native-vlan-id` at the **physical-interface** level (JunOS ELS) — it IS supported; the earlier belief that it was unsupported was wrong. Misplacing it under `unit 0 family ethernet-switching` caused the trunk outage. Live since 2026-06-25 — see VLAN-Activation-2026-06-25.
 - Once fixed, WiFi → EX3400 path will work and VLANs will propagate
 
 ### R730 quarkylab (192.168.10.20)

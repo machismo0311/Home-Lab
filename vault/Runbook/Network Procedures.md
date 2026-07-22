@@ -84,7 +84,7 @@ commit
 
 # Step 2: Add to trunk ports
 set interfaces ge-0/0/46 unit 0 family ethernet-switching vlan members <NAME>
-# Note: do NOT add native-vlan-id - not supported on EX3400
+# Note: native-vlan-id IS supported on EX3400 ELS — set it at the physical-interface level, NOT under unit 0 family ethernet-switching (that misplacement caused the earlier outage; live since 2026-06-25)
 commit
 
 # Step 3: Create IRB interface for routing
