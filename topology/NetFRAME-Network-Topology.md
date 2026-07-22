@@ -240,7 +240,7 @@ FirstNet 5G hotspot ──────────┘   dual-WAN gateway group (
 (192.168.1.0/24, backup)          LAN firewall / DHCP / inter-VLAN routing (single-NAT)
 ```
 
-- **OPNsense v25.7** (VM 100 on pve2) is the network **edge** and the authoritative LAN router/firewall/DHCP and inter-VLAN gateway. `onboot=1`.
+- **OPNsense v25.1.12** (VM 100 on pve2) is the network **edge** and the authoritative LAN router/firewall/DHCP and inter-VLAN gateway. `onboot=1`.
 - **WAN1 (primary)** terminates the ISP public IP directly on `vtnet0` (single-NAT). **WAN2 (failover)** is a FirstNet 5G hotspot on `vtnet2` (`192.168.1.0/24`); an OPNsense gateway group fails over automatically (proven).
 - The **UDR** is now a wireless controller / AP on VLAN 1 (`192.168.10.2`), not the WAN edge.
 
@@ -372,7 +372,7 @@ Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) repla
 
 | VMID | Name | Host | vCPU/RAM | IP | onboot | Notes |
 |---|---|---|---|---|---|---|
-| 100 | OPNsense | pve2 | —/4 GB | 192.168.10.1 | ✅ | LAN router/FW/DHCP v25.7 |
+| 100 | OPNsense | pve2 | —/4 GB | 192.168.10.1 | ✅ | LAN router/FW/DHCP v25.1.12 |
 | 104 | Wazuh | QuarkyLab | —/16 GB | 192.168.10.184 | ✅ | SIEM; ⚠️ **no qemu-guest-agent** → host reboot corrupts indexer (recovery in §11) |
 
 ### 7.4 LXC containers (all on pve3 unless noted)

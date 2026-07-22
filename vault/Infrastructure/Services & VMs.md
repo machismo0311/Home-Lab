@@ -8,7 +8,7 @@
 
 | Service | Type | Status | Host | IP | URL / Notes |
 |---|---|---|---|---|---|
-| OPNsense | VM 100 | 🟢 Live router | pve2 | 192.168.10.1 | https://192.168.10.1 (v25.7) |
+| OPNsense | VM 100 | 🟢 Live router | pve2 | 192.168.10.1 | https://192.168.10.1 (v25.1.12) |
 | Nginx Proxy Manager | LXC+Docker | 🟢 Active | pve3 CT 101 | 192.168.10.181 | http://192.168.10.181:81 (admin, Ares-only F-05) |
 | Vaultwarden | LXC+Docker | 🟢 Active | pve3 CT 102 | 192.168.10.182 | https://vault.kylemason.org |
 | Grafana | LXC+Docker | 🟢 Active | pve3 CT 103 | 192.168.10.183 | https://grafana.kylemason.org (v13.0.2) |

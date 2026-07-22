@@ -67,11 +67,11 @@ mindmap
 
 ## 🌐 Network (live - OPNsense + VLANs)
 
-> [!NOTE] OPNsense (VM 100 on pve2) is the **live LAN router/firewall/DHCP** for `192.168.10.0/24` (v25.7). The UniFi Dream Router is the **upstream WAN edge** (`192.168.1.x` WiFi/WAN). **VLANs are live** (2026-06-25). See [[Networking/Network Overview]].
+> [!NOTE] OPNsense (VM 100 on pve2) is the **live LAN router/firewall/DHCP** for `192.168.10.0/24` (v25.1.12). The UniFi Dream Router is the **upstream WAN edge** (`192.168.1.x` WiFi/WAN). **VLANs are live** (2026-06-25). See [[Networking/Network Overview]].
 
 | Device | IP | Notes |
 |--------|-----|-------|
-| OPNsense (LAN gateway) | 192.168.10.1 | VM 100 on pve2, v25.7 |
+| OPNsense (LAN gateway) | 192.168.10.1 | VM 100 on pve2, v25.1.12 |
 | pve1 (Mac Mini) | 192.168.10.193 | **Standalone** (not in km-cluster); Pi-hole host. TS: 100.x.x.x |
 | pve2 (EliteDesk G4) | 192.168.10.204 | 32GB; OPNsense VM 100, step-ca |
 | pve3 (EliteDesk G4) | 192.168.10.201 | 48GB; primary services node |
