@@ -45,7 +45,7 @@ flowchart TB
 
 | Hardware | Notes |
 |---|---|
-| NetApp DS4246 | 24-bay SAS JBOD shelf (via Randy LSI 9207-8e, IT mode); pool `bulk` BUILT & ONLINE 2026-07-08 (2× 8-wide RAIDZ2, 58.2T raw / ~41.3 TiB usable, reboot-verified) |
+| NetApp DS4246 | 24-bay SAS JBOD shelf (via Randy LSI 9207-8e, IT mode); pool `bulk` BUILT & ONLINE 2026-07-08 (3× RAIDZ2 (8+8+6-wide), 80.0T raw / ~55 TiB usable, expanded 2026-07-17, reboot-verified) |
 
 ---
 
