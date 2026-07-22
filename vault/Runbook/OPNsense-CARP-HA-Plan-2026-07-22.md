@@ -38,8 +38,21 @@ Same pattern per VLAN (`.X.1` = VIP, `.X.2/.X.3` = real).
 
 ## Phase 0 — Decisions (before touching anything)
 
-- [ ] **Backup host** confirmed: a Proxmox box mirroring pve2's role — needs the same NIC
-      story (WAN nic0, LAN-trunk nic1 carrying all 7 VLAN tags) **plus** a NIC/VLAN for pfsync.
+- [ ] **Backup host** confirmed. **NIC spec (derived from pve2's live layout 2026-07-22):**
+      pve2 = 3 NICs, all assigned — `nic0`(onboard,100M)→vmbr0=**WAN**, `nic1`(1G)→vmbr1=**LAN
+      trunk 1-70**, `nic2`(down)→vmbr2=**WAN2** (5G, planned). Each HA node needs, at minimum:
+      **(1) WAN** → UDR (needs a free UDR LAN port for node 2), **(2) LAN trunk 1-70 @ 1GbE**
+      (VLAN-aware — the one that matters), **(3) dedicated pfsync/HA-sync @ 1GbE** (direct
+      cable between the two hosts is cleanest), optional **(4) WAN2** if you want 5G failover
+      on the backup too. **→ Buy a 4× Intel GbE box** (firewall mini-PC or SFF + quad-port
+      i350); **3 ports is the floor** if WAN2 is deferred. Hardware need NOT match pve2 — CARP
+      needs equivalent interfaces + the same OPNsense version, and OPNsense is light (2c/4G).
+- [ ] **⚠️ pfsync needs a port on pve2 too** — its 3 NICs are all used. Either repurpose the
+      idle `nic2` (WAN2 spare) as pfsync now (free, but then the **5G WAN-failover project and
+      CARP HA contend for `nic2`** — add a 4th NIC to pve2 to run both), or add a NIC to pve2.
+      Decide which project owns `nic2`.
+- [ ] **Cluster vs standalone:** run the backup OPNsense host **standalone** (like pve1), NOT
+      in km-cluster — the gateway pair should not depend on cluster quorum health.
 - [ ] **pfsync/sync link**: dedicated physical NIC between the two hosts (preferred) or a
       dedicated isolated VLAN. **Never run pfsync over the production LAN.**
 - [ ] **IP renumber plan** locked: real IPs off every `.X.1`, VIPs claim `.X.1`.
