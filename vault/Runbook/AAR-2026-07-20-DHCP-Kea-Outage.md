@@ -199,3 +199,36 @@ functionally identical for every client.
 - Rebuilt Kea: 7 subnets (LAN/opt1–opt6 = .10/.20/.30/.40/.50/.60/.70), pools `.100–.199`
   (LAN) / `.100–.200` (VLANs), DNS `.177`+`.178`, 6 reservations (R2-D2 `.2`, HA `.60`,
   Pi-hole `.177`, secondary `.178`, brother-printer `.40.10`, bambu-p1s `.40.20`)
+
+## 10. Addendum — 2026-07-21 (impact was broader; completeness + DR fixes)
+
+The original report under-scoped §1/§4. Follow-up audit found the outage also hit
+`ip=dhcp` **service containers**, and the **first Kea rebuild — built from a stale
+2026-07-13 config snapshot (the `download/this` staleness) — did not restore their
+reservations**, so they sat on wrong pool IPs until 07-21:
+
+| Service (ip=dhcp) | Reserved IP | Was on | Effect |
+|---|---|---|---|
+| NPM (CT 101) | `.181` | `.113` | all published `*.kylemason.org` fronts down |
+| Grafana (CT 103) | `.183` | `.114` | monitoring/alerting down |
+| Homepage (CT 106) | `.148`* | `.112` | dashboard down |
+
+\*Homepage `.148` is **not** in the live ISC config (it ran dynamic and had drifted);
+reserved deliberately to match docs — NPM proxies it by hostname, so it's safe.
+
+**Fixes applied 07-21:**
+- Restarted the OPNsense **qemu guest agent** (via `/api/core/service/restart/qemu-ga`) — it
+  had stopped, breaking graceful shutdown *and* live-config reads; channel to pve2 restored.
+- Read the **live** config and reconciled Kea to the full reservation set: added NPM `.181`,
+  Grafana `.183`, `.176` (UniFi US-24), `.180`, Wazuh `.184`, plus Homepage `.148`. **12
+  reservations total.** NPM/Grafana/Homepage rebooted → verified serving at correct IPs.
+- **Vaultwarden** clarified: static on **VLAN 30 (`.30.182`)**, never affected (a `.10.182`
+  ping was a false alarm; CLAUDE.md corrected).
+- **DR backup repaired** (was silently frozen at 07-13 via `download/this`, scheduler stopped):
+  now pulls the **live** `/conf/config.xml` via the guest agent, current config captured, and
+  a `systemd` user timer restored (03:17 daily, `Persistent=true`); age encrypt→decrypt
+  round-trip verified.
+
+**Lesson added:** a rebuild is only as complete as its config source — the `download/this`
+staleness turned an outage recovery into a partial one. Read the **live** config
+(guest agent), never a cached API/backup, when reconstructing state.
