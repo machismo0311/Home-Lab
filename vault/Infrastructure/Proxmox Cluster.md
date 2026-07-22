@@ -45,7 +45,7 @@ flowchart TB
 
 | Hardware | Notes |
 |---|---|
-| NetApp DS4246 | 24-bay SAS JBOD shelf (via Randy LSI 9207-8e, IT mode); pool `bulk` BUILT & ONLINE 2026-07-08 (2× 8-wide RAIDZ2, 58.2T raw / ~41.3 TiB usable, reboot-verified) |
+| NetApp DS4246 | 24-bay SAS JBOD shelf (via Randy LSI 9207-8e, IT mode); pool `bulk` BUILT & ONLINE 2026-07-08 (3× RAIDZ2 (8+8+6-wide), 80.0T raw / ~55 TiB usable, expanded 2026-07-17, reboot-verified) |
 
 ---
 
@@ -121,7 +121,7 @@ pveam download local debian-12-standard_12.12-1_amd64.tar.zst
 
 ## OPNsense VM (pve2 - live LAN router)
 
-- **VM ID:** 100 on pve2, v25.7, onboot=1
+- **VM ID:** 100 on pve2, v25.1.12, onboot=1
 - **Live** LAN router/firewall/DHCP for 192.168.10.0/24 (gateway 192.168.10.1). The UniFi Dream Router is now WAN-only upstream.
 - Serial console access: `qm terminal 100` from pve2 (exit **Ctrl-O**) - **verified working 2026-07-10** (emergency console).
 - Wildcard cert: `*.kylemason.org` via Let's Encrypt DNS-01 (Cloudflare)

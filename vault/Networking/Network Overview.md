@@ -5,7 +5,7 @@
 ---
 
 > [!NOTE] Current State (2026-06-25)
-> **OPNsense (VM 100 on pve2) is the live LAN router/firewall/DHCP** for `192.168.10.0/24` (v25.7). The UniFi Dream Router remains **upstream as the WAN edge** (provides the `192.168.1.x` WAN/WiFi side); it is no longer the LAN gateway. **VLANs are live** as of 2026-06-25 (EX3400 ELS).
+> **OPNsense (VM 100 on pve2) is the live LAN router/firewall/DHCP** for `192.168.10.0/24` (v25.1.12). The UniFi Dream Router remains **upstream as the WAN edge** (provides the `192.168.1.x` WAN/WiFi side); it is no longer the LAN gateway. **VLANs are live** as of 2026-06-25 (EX3400 ELS).
 
 ---
 
@@ -66,7 +66,7 @@ flowchart TB
 
 | Device | IP | Notes |
 |--------|-----|-------|
-| OPNsense (LAN gateway) | 192.168.10.1 | VM 100 on pve2, v25.7 |
+| OPNsense (LAN gateway) | 192.168.10.1 | VM 100 on pve2, v25.1.12 |
 | pve1 (Mac Mini) | 192.168.10.193 | **Standalone** (not in km-cluster); hosts Pi-hole |
 | pve2 | 192.168.10.204 | 32GB; hosts OPNsense VM 100, step-ca |
 | pve3 | 192.168.10.201 | 48GB; NPM, Vaultwarden, Grafana, Homepage, Headscale, NUT |

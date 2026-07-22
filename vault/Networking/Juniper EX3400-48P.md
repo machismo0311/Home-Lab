@@ -192,7 +192,7 @@ EX3400 reads DAC as 10G, UniFi reads as 1G (EEPROM mismatch on 10Gtek passive DA
 
 ### ⚠️ ge-0/0/32 Trunk - OPEN
 
-`native-vlan-id` is not supported on EX3400 - this was root cause of trunk failure. ge-0/0/32 is currently access-only. Fix: configure as plain trunk without `native-vlan-id`.
+`native-vlan-id` IS supported on EX3400 but must be set at the **physical-interface** level (JunOS ELS), NOT under `unit 0 family ethernet-switching` — that misplacement was the trunk-failure root cause. Corrected & live since 2026-06-25 (see the live-config note above and VLAN-Activation-2026-06-25).
 
 ---
 

@@ -13,7 +13,7 @@
 
 | Node | Hardware | CPU | RAM | Storage | IP | Role |
 |------|----------|-----|-----|---------|-----|------|
-| pve1 | Apple Mac Mini (2011) | Core i5 | — | Internal SSD | 192.168.10.193 | Standalone **Proxmox VE** host (own web UI `:8006`, not in km-cluster) — runs Pi-hole primary as **LXC 103** (`192.168.10.177`) + homepage LXC 104. Not headless macOS. |
+| pve1 | Apple Mac Mini (2011) | Core i5 | — | Internal SSD | 192.168.10.193 | Standalone **Proxmox VE** host (own web UI `:8006`, not in km-cluster) — runs Pi-hole primary as **LXC 103** (`192.168.10.177`). Homepage was migrated off pve1 to **pve3 LXC 106** on 2026-06-24 (the retired pve1 CT 104 was still present/running at the 2026-07-22 audit — see cleanup backlog). Not headless macOS. |
 | pve2 | HP EliteDesk 800 G4 SFF | i7-8700 | 32GB | — | 192.168.10.204 | Services |
 | pve3 | HP EliteDesk 800 G4 SFF | i7-8700 | 48GB | 256GB NVMe + 1TB SATA | 192.168.10.201 | Primary services node |
 | pve4 | HP EliteDesk 800 G3 Mini | i5-7500T | 32GB | — | 192.168.10.202 | Services |
@@ -453,7 +453,7 @@ sudo nmcli --ask con up "YourWiFiName"
 
 ### EX3400 trunk fix
 - ge-0/0/32 is currently access-only (default VLAN) — VLANs not trunked to UniFi
-- Need to configure proper trunk without `native-vlan-id` (not supported on EX3400)
+- Configure the trunk with `native-vlan-id` at the **physical-interface** level (JunOS ELS) — it IS supported; the earlier belief that it was unsupported was wrong. Misplacing it under `unit 0 family ethernet-switching` caused the trunk outage. Live since 2026-06-25 — see VLAN-Activation-2026-06-25.
 - Once fixed, WiFi → EX3400 path will work and VLANs will propagate
 
 ### R730 quarkylab (192.168.10.20)

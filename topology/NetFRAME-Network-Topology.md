@@ -240,7 +240,7 @@ FirstNet 5G hotspot ──────────┘   dual-WAN gateway group (
 (192.168.1.0/24, backup)          LAN firewall / DHCP / inter-VLAN routing (single-NAT)
 ```
 
-- **OPNsense v25.7** (VM 100 on pve2) is the network **edge** and the authoritative LAN router/firewall/DHCP and inter-VLAN gateway. `onboot=1`.
+- **OPNsense v25.1.12** (VM 100 on pve2) is the network **edge** and the authoritative LAN router/firewall/DHCP and inter-VLAN gateway. `onboot=1`.
 - **WAN1 (primary)** terminates the ISP public IP directly on `vtnet0` (single-NAT). **WAN2 (failover)** is a FirstNet 5G hotspot on `vtnet2` (`192.168.1.0/24`); an OPNsense gateway group fails over automatically (proven).
 - The **UDR** is now a wireless controller / AP on VLAN 1 (`192.168.10.2`), not the WAN edge.
 
@@ -259,10 +259,10 @@ FirstNet 5G hotspot ──────────┘   dual-WAN gateway group (
 | .180 | UPS A SNMP | Middle Atlantic OL2200R card |
 | .181 | Nginx Proxy Manager | LXC 101 (pve3) |
 | .182 | Vaultwarden | LXC 102 (pve3) |
-| .183 | Grafana/Prometheus/Loki/InfluxDB/Scrutiny | LXC 103 (pve3) |
+| .183 | Grafana/Prometheus/Loki/InfluxDB/Scrutiny | LXC 103 (pve4) |
 | .184 | Wazuh SIEM | VM 104 (QuarkyLab) |
 | .185 | Open WebUI | LXC 107 (pve3) |
-| .186 | Headscale | LXC 105 (pve3) |
+| .186 | Headscale | LXC 105 (pve5) |
 | .187 | **Randy** | SuperMicro PBS / ZFS / Jellyfin |
 | .193 | **pve1** | Mac Mini standalone (Pi-hole host) |
 | .199 | Ares (WiFi) | Admin workstation `wlp2s0` |
@@ -319,7 +319,7 @@ OPNsense (`192.168.10.1`) serves DHCP per VLAN. Most infrastructure uses static/
 
 ## 6. Overlay — Headscale Mesh VPN
 
-Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) replaces the Tailscale SaaS control plane. Tailnet CGNAT range `100.64.0.0/10`.
+Self-hosted **Headscale v0.29.1** (LXC 105 on pve5, `192.168.10.186:8080`) replaces the Tailscale SaaS control plane. Tailnet CGNAT range `100.64.0.0/10`.
 
 | Tailnet IP | Node | User | Tags | State |
 |---|---|---|---|---|
@@ -372,7 +372,7 @@ Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) repla
 
 | VMID | Name | Host | vCPU/RAM | IP | onboot | Notes |
 |---|---|---|---|---|---|---|
-| 100 | OPNsense | pve2 | —/4 GB | 192.168.10.1 | ✅ | LAN router/FW/DHCP v25.7 |
+| 100 | OPNsense | pve2 | —/4 GB | 192.168.10.1 | ✅ | LAN router/FW/DHCP v25.1.12 |
 | 104 | Wazuh | QuarkyLab | —/16 GB | 192.168.10.184 | ✅ | SIEM; ⚠️ **no qemu-guest-agent** → host reboot corrupts indexer (recovery in §11) |
 
 ### 7.4 LXC containers (all on pve3 unless noted)
@@ -421,7 +421,7 @@ datastore (pool)
 
 ### 8.2 NetApp DS4246 (JBOD expansion)
 
-24-bay 4U SAS shelf attached via the LSI 9207-8e (IT mode). Pool **`bulk` BUILT & ONLINE 2026-07-08** — **2× 8-wide RAIDZ2**, **58.2 TB raw / ~41.3 TiB usable**, reboot-verified. Population is **4 TB** class (Seagate `ST4000NM0063` + HGST `HUS724040ALS641`). The earlier live observation of **duplicate serial pairs** (each physical serial appearing twice via **dual-path SAS multipath** through the shelf's two I/O modules) was reconciled during the build so each physical disk maps to a single vdev member.
+24-bay 4U SAS shelf attached via the LSI 9207-8e (IT mode). Pool **`bulk` BUILT & ONLINE 2026-07-08** — **3× RAIDZ2 (8+8+6-wide)**, **80.0 TB raw / ~55 TiB usable** (expanded 2026-07-17), reboot-verified. Population is **4 TB** class (Seagate `ST4000NM0063` + HGST `HUS724040ALS641`). The earlier live observation of **duplicate serial pairs** (each physical serial appearing twice via **dual-path SAS multipath** through the shelf's two I/O modules) was reconciled during the build so each physical disk maps to a single vdev member.
 
 > **Note:** the CLAUDE.md/Rack notes describe the DS4246 as 2 TB-class; the live shelf is 4 TB-class. Pool built per `DS4246-Pool-Buildout-Plan-2026-07-07`. See finding **F-3**.
 
@@ -595,7 +595,7 @@ Findings F-03 (Prometheus/Loki localhost-only), F-05 (NPM `:81` Ares-only), OOB 
 |---|---|---|---|
 | **F-1** | ⚠️ Medium | **Inconsistent default gateways:** pve3/4/5 default via `192.168.1.1` (UDR, off-subnet onlink) while pve2 uses OPNsense `.10.1`. Node egress bypasses the OPNsense firewall/logging. | Repoint pve3/4/5 default to `192.168.10.1` for consistent policy/logging, or document the intent explicitly. |
 | **F-2** | 🟡 Low | **Ares wired mgmt leg (`enp0s31f6`) is link-down**; VLAN 20 OOB is currently unreachable and silently reroutes via WiFi→OPNsense. | Restore the wired leg before OOB/BMC work; verify `ip route get 192.168.20.x`. |
-| **F-3** | ✅ Resolved | **DS4246 pool built:** shelf is 4 TB-class (docs say 2 TB); pool `bulk` BUILT & ONLINE 2026-07-08 (2× 8-wide RAIDZ2, 58.2 TB raw / ~41.3 TiB usable, reboot-verified) with multipath reconciled. | Update Rack/CLAUDE docs to match live 4 TB-class inventory. |
+| **F-3** | ✅ Resolved | **DS4246 pool built:** shelf is 4 TB-class (docs say 2 TB); pool `bulk` BUILT & ONLINE 2026-07-08 (3× RAIDZ2 (8+8+6-wide), 80.0 TB raw / ~55 TiB usable, expanded 2026-07-17, reboot-verified) with multipath reconciled. | Update Rack/CLAUDE docs to match live 4 TB-class inventory. |
 | **F-4** | ✅ Resolved | PBS storage was repointed to `.30.187` and broke VLAN-1 backups; fixed 2026-07-06 back to `.10.187`. | Keep PBS storage pinned to `.10.187`; add a monitor for backup age. |
 | **F-5** | 🟡 Low | Wazuh VM 104 lacks qemu-guest-agent → unclean stop on host reboot corrupts the indexer. | Install `qemu-guest-agent`, set `--agent enabled=1`, one cold start. |
 | **F-6** | 🟡 Low | `xe-0/2/3` DAC to UniFi down (10G/1G EEPROM mismatch). | Replace with a speed-matched SFP or accept as decommissioned. |
