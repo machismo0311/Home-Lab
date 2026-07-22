@@ -1,6 +1,6 @@
 # 🖥️ Homelab - Master Map of Content
 > **Operator:** Kyle Mason (`machismo`) · **Location:** Greater Cleveland, OH
-> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-07-12
+> **Cabinet:** NetFRAME CS9000 42U · **Last Updated:** 2026-07-22
 
 ---
 
@@ -180,3 +180,5 @@ mindmap
 - [ ] VoIP project (deferred - post core infra)
 - [ ] CCNA study cadence established
 - [ ] High Availability roadmap: WAN failover (FirstNet 5G) + OPNsense CARP pair, then compute HA (ha-manager + Ceph/ZFS replication), storage redundancy, and switch Virtual Chassis (see [[High Availability/High Availability MOC]])
+- [ ] NUT automated graceful shutdown — UPS auto-shutdown on sustained battery (config-only, no new hardware; closes a real power-safety gap). See [[Runbook/NUT-Graceful-Shutdown-Plan-2026-07-22]]
+- [ ] Rack environmental monitoring + thermostatic vent-fan control — Pico W/ESPHome (MPL115A2) → Home Assistant → Grafana/Discord, fan control A→B; **gated on HA onboarding**. See [[Runbook/Rack-Environmental-Fan-Control-Plan-2026-07-22]]

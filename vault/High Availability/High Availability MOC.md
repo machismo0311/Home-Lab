@@ -66,7 +66,7 @@ Cluster snapshot (verified 2026-07-12): 7 nodes, quorate (needs 4). `ha-manager`
 2. **Storage SPOF: Randy.** One box serves PBS backups, RKE2 NFS, the private registry, and bare-metal storage. Fix: Ceph (also solves item 1), a second storage target plus replication, or at minimum finish offsite backup.
 3. **Switch redundancy.** EX3400 is a single switch carrying everything including corosync. Add a second switch with Virtual Chassis or LACP and split corosync and uplinks across both.
 4. **Corosync second ring.** Only `ring0` today. Add `ring1` on a separate NIC or VLAN so a network hiccup cannot partition the cluster.
-5. **Power.** Extend the dual-UPS A/B setup with dual PSUs on separate circuits and NUT automated graceful shutdown. See [[Power Distribution]].
+5. **Power.** Extend the dual-UPS A/B setup with dual PSUs on separate circuits and NUT automated graceful shutdown. See [[Runbook/NUT-Graceful-Shutdown-Plan-2026-07-22]] and [[Power Distribution]].
 6. **Application and DR.** Multi-replica K8s workloads with anti-affinity, Vaultwarden and Headscale redundancy, finished offsite backups, and possibly a second PBS.
 
 ## ⚖️ Key decision
