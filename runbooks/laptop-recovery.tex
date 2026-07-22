@@ -1,0 +1,747 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={blue},
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\author{}
+\date{}
+
+\begin{document}
+
+\hypertarget{ares-laptop-disaster-recovery-runbook}{%
+\section{Ares Laptop --- Disaster Recovery
+Runbook}\label{ares-laptop-disaster-recovery-runbook}}
+
+\textbf{Tags:} \#runbook \#disaster-recovery \#ares \#restic \#ops
+\textbf{Created:} 2026-07-20 \textbf{Scope:} Total loss of the Ares
+admin/jump laptop → back to a working box.
+
+The next hardware death should be fast and boring. This is the
+do-this-next-time procedure, ordered start to finish. It was written
+from the 2026-07 recovery of the old Ares (an \textasciitilde8-yr-old
+laptop that died mid-session with a motherboard power-delivery failure)
+onto a \textbf{Dell Latitude 3580} (service tag \texttt{5HWCNJ2}).
+
+Full narrative + evidence:
+\href{ares-recovery-context.md}{\texttt{ares-recovery-context.md}} (Part
+1 = claude.ai chat reconstruction; Part 1B = machine-history ground
+truth). The restic mechanism itself is also documented in
+\href{../vault/Runbook/Ares-Backup-Restore.md}{\texttt{../vault/Runbook/Ares-Backup-Restore.md}}
+--- this runbook is the wider ``hardware is dead, rebuild everything''
+superset.
+
+\begin{quote}
+\textbf{Ares is only the admin box, not a cluster member.} When it dies
+the cluster keeps running --- DNS, Proxmox, OPNsense, backups all stay
+up. There is no production outage clock. Work the steps in order; don't
+rush hardware.
+\end{quote}
+
+\textbf{Key facts to keep this runbook accurate (verbatim --- do not
+paraphrase):}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+Item
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Value
+\end{minipage} \\
+\midrule
+\endhead
+Backup tool & \texttt{restic} (NOT PBS --- see §5) \\
+Repo & \texttt{sftp:randy:/mnt/bulk/backups/ares} (encrypted) \\
+Backup host & Randy --- \texttt{192.168.10.187}, \texttt{bulk} ZFS
+pool \\
+\texttt{randy} SSH alias & \texttt{root@192.168.10.187} (in
+\texttt{\textasciitilde{}/.ssh/config}) --- resolves to \textbf{root},
+which is why SFTP can read the repo \\
+Repo dir perms & root-owned, mode \texttt{700} --- only root can read
+it \\
+Passphrase (on-disk) &
+\texttt{\textasciitilde{}/.config/restic/ares-randy.pass} (mode 600) \\
+Passphrase (offsite) & Vaultwarden entry
+\texttt{Ares\ restic\ backup\ -\textgreater{}\ Randy\ (repo\ password)}
+(pve3 LXC 102) \\
+Hostname & \texttt{ares} --- \textbf{reuse it} (see §2) \\
+Ares IP & \texttt{192.168.10.199} (mgmt VLAN 1) \\
+\bottomrule
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{pre-disaster-checklist-the-prevention-layer}{%
+\subsection{§0 --- Pre-disaster checklist (the prevention
+layer)}\label{pre-disaster-checklist-the-prevention-layer}}
+
+Do these while Ares is healthy. Each one directly collapses a step that
+cost real time in the last recovery. This is the highest-leverage
+section in the document.
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  \textbf{Offline copy of the three secrets that gate everything else.}
+  Put the restic passphrase \textbf{and} the SSH private keys
+  (\texttt{\textasciitilde{}/.ssh/id\_ed25519*}) \textbf{and} the
+  Ansible vault key somewhere that survives the laptop dying: a phone
+  password manager, a printed copy in a safe, or the salvaged NVMe in an
+  enclosure (below). \emph{Why:} last time the passphrase lived only in
+  Vaultwarden, and reaching it needed a from-scratch nginx TLS proxy on
+  a machine with nothing installed (§4). An offline copy collapses §4 to
+  a copy-paste.
+\item[$\square$]
+  \textbf{Keep a USB 3.2 NVMe M-key enclosure in the kit permanently}
+  (ORICO / UGREEN, \textasciitilde\$15--20). \emph{Why:} it is the
+  fastest path to the old drive's secrets and the ultimate fallback
+  source of truth. The salvaged 970 EVO Plus is currently unreadable
+  precisely because there's no enclosure on hand.
+\item[$\square$]
+  \textbf{The backup mechanism is documented and unambiguous:} restic at
+  \texttt{sftp:randy:/mnt/bulk/backups/ares}, repo dir is
+  \textbf{root-owned mode 700}, so restic must run \textbf{as root} (the
+  \texttt{randy} alias already is root). It is \textbf{not PBS}. See §5.
+  \emph{Why:} last time recovery started down the PBS /
+  \texttt{proxmox-backup-client} path and lost time before discovering
+  it was restic.
+\item[$\square$]
+  \textbf{A working Debian DVD-1 ISO is on hand} (not just netinst) with
+  a way to flash it (Rufus). \emph{Why:} the Intel Wireless-AC card
+  needs non-free firmware the netinst can't fetch without a network
+  (§3).
+\item[$\square$]
+  \textbf{The backup is monitored and freshness is trusted.} The
+  \texttt{AresBackupStale} Grafana rule (\textgreater26h → Discord) must
+  be live and believed. \emph{Why:} verify snapshot age FIRST every time
+  (§1); don't assume the backup is current.
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{confirm-the-backup-is-good-before-touching-hardware}{%
+\subsection{§1 --- Confirm the backup is good BEFORE touching
+hardware}\label{confirm-the-backup-is-good-before-touching-hardware}}
+
+Prove you have a restorable, recent, intact snapshot \textbf{before}
+buying or wiping anything. If this step fails, fix the backup story
+first --- everything downstream assumes it.
+
+From any machine that can reach Randy and has the passphrase (this can
+be done before the new laptop even exists --- e.g.~from another box or a
+phone SSH client):
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ssh}\NormalTok{ randy }\StringTok{\textquotesingle{}restic {-}r /mnt/bulk/backups/ares snapshots\textquotesingle{}}
+\end{Highlighting}
+\end{Shaded}
+
+Lists every snapshot with ID + timestamp. Run \textbf{on Randy as root}
+(the \texttt{randy} alias is root, and the repo is root-only), so you
+avoid the SFTP permission trap entirely for a read-only check. Confirm
+the newest snapshot is recent --- the last real recovery found the
+newest at \textbf{2026-07-17 04:03, 110.212 GiB}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ssh}\NormalTok{ randy }\StringTok{\textquotesingle{}restic {-}r /mnt/bulk/backups/ares check\textquotesingle{}}
+\end{Highlighting}
+\end{Shaded}
+
+Verifies repo structure and metadata are intact (fast). This is
+\emph{not} a full data re-read --- for that,
+\texttt{restic\ check\ -\/-read-data} pulls back all \textasciitilde110
+GiB; skip it routinely (ZFS checksums on \texttt{bulk} already guard
+bit-rot) but consider it once before you delete any staging copy.
+
+\begin{quote}
+\textbf{Trap from last time:} don't judge freshness by reading the
+backup \emph{log} --- and especially not the log \emph{inside a restored
+copy}, which can be a mid-run snapshot that ends at ``backup starting''
+with no completion line. Trust \texttt{restic\ snapshots} against the
+\textbf{live} repo, not a log artifact.
+\end{quote}
+
+\begin{quote}
+\textbf{If a stale lock blocks you:} \texttt{restic\ unlock} clears an
+abandoned lock left by the dead machine.
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{replacement-hardware-selection}{%
+\subsection{§2 --- Replacement hardware
+selection}\label{replacement-hardware-selection}}
+
+Check interfaces and RAM \textbf{before you buy or commit a drive} ---
+the last stopgap laptop had two nasty surprises that a spec check would
+have caught.
+
+\textbf{Interface / RAM checklist (verify against the actual model's
+service manual):}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  \textbf{Drive interface: NVMe vs SATA, and is there an M.2 NVMe slot
+  at all?} The Latitude 3580 has \textbf{no M.2 NVMe slot} --- only a
+  2.5'' SATA bay + WLAN/WWAN. Its RWMDF caddy carries \textbf{M.2 SATA
+  only}, not NVMe/PCIe. The salvaged 1TB 970 EVO Plus (NVMe) therefore
+  \textbf{cannot be used internally} --- a WD Black 2.5'' SATA drive
+  went in the bay instead. Confirm the slot type before planning to
+  reuse any drive.
+\item[$\square$]
+  \textbf{RAM is socketed, not soldered.} (A ThinkPad T14 Gen 2 was
+  rejected for soldered RAM.) Socketed = upgradable and repairable.
+\item[$\square$]
+  Enough of everything for a jump box: the old Ares had 32GB RAM.
+\end{itemize}
+
+\textbf{Reuse the hostname \texttt{ares}.} This is a rule, not a
+preference. Keeping the name means you do \textbf{not} have to touch:
+
+\begin{itemize}
+\tightlist
+\item
+  Ansible inventory
+\item
+  Pi-hole DNS records
+\item
+  DHCP MAC reservations
+\item
+  Headscale node entries
+\item
+  every script that hardcodes \texttt{ares}
+\end{itemize}
+
+On any machine that had SSH'd to the \emph{old} Ares, clear its stale
+host key so you don't hit ``host key verification failed'' against the
+new box:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ssh{-}keygen} \AttributeTok{{-}R}\NormalTok{ ares}
+\FunctionTok{ssh{-}keygen} \AttributeTok{{-}R}\NormalTok{ 192.168.10.199}
+\end{Highlighting}
+\end{Shaded}
+
+Removes the old fingerprint for the name and the IP from
+\texttt{known\_hosts}. (This exact class of stale-key failure once
+masqueraded as an ``auth failure'' against the EX3400 --- see
+\texttt{EX3400-SSH-Auth-Failure-RCA.md}.)
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{install-debian}{%
+\subsection{§3 --- Install Debian}\label{install-debian}}
+
+Target: \textbf{Debian 13 Trixie + KDE Plasma 6} (better 7th-gen Intel
+firmware support than Debian 12).
+
+\textbf{Media:} - Use the full \textbf{DVD-1 ISO}, \emph{not} netinst.
+\emph{Why:} the Intel Wireless-AC card needs non-free firmware; netinst
+assumes a working network to fetch it, which you don't have yet. The DVD
+carries firmware + the full KDE set offline. - Flash with \textbf{Rufus
+in DD mode} (not ISO mode). \emph{Why:} ISO mode rewrites the boot
+sector and corrupts Debian's hybrid ISO; DD writes it byte-for-byte.
+Target \textbf{GPT / UEFI}.
+
+\textbf{Installer:} - At software selection, \textbf{UNCHECK GNOME,
+CHECK KDE Plasma} --- Debian defaults to GNOME and it's easy to blow
+past. - Set hostname \textbf{\texttt{ares}} (see §2).
+
+\hypertarget{uefi-secure-boot-grub-nvram-recovery-expect-this-on-dell}{%
+\subsubsection{§3.1 --- UEFI / Secure-Boot / GRUB-NVRAM recovery (expect
+this on
+Dell)}\label{uefi-secure-boot-grub-nvram-recovery-expect-this-on-dell}}
+
+GRUB installs fine but the machine boots to firmware with no
+\texttt{debian} entry --- the EFI files are on the ESP but the NVRAM
+boot variable didn't stick (it clears when the USB is pulled and the
+firmware reshuffles boot order). Two fixes; the first is what worked.
+
+\textbf{Fix A --- add the boot entry by hand in firmware (what worked):}
+- In the Dell firmware boot menu, add a boot option pointing at
+\texttt{\textbackslash{}EFI\textbackslash{}debian\textbackslash{}shimx64.efi}
+(fallback
+\texttt{\textbackslash{}EFI\textbackslash{}debian\textbackslash{}grubx64.efi}),
+name it \texttt{debian}, and move it to the \textbf{top} of the boot
+order. - \textbf{Secure Boot:} Dell firmware can silently re-enable it
+after changes, and then shim refuses to load. Re-confirm \textbf{Secure
+Boot OFF} under \textbf{F2 → Boot Configuration}.
+
+\textbf{Fix B --- rescue mode (same install USB → Advanced → Rescue):}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{grub{-}install} \AttributeTok{{-}{-}target}\OperatorTok{=}\NormalTok{x86\_64{-}efi }\AttributeTok{{-}{-}efi{-}directory}\OperatorTok{=}\NormalTok{/boot/efi }\AttributeTok{{-}{-}bootloader{-}id}\OperatorTok{=}\NormalTok{debian }\AttributeTok{{-}{-}recheck}
+\ExtensionTok{update{-}grub}
+\ExtensionTok{efibootmgr} \AttributeTok{{-}v}
+\end{Highlighting}
+\end{Shaded}
+
+Reinstalls GRUB's EFI files, rewrites the NVRAM boot entry named
+\texttt{debian}, and prints the boot order so you can confirm it took.
+Remove leftover Windows entries with:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{efibootmgr} \AttributeTok{{-}b} \OperatorTok{\textless{}}\NormalTok{NNNN}\OperatorTok{\textgreater{}}\NormalTok{ {-}B}
+\end{Highlighting}
+\end{Shaded}
+
+Deletes boot entry number \texttt{NNNN} (read the number from
+\texttt{efibootmgr\ -v} output).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{retrieve-the-restic-passphrase}{%
+\subsection{§4 --- Retrieve the restic
+passphrase}\label{retrieve-the-restic-passphrase}}
+
+You need the repo passphrase before you can restore (§5). Take the fast
+path if you prepared §0; the Vaultwarden path is the fallback only.
+
+\hypertarget{fast-path-use-this-if-0-was-done}{%
+\subsubsection{§4.1 --- Fast path (use this if §0 was
+done)}\label{fast-path-use-this-if-0-was-done}}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Offline copy:} phone password manager, printed copy, or
+  wherever you stashed it. Copy it and go straight to §5.
+\item
+  \textbf{Salvaged NVMe via enclosure:} put the old 970 EVO Plus in the
+  USB NVMe enclosure, mount it read-only, and read the passphrase
+  directly from
+  \texttt{\textasciitilde{}/.config/restic/ares-randy.pass} (the SSH
+  keys and Ansible vault key are right there too). This makes the whole
+  Vaultwarden detour unnecessary.
+\end{itemize}
+
+\hypertarget{fallback-pull-it-from-vaultwarden}{%
+\subsubsection{§4.2 --- Fallback: pull it from
+Vaultwarden}\label{fallback-pull-it-from-vaultwarden}}
+
+Vaultwarden runs on pve3 (LXC 102) and survives Ares dying, but it needs
+HTTPS and can't be hit directly from a fresh laptop. Two ways in:
+
+\textbf{Option 1 --- read the secret straight out of the container over
+SSH} (fastest; skips the browser entirely). If the entry you need is
+stored as a container env var / file, \texttt{pct\ exec} into it from a
+Proxmox node:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ssh}\NormalTok{ root@192.168.10.201 }\StringTok{"pct exec 102 {-}{-} grep ADMIN\_TOKEN /etc/vaultwarden.env"}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{192.168.10.201} = pve3, \texttt{102} = the Vaultwarden LXC.
+(This exact command pulled the Vaultwarden admin token during the last
+recovery. The restic passphrase is a \emph{vault item}, not an env var,
+so this gets you the admin token / into the box --- you may still need
+the UI or \texttt{bw} CLI to read the item itself.)
+
+\textbf{Option 2 --- stand up a throwaway TLS proxy and use the web UI}
+(what was done last time). Vaultwarden speaks plain HTTP on
+\texttt{:8080}; the browser wants HTTPS. Tunnel to it, then front it
+with a self-signed TLS proxy:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{ss} \AttributeTok{{-}tlnp} \KeywordTok{|} \FunctionTok{grep} \AttributeTok{{-}E} \StringTok{\textquotesingle{}8080|8443\textquotesingle{}}          \CommentTok{\# confirm the tunnel/listener is up}
+\FunctionTok{sudo}\NormalTok{ apt install }\AttributeTok{{-}y}\NormalTok{ nginx openssl        }\CommentTok{\# neither is on a fresh box}
+\FunctionTok{sudo}\NormalTok{ openssl req }\AttributeTok{{-}x509} \AttributeTok{{-}newkey}\NormalTok{ rsa:2048 }\AttributeTok{{-}nodes} \AttributeTok{{-}days}\NormalTok{ 30 }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}keyout}\NormalTok{ /etc/ssl/private/vw.key }\AttributeTok{{-}out}\NormalTok{ /etc/ssl/certs/vw.crt }\AttributeTok{{-}subj} \StringTok{"/CN=localhost"}
+\end{Highlighting}
+\end{Shaded}
+
+First line verifies the SSH local-forward to \texttt{:8080} is
+listening. The \texttt{openssl} line mints a 30-day self-signed cert for
+\texttt{localhost}. Then add an nginx server block listening
+\texttt{8443\ ssl} that proxies to \texttt{127.0.0.1:8080}, validate and
+load it:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sudo}\NormalTok{ nginx }\AttributeTok{{-}t} \KeywordTok{\&\&} \FunctionTok{sudo}\NormalTok{ systemctl restart nginx}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{nginx\ -t} checks the config before restart. Open
+\texttt{https://localhost:8443} in Firefox, accept the self-signed cert,
+log in, and copy the entry
+\textbf{\texttt{Ares\ restic\ backup\ -\textgreater{}\ Randy\ (repo\ password)}}.
+
+\begin{quote}
+\textbf{After recovery, close this gap for good (§0):} get the
+passphrase into an offline store so §4.2 never happens again. During the
+last recovery the restic entry was \emph{added} to Vaultwarden as
+remediation --- also keep a copy off-cluster.
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{restore-with-restic}{%
+\subsection{§5 --- Restore with restic}\label{restore-with-restic}}
+
+This is \textbf{restic}, not PBS. Do \textbf{not} reach for
+\texttt{proxmox-backup-client} / \texttt{.pxar} /
+\texttt{host/ares/\textless{}timestamp\textgreater{}} --- that path was
+a dead end last time.
+
+\textbf{Repo reality:} \texttt{/mnt/bulk/backups/ares} on Randy is
+\textbf{root-owned, mode 700}. Only root can read it. The trick that
+makes this painless: the \texttt{randy} SSH alias in
+\texttt{\textasciitilde{}/.ssh/config} already points at
+\textbf{\texttt{root@192.168.10.187}}, so \texttt{sftp:randy:} is an
+SFTP session \emph{as root} and can read the repo --- you do
+\textbf{not} have to log into Randy and run restic there. (For a
+read-only \texttt{snapshots}/\texttt{check} it's still fine to run on
+Randy directly, as in §1.)
+
+\textbf{Step 1 --- get restic on the fresh box} (it won't be installed):
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sudo}\NormalTok{ apt install }\AttributeTok{{-}y}\NormalTok{ restic}
+\end{Highlighting}
+\end{Shaded}
+
+Installs the restic binary. (The healthy Ares also keeps a static binary
+at \texttt{\textasciitilde{}/.local/bin/restic}; either works.)
+
+\textbf{Step 2 --- point restic at the repo and unlock it:}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{export} \VariableTok{RESTIC\_REPOSITORY}\OperatorTok{=}\StringTok{"sftp:randy:/mnt/bulk/backups/ares"}
+\BuiltInTok{export} \VariableTok{RESTIC\_PASSWORD\_FILE}\OperatorTok{=}\NormalTok{\textasciitilde{}/.config/restic/ares{-}randy.pass   }\CommentTok{\# if you restored the file}
+\CommentTok{\# — or, with the passphrase from §4, avoid putting it in shell history:}
+\CommentTok{\# read {-}rs RESTIC\_PASSWORD; export RESTIC\_PASSWORD}
+\ExtensionTok{restic}\NormalTok{ snapshots}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{RESTIC\_REPOSITORY} selects the repo over SFTP-as-root; the
+password is supplied by file (preferred) or env.
+\texttt{restic\ snapshots} confirms you can actually read it and shows
+the snapshot you're about to restore.
+
+\begin{quote}
+\textbf{Security note (learned the hard way):} last time the passphrase
+was inlined as
+\texttt{export\ RESTIC\_PASSWORD=\textquotesingle{}…\textquotesingle{}},
+which left it in \textbf{plaintext in
+\texttt{\textasciitilde{}/.bash\_history}}. Prefer
+\texttt{RESTIC\_PASSWORD\_FILE}, or \texttt{read\ -rs} so it never hits
+history. If you do inline it, scrub the line from
+\texttt{\textasciitilde{}/.bash\_history} afterward.
+\end{quote}
+
+\textbf{Step 3 --- restore to staging, NEVER straight onto live
+\texttt{/home}:}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{restic}\NormalTok{ restore latest }\AttributeTok{{-}{-}target}\NormalTok{ \textasciitilde{}/restore}
+\end{Highlighting}
+\end{Shaded}
+
+Restores the newest snapshot into \texttt{\textasciitilde{}/restore} on
+the laptop (not onto live \texttt{/home}, which KDE has dotfiles open in
+--- overwriting live is unpredictable). This runs from the laptop over
+SFTP-as-root and lands directly in the staging dir; no Randy-side
+staging or rsync is needed. To pull just one tree, add
+\texttt{-\/-include\ /home/machismo/Home-Lab}.
+
+\textbf{Step 4 --- inspect, then selectively reinstate.} With the old
+home sitting under \texttt{\textasciitilde{}/restore/home/machismo/},
+copy back what you need --- dotfiles, \texttt{\textasciitilde{}/.ssh/}
+keys (check perms: \texttt{600} on private keys), the \texttt{Home-Lab}
+repo, \texttt{\textasciitilde{}/.config/restic/}, and the backup
+script/timer. Do it deliberately, not with a blind overwrite.
+
+\textbf{Step 5 --- repopulate excluded content.} Upstream git submodules
+(\texttt{claude-desktop-debian}, \texttt{pacextractor},
+\texttt{spreadtrum\_flash}, \texttt{CVE-2022-38694\_unlock\_bootloader})
+and caches/venvs were excluded from the backup to save space:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{git} \AttributeTok{{-}C}\NormalTok{ \textasciitilde{}/dotfiles submodule update }\AttributeTok{{-}{-}init} \AttributeTok{{-}{-}recursive}
+\end{Highlighting}
+\end{Shaded}
+
+Re-clones the excluded submodules from their own remotes. Rebuild Python
+venvs from their \texttt{requirements.txt} as needed.
+
+\textbf{Step 6 --- reinstate the backup tooling immediately} (this is
+what stopped backups last time --- the rebuild wiped restic,
+\texttt{ares-backup.sh}, \texttt{\textasciitilde{}/.config/restic/}, and
+all user timers, so \texttt{AresBackupStale} fired). Restore the
+\texttt{restic} binary to \texttt{\textasciitilde{}/.local/bin/},
+\texttt{ares-backup.sh}, and \texttt{\textasciitilde{}/.config/restic/},
+then enable the timer and run once:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{systemctl} \AttributeTok{{-}{-}user}\NormalTok{ enable }\AttributeTok{{-}{-}now}\NormalTok{ ares{-}backup.timer}
+\ExtensionTok{systemctl} \AttributeTok{{-}{-}user}\NormalTok{ list{-}timers ares{-}backup.timer}
+\end{Highlighting}
+\end{Shaded}
+
+Enables the daily 04:00 backup timer and shows its next run, so the new
+box is protected again the same night. Full detail:
+\href{../vault/Runbook/Ares-Backup-Restore.md}{\texttt{../vault/Runbook/Ares-Backup-Restore.md}}.
+
+\begin{quote}
+\textbf{Clean up staging once reinstated:}
+\texttt{\textasciitilde{}/restore} is temporarily excluded in
+\texttt{\textasciitilde{}/.config/restic/excludes.txt} so it isn't
+double-captured. Remove it (and the exclude line) once you're confident
+everything is reinstated.
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{rebuild-the-toolchain-claude-code}{%
+\subsection{§6 --- Rebuild the toolchain (Claude
+Code)}\label{rebuild-the-toolchain-claude-code}}
+
+Install Claude Code via the official installer:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{curl} \AttributeTok{{-}fsSL}\NormalTok{ https://claude.ai/install.sh }\KeywordTok{|} \FunctionTok{bash}
+\end{Highlighting}
+\end{Shaded}
+
+Installs the \texttt{claude} CLI into
+\texttt{\textasciitilde{}/.local/bin} (last recovery landed v2.1.215).
+
+\textbf{\texttt{claude:\ command\ not\ found} --- the PATH fix.}
+\texttt{\textasciitilde{}/.local/bin} isn't on PATH for interactive
+non-login shells: the export lived only in
+\texttt{\textasciitilde{}/.profile} (login shells) and was missing from
+\texttt{\textasciitilde{}/.bashrc} (the normal desktop-terminal case).
+Add it to \texttt{\textasciitilde{}/.bashrc}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{grep} \AttributeTok{{-}n} \StringTok{\textquotesingle{}local/bin\textquotesingle{}}\NormalTok{ \textasciitilde{}/.bashrc \textasciitilde{}/.profile                       }\CommentTok{\# see what\textquotesingle{}s already there}
+\BuiltInTok{printf} \StringTok{\textquotesingle{}\textbackslash{}nexport PATH="$HOME/.local/bin:$PATH"\textbackslash{}n\textquotesingle{}} \OperatorTok{\textgreater{}\textgreater{}}\NormalTok{ \textasciitilde{}/.bashrc  }\CommentTok{\# append the export}
+\BuiltInTok{source}\NormalTok{ \textasciitilde{}/.bashrc }\KeywordTok{\&\&} \FunctionTok{which}\NormalTok{ claude }\KeywordTok{\&\&} \ExtensionTok{claude} \AttributeTok{{-}{-}version}           \CommentTok{\# confirm it resolves}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{grep} shows whether the export exists; \texttt{printf} appends
+it cleanly (preferred over \texttt{echo} for predictable newlines);
+\texttt{source} reloads the shell and the last two commands confirm
+\texttt{claude} is now found.
+
+\begin{quote}
+\textbf{OPEN ISSUE --- Claude account (runbook can't fix this, only flag
+it):} on the last rebuild, Claude login landed in an \textbf{empty
+account with a payment prompt despite an active subscription} --- likely
+a duplicate account from a different auth method. The account ID is
+\textbf{not} usable as a CLI credential. Resolve it with Anthropic
+support at \textbf{support.claude.com}; there is no local workaround.
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{post-restore-verification-checklist}{%
+\subsection{§7 --- Post-restore verification
+checklist}\label{post-restore-verification-checklist}}
+
+Prove the rebuilt Ares is fully back in its admin/jump role. Work top to
+bottom.
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  \textbf{SSH keys intact:} \texttt{ls\ -l\ \textasciitilde{}/.ssh} ---
+  private keys mode \texttt{600}; \texttt{randy}, \texttt{quarkylab},
+  etc. aliases present in \texttt{\textasciitilde{}/.ssh/config}.
+\item[$\square$]
+  \textbf{Reach Randy as root:}
+  \texttt{ssh\ randy\ \textquotesingle{}hostname\ \&\&\ zpool\ list\textquotesingle{}}
+  --- confirms the alias, the key, and Randy's pools (\texttt{bulk},
+  \texttt{datastore}) are healthy.
+\item[$\square$]
+  \textbf{SSH into each cluster node:} pve2 \texttt{.204}, pve3
+  \texttt{.201}, pve4 \texttt{.202}, pve5 \texttt{.203}, plus pve1
+  \texttt{.193}, QuarkyLab \texttt{.179}, Jarvis \texttt{.31}. Each
+  should accept the key without a password.
+\item[$\square$]
+  \textbf{Proxmox reachable:} open a node UI,
+  e.g.~\texttt{https://192.168.10.201:8006}.
+\item[$\square$]
+  \textbf{DNS resolves via Pi-hole:}
+  \texttt{dig\ @192.168.10.177\ kylemason.org\ +short} (primary) and
+  \texttt{@192.168.10.178} (secondary) both answer.
+\item[$\square$]
+  \textbf{Ansible sees the fleet (dry run, no changes):}
+  \texttt{ansible\ all\ -m\ ping} then
+  \texttt{ansible-playbook\ \textless{}play\textgreater{}\ -\/-check\ -\/-diff}.
+  Confirms the inventory, the vault key, and SSH all work end-to-end.
+\item[$\square$]
+  \textbf{Backups running again:}
+  \texttt{systemctl\ -\/-user\ list-timers\ ares-backup.timer} shows a
+  next run; after the first run, \texttt{restic\ snapshots} shows a
+  fresh-dated snapshot and \texttt{AresBackupStale} clears in Discord.
+\item[$\square$]
+  \textbf{git working trees clean:}
+  \texttt{git\ -C\ \textasciitilde{}/dotfiles\ status} and
+  \texttt{git\ -C\ \textasciitilde{}/Home-Lab\ status} --- restored, on
+  the right branch, submodules initialised.
+\item[$\square$]
+  \textbf{Secrets hygiene:} confirm the restic passphrase is in an
+  offline store (§0) and scrub any plaintext secret from
+  \texttt{\textasciitilde{}/.bash\_history} (§5 security note).
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{appendix-lessons-that-shaped-this-runbook}{%
+\subsection{Appendix --- Lessons that shaped this
+runbook}\label{appendix-lessons-that-shaped-this-runbook}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Reuse the hostname} --- it kept
+  Ansible/DNS/DHCP/Headscale/scripts untouched.
+\item
+  \textbf{Keep the secrets offline} --- the single biggest avoidable
+  cost was the Vaultwarden-only passphrase and the from-scratch TLS
+  proxy to reach it.
+\item
+  \textbf{Check the drive interface before buying/reusing} --- NVMe vs
+  SATA, M.2 slot presence. The salvaged NVMe was dead-on-arrival for a
+  SATA-only 3580.
+\item
+  \textbf{Keep a USB NVMe enclosure in the kit} --- the fallback source
+  of truth.
+\item
+  \textbf{DVD ISO + Rufus DD} for offline-firmware laptops, and expect
+  the Dell UEFI NVRAM / Secure-Boot boot-entry dance.
+\item
+  \textbf{It's restic, not PBS} ---
+  \texttt{sftp:randy:/mnt/bulk/backups/ares}, root-owned 700, run as
+  root. Enumerate ZFS pools before hunting for a repo.
+\item
+  \textbf{Verify snapshot freshness first, every time} --- against the
+  live repo, not a log artifact.
+\item
+  \textbf{Restore to staging, inspect, then reinstate} --- never
+  straight onto live \texttt{/home}.
+\end{enumerate}
+
+\end{document}
