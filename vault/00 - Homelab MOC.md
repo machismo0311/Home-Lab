@@ -84,8 +84,8 @@ mindmap
 | Juniper EX3400 | 192.168.10.50 | JunOS 23.4R2-S7.4, VLAN trunk |
 | Nginx Proxy Manager | 192.168.10.181 | LXC 101 on pve3 |
 | Vaultwarden | 192.168.10.182 | LXC 102 on pve3 |
-| Grafana/Prometheus/Loki | 192.168.10.183 | LXC 103 on pve3 |
-| Headscale | 192.168.10.186 | LXC 105 on pve3 |
+| Grafana/Prometheus/Loki | 192.168.10.183 | LXC 103 on pve4 |
+| Headscale | 192.168.10.186 | LXC 105 on pve5 |
 | Homepage | 192.168.10.148 | LXC 106 on pve3 |
 | Pi-hole (primary) | 192.168.10.177 | LXC on pve1 |
 | Pi-hole (secondary) | 192.168.10.178 | CT 108 on pve5 (nebula-sync mirror, 2026-07-10) |
@@ -116,7 +116,7 @@ mindmap
 - [[Infrastructure/Services & VMs]] - All deployed/planned services
 
 ### VPN
-- [[Projects/Headscale]] - Self-hosted Tailscale control plane (pve3 CT 105)
+- [[Projects/Headscale]] - Self-hosted Tailscale control plane (pve5 CT 105)
 
 ### Kubernetes
 - [[Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10]] - RKE2 cluster (3-node HA CP, Cilium, MetalLB, Randy storage worker, private registry w/ step-ca TLS + auto-renew); manifests in `scripts/rke2/`

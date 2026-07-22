@@ -259,10 +259,10 @@ FirstNet 5G hotspot ──────────┘   dual-WAN gateway group (
 | .180 | UPS A SNMP | Middle Atlantic OL2200R card |
 | .181 | Nginx Proxy Manager | LXC 101 (pve3) |
 | .182 | Vaultwarden | LXC 102 (pve3) |
-| .183 | Grafana/Prometheus/Loki/InfluxDB/Scrutiny | LXC 103 (pve3) |
+| .183 | Grafana/Prometheus/Loki/InfluxDB/Scrutiny | LXC 103 (pve4) |
 | .184 | Wazuh SIEM | VM 104 (QuarkyLab) |
 | .185 | Open WebUI | LXC 107 (pve3) |
-| .186 | Headscale | LXC 105 (pve3) |
+| .186 | Headscale | LXC 105 (pve5) |
 | .187 | **Randy** | SuperMicro PBS / ZFS / Jellyfin |
 | .193 | **pve1** | Mac Mini standalone (Pi-hole host) |
 | .199 | Ares (WiFi) | Admin workstation `wlp2s0` |
@@ -319,7 +319,7 @@ OPNsense (`192.168.10.1`) serves DHCP per VLAN. Most infrastructure uses static/
 
 ## 6. Overlay — Headscale Mesh VPN
 
-Self-hosted **Headscale v0.29.1** (LXC 105 on pve3, `192.168.10.186:8080`) replaces the Tailscale SaaS control plane. Tailnet CGNAT range `100.64.0.0/10`.
+Self-hosted **Headscale v0.29.1** (LXC 105 on pve5, `192.168.10.186:8080`) replaces the Tailscale SaaS control plane. Tailnet CGNAT range `100.64.0.0/10`.
 
 | Tailnet IP | Node | User | Tags | State |
 |---|---|---|---|---|

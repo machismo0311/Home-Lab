@@ -107,7 +107,7 @@ flowchart TB
 
     subgraph PVE["km-cluster - Proxmox nodes"]
         PVE2["pve2 · .204<br/>OPNsense host"]
-        PVE3["pve3 · .201<br/>NPM·Vault·Grafana·Homepage·Headscale"]
+        PVE3["pve3 · .201<br/>NPM·Vault·Homepage · (Grafana→pve4, Headscale→pve5 since 2026-07-16)"]
         PVE4["pve4 · .202"]
         PVE5["pve5 · .203"]
         QUARK["QuarkyLab · .179<br/>RTX 8000 48GB · Wazuh VM 104 ·184"]
@@ -183,7 +183,7 @@ QuarkyLab's single RTX 8000 is safely shared between production research and a c
 | OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.1.12 |
 | Pi-hole (primary) | pve1 (LXC, Mac Mini) | `192.168.10.177` | DNS filter - standalone node, NOT pve3 |
 | Pi-hole (secondary) | pve5 (CT 108) | `192.168.10.178` | DNS HA - mirror of .177 via nebula-sync; OPNsense DHCP hands out both (2026-07-10) |
-| Headscale | pve3 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
+| Headscale | pve5 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
 | Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
 | step-ca | pve2 | `https://192.168.10.204:443` | Internal CA, `*.netframe.local` TLS |
 | Vaultwarden | pve3 (LXC 102) | `http://192.168.10.182` | Active ✅ (healthy, onboot=1) |

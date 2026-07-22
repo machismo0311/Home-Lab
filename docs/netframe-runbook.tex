@@ -391,7 +391,7 @@ exposes no logprobs, so routing is by flag/model/failure, not confidence).
 \midrule
 OPNsense   & pve2      & VM 100  & 192.168.10.1    & Router/firewall \\
 Pi-hole    & pve1      & LXC 103 & 192.168.10.177  & DNS (Mac Mini, standalone) \\
-Headscale  & pve3      & LXC 105 & 192.168.10.186  & VPN, v0.29.1 \\
+Headscale  & pve5      & LXC 105 & 192.168.10.186  & VPN, v0.29.1 \\
 Wazuh      & QuarkyLab & VM 104  & 192.168.10.184  & SIEM \\
 step-ca    & pve2      & —       & —               & Internal CA \\
 PBS        & Randy     & —       & 192.168.10.187:8007 & Backup server \\
@@ -400,7 +400,7 @@ PBS        & Randy     & —       & 192.168.10.187:8007 & Backup server \\
 
 \subsection{Headscale}
 
-Headscale v0.29.1 running as LXC 105 on pve3. Phase 1 (2026-06-22) migrated
+Headscale v0.29.1 running as LXC 105 on pve5. Phase 1 (2026-06-22) migrated
 Ares (100.64.0.1), Randy (.2), pve5 (.3), pve4 (.4), pve3 (.5) and Jarvis (.6)
 to self-hosted. Phase 2 (QuarkyLab + the researcher's Mac) is pending.
 
