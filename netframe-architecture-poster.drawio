@@ -1,0 +1,650 @@
+<mxfile host="app.diagrams.net" agent="Claude Code" version="24.0.0">
+  <diagram name="Node Configuration Reference" id="panel-nodeconfig">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="960" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== OUTER PANEL ===== -->
+        <mxCell id="outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1220" height="880" as="geometry" />
+        </mxCell>
+
+        <!-- Title bar -->
+        <mxCell id="titlebar" value="NetFRAME  —  Physical Equipment &amp; Node Configuration Reference" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="titleright" value="km-cluster  ·  Proxmox VE 9.2.3  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- =========================================================== -->
+        <!-- GROUP A : R730 GPU COMPUTE (pink)                           -->
+        <!-- =========================================================== -->
+        <mxCell id="gA" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FBE4E2;strokeColor=#B85450;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="770" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="gAh" value="COMPUTE  —  DELL R730 GPU NODES" style="text;html=1;fillColor=#B85450;strokeColor=#B85450;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="770" height="26" as="geometry" />
+        </mxCell>
+
+        <!-- QuarkyLab -->
+        <mxCell id="qiA" value="" style="sketch=0;html=1;shape=mxgraph.networks.server;fillColor=#B85450;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="76" y="140" width="40" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="qtA" value="&lt;b&gt;QuarkyLab&lt;/b&gt; · Dell R730&#10;2× Xeon E5-2699 v4 · 512 GB LRDIMM&#10;RTX 8000 48 GB · PVE 9.2.3&#10;Role: ML / DUNE research" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="134" width="380" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="qbA" value="192.168.10.179&#10;.30.179 (VLAN30)" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B85450;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="138" width="146" height="46" as="geometry" />
+        </mxCell>
+
+        <!-- Jarvis -->
+        <mxCell id="jiA" value="" style="sketch=0;html=1;shape=mxgraph.networks.server;fillColor=#B85450;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="76" y="228" width="40" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="jtA" value="&lt;b&gt;Jarvis&lt;/b&gt; · Dell R730&#10;2× Xeon E5-2687W v4 · 384 GB LRDIMM&#10;2× RTX 6000 (48 GB total) · PVE 9.2.3&#10;Role: LLM inference — Ollama / llm_router" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="222" width="380" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="jbA" value="192.168.10.31&#10;.30.31 (VLAN30)" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B85450;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="226" width="146" height="46" as="geometry" />
+        </mxCell>
+
+        <!-- =========================================================== -->
+        <!-- GROUP B : STORAGE / RANDY (blue)                            -->
+        <!-- =========================================================== -->
+        <mxCell id="gB" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#E1EAF7;strokeColor=#6C8EBF;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="316" width="770" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="gBh" value="STORAGE  —  RANDY (SuperMicro) + DS4246 SHELF" style="text;html=1;fillColor=#6C8EBF;strokeColor=#6C8EBF;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="316" width="770" height="26" as="geometry" />
+        </mxCell>
+
+        <!-- Randy -->
+        <mxCell id="riB" value="" style="sketch=0;html=1;shape=mxgraph.networks.storage;fillColor=#6C8EBF;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="76" y="354" width="40" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="rtB" value="&lt;b&gt;Randy&lt;/b&gt; · SuperMicro CSE-219U (X10DRU-i+)&#10;2× Xeon E5-2690 v3 (24c/48t) · 128 GB ECC&#10;ConnectX-3 dual 10GbE · ZFS 'datastore' 36.7 T raw&#10;Role: PBS v4.2.2 + NFS export + Jellyfin" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="348" width="400" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="rbB" value="192.168.10.187&#10;.30.187 (VLAN30)" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="352" width="146" height="46" as="geometry" />
+        </mxCell>
+
+        <!-- DS4246 -->
+        <mxCell id="diB" value="" style="sketch=0;html=1;shape=mxgraph.networks.storage;fillColor=#8FA9CE;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="76" y="430" width="40" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="dtB" value="&lt;b&gt;DS4246&lt;/b&gt; JBOD shelf (via Randy)&#10;22× 4 TB SAS · LSI 9207-8e (IT mode) · multipath&#10;Pool 'bulk' — 3× RAIDZ2 (8+8+6) · 80 T raw / ~55 TiB" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="428" width="400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="dbB" value="LSI 9207-8e" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="432" width="146" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- =========================================================== -->
+        <!-- GROUP C : CLUSTER NODES / ELITEDESK (green)                 -->
+        <!-- =========================================================== -->
+        <mxCell id="gC" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#E3F0DE;strokeColor=#82B366;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="512" width="770" height="228" as="geometry" />
+        </mxCell>
+        <mxCell id="gCh" value="CLUSTER NODES  —  HP ELITEDESK (km-cluster)" style="text;html=1;fillColor=#82B366;strokeColor=#82B366;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="512" width="770" height="26" as="geometry" />
+        </mxCell>
+
+        <!-- pve2 -->
+        <mxCell id="p2i" value="" style="sketch=0;html=1;shape=mxgraph.networks.pc;fillColor=#82B366;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="548" width="38" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p2t" value="&lt;b&gt;pve2&lt;/b&gt; · EliteDesk 800 G4 (i7-8700) · 32 GB — Role: OPNsense host (VM 100)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="548" width="480" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p2b" value="192.168.10.204" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="552" width="146" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- pve3 -->
+        <mxCell id="p3i" value="" style="sketch=0;html=1;shape=mxgraph.networks.pc;fillColor=#82B366;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="596" width="38" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3t" value="&lt;b&gt;pve3&lt;/b&gt; · EliteDesk 800 G4 (i7-8700) · 48 GB — Role: services (NPM · Vaultwarden · Homepage · OpenWebUI)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="596" width="480" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3b" value="192.168.10.201" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="600" width="146" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- pve4 -->
+        <mxCell id="p4i" value="" style="sketch=0;html=1;shape=mxgraph.networks.pc;fillColor=#82B366;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="644" width="38" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p4t" value="&lt;b&gt;pve4&lt;/b&gt; · EliteDesk 800 G3 Mini (i5-7500T) · 32 GB — Role: Prometheus / Grafana / Loki (LXC 103)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="644" width="480" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p4b" value="192.168.10.202" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="648" width="146" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- pve5 -->
+        <mxCell id="p5i" value="" style="sketch=0;html=1;shape=mxgraph.networks.pc;fillColor=#82B366;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="692" width="38" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p5t" value="&lt;b&gt;pve5&lt;/b&gt; · EliteDesk 800 G3 Mini (i5-7500T) · 32 GB — Role: Headscale (LXC 105) + Pi-hole 2 (CT 108)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="692" width="480" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p5b" value="192.168.10.203" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="696" width="146" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- =========================================================== -->
+        <!-- GROUP D : STANDALONE / PVE1 (tan)                           -->
+        <!-- =========================================================== -->
+        <mxCell id="gD" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FCF3D8;strokeColor=#D6B656;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="756" width="770" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="gDh" value="STANDALONE  —  pve1 (Apple Mac Mini running Proxmox VE · NOT km-cluster)" style="text;html=1;fillColor=#D6B656;strokeColor=#D6B656;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="756" width="770" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="p1i" value="" style="sketch=0;html=1;shape=mxgraph.networks.pc;fillColor=#D6B656;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="798" width="38" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p1t" value="&lt;b&gt;pve1&lt;/b&gt; · Apple Mac Mini · Proxmox VE (standalone host)&#10;Role: Pi-hole primary (LXC 103 · .177) + homepage LXC 104 — DNS only" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="796" width="480" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p1b" value="192.168.10.193" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D6B656;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="668" y="806" width="146" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- =========================================================== -->
+        <!-- NOTES COLUMN (yellow)                                       -->
+        <!-- =========================================================== -->
+        <mxCell id="n1h" value="NOTE  ·  GPU KERNEL PIN" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="100" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="n1b" value="QuarkyLab &amp; Jarvis are pinned to kernel &lt;b&gt;6.14.11-9-pve&lt;/b&gt; (GRUB_DEFAULT) for the NVIDIA 550.163.01 stack. Kernel 6.17+ breaks NVIDIA 550 — never upgrade the kernel or change the GRUB default on either R730." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="124" width="392" height="92" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n2h" value="NOTE  ·  DUAL-HOMED (VLAN 30)" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="232" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="n2b" value="QuarkyLab / Jarvis / Randy dual-homed since 2026-07-02: corosync + mgmt + monitoring stay on &lt;b&gt;VLAN 1&lt;/b&gt; (.10.x); NFS, PBS backup and internet egress ride &lt;b&gt;Servers VLAN 30&lt;/b&gt; (.30.x, gw .30.1). Corosync deliberately left on VLAN 1." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="256" width="392" height="96" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n3h" value="NOTE  ·  RANDY — TWO STORAGE CONTROLLERS" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="368" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="n3b" value="Boot = RAID-1 on &lt;b&gt;AVAGO 3108 MegaRAID&lt;/b&gt; (do not reconfigure). Data / JBOD = separate &lt;b&gt;LSI 9207-8e&lt;/b&gt; in IT mode. JBOD may reset on reboot — re-run storcli64 set jbod=on. Original 3108 PCIe slot is DEAD; do not reuse." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="392" width="392" height="96" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n4h" value="NOTE  ·  SERVICE PLACEMENT (2026-07-16 AAR)" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="504" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="n4b" value="De-concentrated off pve3: &lt;b&gt;pve3&lt;/b&gt; = NPM 101 + Vaultwarden 102 + Homepage 106 + OpenWebUI 107 (VLAN30-pinned). &lt;b&gt;Grafana 103 = pve4&lt;/b&gt;. &lt;b&gt;Headscale 105 = pve5&lt;/b&gt;. DNS is HA: Pi-hole .177 (pve1) + .178 (pve5 CT 108). All services onboot=1." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="528" width="392" height="104" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n5h" value="NOTE  ·  POWER" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="648" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="n5b" value="&lt;b&gt;Middle Atlantic UPS-OL2200R&lt;/b&gt; feeds the R730s, Randy &amp; DS4246. &lt;b&gt;Tripp Lite SMART1500VA&lt;/b&gt; feeds the EX3400, UniFi &amp; small compute. APC AP7901 managed PDU on EX3400 ge-0/0/38." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="672" width="392" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Legend / footer -->
+        <mxCell id="legend" value="Icon fill = role group   ·   IP badges show VLAN 1 mgmt / VLAN 30 service address   ·   Source: Home-Lab/CLAUDE.md (2026-07-23)" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#7A6A2A;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="852" y="792" width="392" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="Networking &amp; VLANs" id="panel-vlans">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="960" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== OUTER PANEL ===== -->
+        <mxCell id="v_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1220" height="880" as="geometry" />
+        </mxCell>
+        <mxCell id="v_titlebar" value="NetFRAME  —  Networking &amp; VLANs" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="v_titleright" value="EX3400 802.1Q  ·  7 VLANs  ·  OPNsense L3 gateway  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="600" y="42" width="656" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ VLAN 1 · Management ============ -->
+        <mxCell id="v1c" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E1EAF7;strokeColor=#6C8EBF;" vertex="1" parent="1">
+          <mxGeometry x="60" y="132" width="770" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="v1chip" value="VLAN 1" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#6C8EBF;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="74" y="144" width="68" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="v1t" value="Management" style="text;html=1;fillColor=none;strokeColor=none;fontStyle=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#2A4B7C;" vertex="1" parent="1">
+          <mxGeometry x="156" y="142" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="v1s" value="192.168.10.0/24" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="144" width="190" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="v1p" value="Cluster management plane — Proxmox corosync ring, node &amp; PBS web UIs, admin workstation (Ares .199). All 7 nodes' mgmt IPs live here (.10.x)." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="156" y="170" width="466" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ VLAN 20 · Trusted / OOB-BMC ============ -->
+        <mxCell id="v20c" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FBE4E2;strokeColor=#B85450;" vertex="1" parent="1">
+          <mxGeometry x="60" y="226" width="770" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="v20chip" value="VLAN 20" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#B85450;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="74" y="238" width="68" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="v20t" value="Trusted / OOB-BMC" style="text;html=1;fillColor=none;strokeColor=none;fontStyle=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#8C2E2A;" vertex="1" parent="1">
+          <mxGeometry x="156" y="236" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="v20s" value="192.168.20.0/24" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B85450;fontFamily=monospace;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="238" width="190" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="v20p" value="Out-of-band management only — iDRAC/IPMI: QuarkyLab .20, Jarvis .21, Randy .22. Reached from Ares enp0s31f6.20; BMC creds rotated to Vaultwarden." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="156" y="264" width="466" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ VLAN 30 · Servers ============ -->
+        <mxCell id="v30c" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E3F0DE;strokeColor=#82B366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="320" width="770" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="v30chip" value="VLAN 30" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#82B366;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="74" y="332" width="68" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="v30t" value="Servers" style="text;html=1;fillColor=none;strokeColor=none;fontStyle=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#3F6B29;" vertex="1" parent="1">
+          <mxGeometry x="156" y="330" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="v30s" value="192.168.30.0/24" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="332" width="190" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="v30p" value="Data path for dual-homed R730s + Randy (.30.179/.31/.187, gw .30.1) — NFS, PBS backup, 10G, internet egress. Vaultwarden static .30.182." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="156" y="358" width="466" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ VLAN 40 · IoT ============ -->
+        <mxCell id="v40c" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FCEBD0;strokeColor=#D79B00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="414" width="770" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="v40chip" value="VLAN 40" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#D79B00;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="74" y="426" width="68" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="v40t" value="IoT" style="text;html=1;fillColor=none;strokeColor=none;fontStyle=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#9A6E00;" vertex="1" parent="1">
+          <mxGeometry x="156" y="424" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="v40s" value="192.168.40.0/24" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D79B00;fontFamily=monospace;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="426" width="190" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="v40p" value="Untrusted smart-home / IoT devices — isolated from the management and server planes." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="156" y="452" width="466" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ VLAN 50 · VoIP ============ -->
+        <mxCell id="v50c" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#EEE6F5;strokeColor=#9673A6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="508" width="770" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="v50chip" value="VLAN 50" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#9673A6;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="74" y="520" width="68" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="v50t" value="VoIP" style="text;html=1;fillColor=none;strokeColor=none;fontStyle=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#5E4272;" vertex="1" parent="1">
+          <mxGeometry x="156" y="518" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="v50s" value="192.168.50.0/24" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="520" width="190" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="v50p" value="Voice / IP telephony — QoS-prioritised voice segment." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="156" y="546" width="466" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ VLAN 60 · Guest ============ -->
+        <mxCell id="v60c" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#ECECEC;strokeColor=#808080;" vertex="1" parent="1">
+          <mxGeometry x="60" y="602" width="770" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="v60chip" value="VLAN 60" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#808080;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="74" y="614" width="68" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="v60t" value="Guest" style="text;html=1;fillColor=none;strokeColor=none;fontStyle=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#4D4D4D;" vertex="1" parent="1">
+          <mxGeometry x="156" y="612" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="v60s" value="192.168.60.0/24" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#808080;fontFamily=monospace;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="614" width="190" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="v60p" value="Isolated guest Wi-Fi — internet only, no reach into LAN or management. DHCP static map for Home Assistant HA .60 also lives on this scope." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="156" y="640" width="466" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ VLAN 70 · Lab ============ -->
+        <mxCell id="v70c" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#DDF0F0;strokeColor=#3C9EA0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="696" width="770" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="v70chip" value="VLAN 70" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#3C9EA0;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="74" y="708" width="68" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="v70t" value="Lab" style="text;html=1;fillColor=none;strokeColor=none;fontStyle=1;fontSize=13;align=left;verticalAlign=middle;fontColor=#236E70;" vertex="1" parent="1">
+          <mxGeometry x="156" y="706" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="v70s" value="192.168.70.0/24" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#3C9EA0;fontFamily=monospace;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="708" width="190" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="v70p" value="Sandbox / lab experiments — standalone 'sandbox' EliteDesk (.70.x). NOT a km-cluster member." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="156" y="734" width="466" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ Bottom gateway strip ============ -->
+        <mxCell id="v_gw" value="&lt;b&gt;L3 gateway &amp; firewall:&lt;/b&gt; OPNsense VM 100 (pve2) = .1 on every VLAN     ·     &lt;b&gt;Core switch:&lt;/b&gt; EX3400-48P — 192.168.10.50, JunOS 23.4R2-S7.4     ·     Inter-VLAN routing + firewalling on OPNsense" style="text;html=1;fillColor=#FFF3D6;strokeColor=#B8860B;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="60" y="796" width="770" height="46" as="geometry" />
+        </mxCell>
+
+        <!-- =========================================================== -->
+        <!-- NOTES COLUMN                                                -->
+        <!-- =========================================================== -->
+        <mxCell id="vn1h" value="NOTE  ·  DHCP — KEA on OPNsense" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="132" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="vn1b" value="Backend migrated ISC → Kea 2026-07-20 after an empty-Kea outage. Holds all 12 reservations and hands out &lt;b&gt;both&lt;/b&gt; Pi-hole .177 + .178 on all 7 VLAN scopes → automatic client DNS failover. Resolver = Unbound on .1. Critical services (.177 / .181 / .183 / .148) are static-in-container so a DHCP outage can't drop routing." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="156" width="392" height="128" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vn2h" value="NOTE  ·  DNS — HIGH AVAILABILITY" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="296" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="vn2b" value="Primary Pi-hole .177 (pve1 LXC 103) + secondary .178 (pve5 CT 108 'netframe-pihole2'). Secondary is a nebula-sync full mirror (systemd /15 min: gravity, adlists, local DNS, allow/deny). Both admin passwords unified in Vaultwarden." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="320" width="392" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vn3h" value="NOTE  ·  EX3400 — TRUNK / NATIVE-VLAN GOTCHA" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="432" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="vn3b" value="On this EX3400 (ELS) native-vlan-id goes at &lt;b&gt;interface level&lt;/b&gt;, NOT under unit 0 family ethernet-switching. Node ports are trunks (native 1 + tagged servers). pve2 vmbr2/nic2 auto-start is DISABLED — a live UniFi cable on that unused bridge caused a trunk loop." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="456" width="392" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vn4h" value="NOTE  ·  SECURITY SEGMENTATION (Phase 1)" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="588" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="vn4b" value="All three BMCs moved off flat VLAN 1 onto VLAN 20 (2026-07-03); factory creds rotated → Vaultwarden. Ports ge-0/0/30 · 32 · 44 are tagged-VLAN-20-only. Pending: OPNsense rule to deny non-Ares → VLAN 20 and block BMC internet egress (Phase 1.5)." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="612" width="392" height="118" as="geometry" />
+        </mxCell>
+
+        <mxCell id="v_legend" value="Chip colour = security tier   ·   Subnet badges are /24   ·   Source: Home-Lab/CLAUDE.md (2026-07-23)" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#7A6A2A;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="852" y="742" width="392" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="Logical Topology" id="panel-topology">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== OUTER PANEL ===== -->
+        <mxCell id="t_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1520" height="810" as="geometry" />
+        </mxCell>
+        <mxCell id="t_titlebar" value="NetFRAME  —  Logical Topology" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="42" y="42" width="1516" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="t_titleright" value="Internet → OPNsense → EX3400 → hosts / guests  ·  km-cluster  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="820" y="42" width="736" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ===== BACKBONE ===== -->
+        <mxCell id="t_net" value="&lt;b&gt;INTERNET&lt;/b&gt;&#10;WAN1 (primary) + WAN2 LTE / FirstNet failover" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#ECECEC;strokeColor=#808080;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="680" y="100" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="t_opn" value="&lt;b&gt;OPNsense · Router / Firewall / DHCP (Kea)&lt;/b&gt;&#10;.1 gateway on all 7 VLANs  ·  VM 100 @ pve2" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#FBE4E2;strokeColor=#B85450;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="640" y="196" width="320" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="t_sw" value="&lt;b&gt;EX3400-48P · Core Switch&lt;/b&gt;     ·     192.168.10.50     ·     JunOS 23.4R2-S7.4     ·     802.1Q VLAN trunks" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#DDF0F0;strokeColor=#3C9EA0;fontSize=12;align=center;verticalAlign=middle;fontColor=#236E70;" vertex="1" parent="1">
+          <mxGeometry x="120" y="300" width="1360" height="54" as="geometry" />
+        </mxCell>
+
+        <!-- backbone edges -->
+        <mxCell id="e_wan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#333333;strokeWidth=3;" edge="1" parent="1" source="t_net" target="t_opn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_lan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=3;" edge="1" parent="1" source="t_opn" target="t_sw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== HOSTS (single row off the switch) ===================== -->
+
+        <!-- pve2 -->
+        <mxCell id="h_pve2" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#EAF3E4;strokeColor=#82B366;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="90" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_pve2" value="pve2 · .204" style="text;html=1;fillColor=#82B366;strokeColor=#82B366;fontColor=#ffffff;fontStyle=1;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="90" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve2_1" value="&lt;b&gt;OPNsense&lt;/b&gt;&#10;VM100 · .1" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="98" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve2_2" value="&lt;b&gt;step-ca&lt;/b&gt;&#10;.204:443" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="98" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- pve3 -->
+        <mxCell id="h_pve3" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#EAF3E4;strokeColor=#82B366;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="268" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_pve3" value="pve3 · .201" style="text;html=1;fillColor=#82B366;strokeColor=#82B366;fontColor=#ffffff;fontStyle=1;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="268" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve3_1" value="&lt;b&gt;NPM&lt;/b&gt;&#10;LXC101 · .181" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="276" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve3_2" value="&lt;b&gt;Vaultwarden&lt;/b&gt;&#10;LXC102 · .30.182" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="276" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve3_3" value="&lt;b&gt;Homepage&lt;/b&gt;&#10;LXC106 · .148" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="276" y="520" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve3_4" value="&lt;b&gt;OpenWebUI&lt;/b&gt;&#10;LXC107 · .185" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="276" y="560" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve3_5" value="&lt;b&gt;rke2-cp1&lt;/b&gt;&#10;VM201 · .51" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#9AA0A6;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="276" y="600" width="144" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- pve4 -->
+        <mxCell id="h_pve4" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#EAF3E4;strokeColor=#82B366;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="446" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_pve4" value="pve4 · .202" style="text;html=1;fillColor=#82B366;strokeColor=#82B366;fontColor=#ffffff;fontStyle=1;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="446" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve4_1" value="&lt;b&gt;Grafana / Prom / Loki&lt;/b&gt;&#10;LXC103 · .183" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="454" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve4_2" value="&lt;b&gt;Scrutiny&lt;/b&gt;&#10;:8080" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="454" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve4_3" value="&lt;b&gt;rke2-cp2&lt;/b&gt;&#10;VM202 · .52" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#9AA0A6;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="454" y="520" width="144" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- pve5 -->
+        <mxCell id="h_pve5" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#EAF3E4;strokeColor=#82B366;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="624" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_pve5" value="pve5 · .203" style="text;html=1;fillColor=#82B366;strokeColor=#82B366;fontColor=#ffffff;fontStyle=1;fontSize=11;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="624" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve5_1" value="&lt;b&gt;Headscale&lt;/b&gt;&#10;LXC105 · .186" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="632" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve5_2" value="&lt;b&gt;Pi-hole 2&lt;/b&gt;&#10;CT108 · .178" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="632" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve5_3" value="&lt;b&gt;Home Assistant&lt;/b&gt;&#10;VM110 · .60" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="632" y="520" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve5_4" value="&lt;b&gt;rke2-cp3&lt;/b&gt;&#10;VM203 · .53" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#9AA0A6;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="632" y="560" width="144" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- QuarkyLab -->
+        <mxCell id="h_quark" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FBE4E2;strokeColor=#B85450;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="802" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_quark" value="QuarkyLab · .179 / .30.179" style="text;html=1;fillColor=#B85450;strokeColor=#B85450;fontColor=#ffffff;fontStyle=1;fontSize=10;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="802" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_quark_1" value="&lt;b&gt;Wazuh SIEM&lt;/b&gt;&#10;VM104 · .184" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B85450;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="810" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_quark_2" value="&lt;b&gt;DUNE agent&lt;/b&gt;&#10;RAG pipeline" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B85450;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="810" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_quark_3" value="&lt;b&gt;RTX 8000 48GB&lt;/b&gt;&#10;ML / GPU" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#FCEFD9;strokeColor=#D79B00;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="810" y="520" width="144" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Jarvis -->
+        <mxCell id="h_jarvis" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FBE4E2;strokeColor=#B85450;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="980" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_jarvis" value="Jarvis · .31 / .30.31" style="text;html=1;fillColor=#B85450;strokeColor=#B85450;fontColor=#ffffff;fontStyle=1;fontSize=11;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="980" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_jarvis_1" value="&lt;b&gt;Ollama&lt;/b&gt;&#10;GPU-backed" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B85450;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="988" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_jarvis_2" value="&lt;b&gt;llm_router&lt;/b&gt;&#10;:8000 · llm.netframe.local" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B85450;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="988" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_jarvis_3" value="&lt;b&gt;2× RTX 6000&lt;/b&gt;&#10;48GB · LLM" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#FCEFD9;strokeColor=#D79B00;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="988" y="520" width="144" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- Randy -->
+        <mxCell id="h_randy" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#E1EAF7;strokeColor=#6C8EBF;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="1158" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_randy" value="Randy · .187 / .30.187" style="text;html=1;fillColor=#6C8EBF;strokeColor=#6C8EBF;fontColor=#ffffff;fontStyle=1;fontSize=11;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="1158" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_randy_1" value="&lt;b&gt;PBS&lt;/b&gt;&#10;:8007 · backups" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1166" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_randy_2" value="&lt;b&gt;NFS export&lt;/b&gt;&#10;/datastore (VLAN30)" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1166" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_randy_3" value="&lt;b&gt;Jellyfin&lt;/b&gt;&#10;:8096" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1166" y="520" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_randy_4" value="&lt;b&gt;ZFS&lt;/b&gt;&#10;datastore · bulk (55TiB)" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#EAF0F8;strokeColor=#6C8EBF;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1166" y="560" width="144" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- pve1 (standalone) -->
+        <mxCell id="h_pve1" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FCF3D8;strokeColor=#D6B656;verticalAlign=top;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1336" y="400" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="hh_pve1" value="pve1 · .193 (standalone)" style="text;html=1;fillColor=#D6B656;strokeColor=#D6B656;fontColor=#ffffff;fontStyle=1;fontSize=10;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="1336" y="400" width="160" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve1_1" value="&lt;b&gt;Pi-hole 1 (primary)&lt;/b&gt;&#10;LXC103 · .177 · DNS" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D6B656;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1344" y="440" width="144" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c_pve1_2" value="&lt;b&gt;Homepage&lt;/b&gt;&#10;LXC104" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D6B656;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1344" y="480" width="144" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== SWITCH → HOST EDGES ===================== -->
+        <!-- blue = VLAN 1 mgmt ; green = VLAN 30 servers -->
+        <mxCell id="eb_pve2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.037;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;" edge="1" parent="1" source="t_sw" target="h_pve2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb_pve3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.16;exitY=1;exitDx=0;exitDy=0;entryX=0.32;entryY=0;" edge="1" parent="1" source="t_sw" target="h_pve3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eg_pve3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#2D7D32;strokeWidth=2;exitX=0.18;exitY=1;exitDx=0;exitDy=0;entryX=0.68;entryY=0;" edge="1" parent="1" source="t_sw" target="h_pve3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb_pve4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.299;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;" edge="1" parent="1" source="t_sw" target="h_pve4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb_pve5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.429;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;" edge="1" parent="1" source="t_sw" target="h_pve5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb_quark" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.55;exitY=1;exitDx=0;exitDy=0;entryX=0.32;entryY=0;" edge="1" parent="1" source="t_sw" target="h_quark">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eg_quark" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#2D7D32;strokeWidth=2;exitX=0.57;exitY=1;exitDx=0;exitDy=0;entryX=0.68;entryY=0;" edge="1" parent="1" source="t_sw" target="h_quark">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb_jarvis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.681;exitY=1;exitDx=0;exitDy=0;entryX=0.32;entryY=0;" edge="1" parent="1" source="t_sw" target="h_jarvis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eg_jarvis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#2D7D32;strokeWidth=2;exitX=0.701;exitY=1;exitDx=0;exitDy=0;entryX=0.68;entryY=0;" edge="1" parent="1" source="t_sw" target="h_jarvis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb_randy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.812;exitY=1;exitDx=0;exitDy=0;entryX=0.32;entryY=0;" edge="1" parent="1" source="t_sw" target="h_randy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eg_randy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#2D7D32;strokeWidth=2;exitX=0.832;exitY=1;exitDx=0;exitDy=0;entryX=0.68;entryY=0;" edge="1" parent="1" source="t_sw" target="h_randy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb_pve1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#4D6FA9;strokeWidth=2;exitX=0.953;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;" edge="1" parent="1" source="t_sw" target="h_pve1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== NOTES ROW ===================== -->
+        <mxCell id="tn1h" value="NOTE  ·  DUAL-HOMING (VLAN 1 + VLAN 30)" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="90" y="672" width="460" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="tn1b" value="QuarkyLab / Jarvis / Randy carry mgmt + corosync + monitoring on VLAN 1 (.10.x) and NFS / PBS / internet egress on Servers VLAN 30 (.30.x, gw .30.1). pve3 is the only EliteDesk with a VLAN 30 trunk (Vaultwarden .30.182)." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="90" y="696" width="460" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tn2h" value="NOTE  ·  RKE2 K8S OVERLAY" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="570" y="672" width="460" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="tn2b" value="3-node HA control plane rke2-cp1/2/3 (VMs 201/202/203 on pve3/4/5 · .51/.52/.53) + Randy bare-metal agent. API VIP 192.168.10.54:6443 (kube-vip), MetalLB pool .71–.75, Cilium CNI, NFS StorageClass from Randy." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="570" y="696" width="460" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tn3h" value="NOTE  ·  DNS IS HIGHLY AVAILABLE" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="672" width="460" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="tn3b" value="Primary Pi-hole .177 (pve1, standalone) + secondary .178 (pve5 CT 108). OPNsense / Kea hands out BOTH on all 7 VLAN scopes → client failover. Resolver = Unbound on .1. Critical services are static-in-container." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="696" width="460" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== LEGEND ===================== -->
+        <mxCell id="lg_b" value="" style="rounded=0;html=1;fillColor=#4D6FA9;strokeColor=#4D6FA9;" vertex="1" parent="1">
+          <mxGeometry x="90" y="812" width="34" height="6" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_bt" value="VLAN 1 (mgmt / corosync)" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="130" y="805" width="180" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_g" value="" style="rounded=0;html=1;fillColor=#2D7D32;strokeColor=#2D7D32;" vertex="1" parent="1">
+          <mxGeometry x="320" y="812" width="34" height="6" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_gt" value="VLAN 30 (servers data path)" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="360" y="805" width="190" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_k" value="" style="rounded=0;html=1;fillColor=#333333;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="560" y="812" width="34" height="6" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_kt" value="WAN / uplink" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="600" y="805" width="110" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_note" value="Boxes inside hosts = VMs / LXCs (id · IP).  Grey chips = RKE2 nodes.  Dashed host = standalone (not km-cluster).  Source: Home-Lab/CLAUDE.md (2026-07-23)" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#7A6A2A;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="720" y="805" width="820" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
