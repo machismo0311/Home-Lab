@@ -647,4 +647,158 @@
       </root>
     </mxGraphModel>
   </diagram>
+  <diagram name="Access, Auth &amp; Reverse Proxy" id="panel-auth">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="960" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="a_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1220" height="880" as="geometry" />
+        </mxCell>
+        <mxCell id="a_titlebar" value="NetFRAME  —  Access, Auth &amp; Reverse Proxy" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="a_titleright" value="Identity · TLS · reverse proxy · split DNS  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ G1 IDENTITY, CERTS & SECRETS (purple) ============ -->
+        <mxCell id="aG1" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#EEE6F5;strokeColor=#9673A6;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="770" height="204" as="geometry" />
+        </mxCell>
+        <mxCell id="aG1h" value="IDENTITY, CERTIFICATES &amp; SECRETS" style="text;html=1;fillColor=#9673A6;strokeColor=#9673A6;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="770" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="a1i1" value="" style="sketch=0;html=1;shape=mxgraph.networks.firewall;fillColor=#9673A6;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="136" width="40" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="a1t1" value="&lt;b&gt;step-ca&lt;/b&gt; · private ACME CA (pve2) — issues *.netframe.local TLS; CA password stored in Vaultwarden." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="134" width="480" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="a1b1" value="192.168.10.204:443" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="142" width="186" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="a1i2" value="" style="sketch=0;html=1;shape=mxgraph.networks.storage;fillColor=#9673A6;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="196" width="40" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="a1t2" value="&lt;b&gt;Vaultwarden&lt;/b&gt; · password / secret vault (Docker on LXC 102, pve3). Break-glass read copy in scripts/break-glass." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="194" width="480" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="a1b2" value="192.168.30.182" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="202" width="186" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="a1i3" value="" style="sketch=0;html=1;shape=mxgraph.networks.cloud;fillColor=#9673A6;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="256" width="42" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a1t3" value="&lt;b&gt;Headscale&lt;/b&gt; v0.29.1 · self-hosted Tailscale control plane (LXC 105, pve5). Mesh: Ares/Randy/pve5/pve4/pve3/Jarvis." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="254" width="480" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="a1b3" value="192.168.10.186&#10;100.64.0.x" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="252" width="186" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ G2 REVERSE PROXY - NPM (blue) ============ -->
+        <mxCell id="aG2" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#E1EAF7;strokeColor=#6C8EBF;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="320" width="770" height="252" as="geometry" />
+        </mxCell>
+        <mxCell id="aG2h" value="REVERSE PROXY  —  nginx-proxy-manager (NPM)" style="text;html=1;fillColor=#6C8EBF;strokeColor=#6C8EBF;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="320" width="770" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="a2i1" value="" style="sketch=0;html=1;shape=mxgraph.networks.load_balancer;fillColor=#6C8EBF;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="356" width="40" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="a2t1" value="&lt;b&gt;NPM&lt;/b&gt; (LXC 101, pve3) — reverse proxy + TLS termination. Admin :81 restricted to Ares (.199) via DOCKER-USER firewall. LE certs via Cloudflare DNS-01." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="352" width="480" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="a2b1" value="192.168.10.181&#10;admin :81" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="356" width="186" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="a2p1" value="&lt;b&gt;homepage.kylemason.org&lt;/b&gt;  →  Homepage (.148)  ·  LE (Cloudflare DNS-01) + basic auth (kyle)" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#F4F8FD;strokeColor=#6C8EBF;align=left;verticalAlign=middle;fontSize=10;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="98" y="414" width="530" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="a2p1b" value="host id 4" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="648" y="414" width="166" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="a2p2" value="&lt;b&gt;llm.netframe.local&lt;/b&gt;  →  Jarvis llm_router (.31:8000)  ·  HTTP-only" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#F4F8FD;strokeColor=#6C8EBF;align=left;verticalAlign=middle;fontSize=10;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="98" y="454" width="530" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="a2p2b" value="host id 5" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="648" y="454" width="166" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="a2p3" value="&lt;b&gt;chat.netframe.local&lt;/b&gt;  →  Open WebUI (.185)  →  llm_router backend" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#F4F8FD;strokeColor=#6C8EBF;align=left;verticalAlign=middle;fontSize=10;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="98" y="494" width="530" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="a2p3b" value="host id 6" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="648" y="494" width="166" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="a2note" value="TLS: public names via Let's Encrypt (Cloudflare DNS-01); internal *.netframe.local via step-ca. :3000/:8000 backends firewalled to NPM only." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;fontStyle=2;spacingLeft=10;fontColor=#3B5A86;" vertex="1" parent="1">
+          <mxGeometry x="98" y="532" width="716" height="32" as="geometry" />
+        </mxCell>
+
+        <!-- ============ G3 SPLIT DNS (green) ============ -->
+        <mxCell id="aG3" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#E3F0DE;strokeColor=#82B366;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="588" width="770" height="216" as="geometry" />
+        </mxCell>
+        <mxCell id="aG3h" value="SPLIT DNS  —  Pi-hole (HA) + Unbound" style="text;html=1;fillColor=#82B366;strokeColor=#82B366;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="588" width="770" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="a3i1" value="" style="sketch=0;html=1;shape=mxgraph.networks.server;fillColor=#82B366;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="624" width="40" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="a3t1" value="&lt;b&gt;Pi-hole DNS&lt;/b&gt; · primary .177 (pve1) + secondary .178 (pve5 CT 108). OPNsense/Kea hands out BOTH on all 7 scopes → client failover." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="622" width="480" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="a3b1" value=".177 / .178" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="630" width="186" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="a3i2" value="" style="sketch=0;html=1;shape=mxgraph.networks.router;fillColor=#82B366;strokeColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="78" y="682" width="42" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="a3t2" value="&lt;b&gt;Unbound&lt;/b&gt; recursive resolver on OPNsense (.1) — Pi-hole's upstream; performs the recursive lookups for external names." style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=11;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="128" y="680" width="480" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="a3b2" value="192.168.10.1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="628" y="688" width="186" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="a3t3" value="&lt;b&gt;Local records (split-horizon):&lt;/b&gt; llm · chat · homepage · homeassistant.netframe.local + *.netframe.local → internal IPs. Resolve only for Pi-hole clients; public kylemason.org names resolve everywhere but proxy internally." style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#F1F8ED;strokeColor=#82B366;align=left;verticalAlign=middle;fontSize=10;spacingLeft=10;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="98" y="732" width="716" height="58" as="geometry" />
+        </mxCell>
+
+        <!-- ============ NOTES COLUMN ============ -->
+        <mxCell id="an1h" value="NOTE  ·  SPLIT-HORIZON DNS" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="100" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="an1b" value="&lt;b&gt;netframe.local&lt;/b&gt; names exist only on Pi-hole → resolve for LAN/VPN clients, never publicly. &lt;b&gt;kylemason.org&lt;/b&gt; names are public DNS but NPM proxies them to internal services. A device not using Pi-hole (.177/.178) can't reach the *.netframe.local vhosts." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="124" width="392" height="132" as="geometry" />
+        </mxCell>
+
+        <mxCell id="an2h" value="NOTE  ·  NPM ADMIN LOCKDOWN" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="268" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="an2b" value="NPM admin UI :81 is restricted to Ares (.199) via a DOCKER-USER firewall rule (finding F-05). Backends like Homepage :3000 and llm_router :8000 are firewalled so only NPM can reach them." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="292" width="392" height="108" as="geometry" />
+        </mxCell>
+
+        <mxCell id="an3h" value="NOTE  ·  HEADSCALE (VPN) — PHASE 2 PENDING" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="412" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="an3b" value="Self-hosted Tailscale control plane on pve5 (moved 2026-07-16). Current mesh: Ares (.1), Randy (.2), pve5 (.3), pve4 (.4), pve3 (.5), Jarvis (.6). Phase 2: QuarkyLab + the researcher's Mac must migrate together — do not migrate one alone." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="436" width="392" height="128" as="geometry" />
+        </mxCell>
+
+        <mxCell id="an4h" value="NOTE  ·  SECURITY MONITORING (SIEM)" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="576" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="an4b" value="&lt;b&gt;Wazuh&lt;/b&gt; SIEM runs as VM 104 on QuarkyLab (192.168.10.184, dashboard https://…184). qemu-guest-agent enabled → clean host-reboot shutdowns. Migrated off pve2." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="600" width="392" height="104" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a_legend" value="Reverse-proxy vhosts terminate TLS at NPM   ·   split-horizon = internal names Pi-hole-only   ·   Source: Home-Lab/CLAUDE.md (2026-07-23)" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#7A6A2A;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="852" y="716" width="392" height="80" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
 </mxfile>
