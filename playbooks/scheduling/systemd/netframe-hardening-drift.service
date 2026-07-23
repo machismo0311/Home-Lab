@@ -1,0 +1,28 @@
+# NETFRAME hardening drift check — runs from Ares (control node).
+#
+# Reinstated 2026-07-22 after verifying it runs clean under --check across all 8
+# nodes on the current ansible-core (the condition ares.crontab noted before
+# putting it back on a timer). Mirrors netframe-backup-verify.{service,timer}.
+#
+# READ-ONLY: runs desired-state.yml in --check mode (detection only, never
+# enforces) and writes hardening-drift.json to Randy, where netframe_monitor
+# ingests it as the hardening_drift check.
+#
+# Install as a USER unit (needs machismo's ansible venv, vault-pass, SSH key):
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-hardening-drift.service ~/.config/systemd/user/
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-hardening-drift.timer   ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now netframe-hardening-drift.timer
+# Inspect: systemctl --user list-timers netframe-hardening-drift.timer
+#          tail ~/.config/netframe-backup-verify/hardening-drift.log
+
+[Unit]
+Description=NETFRAME hardening drift check (Ansible --check, from Ares)
+Documentation=https://github.com/machismo0311/Home-Lab
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '/home/machismo/Home-Lab/playbooks/scheduling/run-hardening-drift-check.sh >> /home/machismo/.config/netframe-backup-verify/hardening-drift.log 2>&1'
+# Exit 0 = the run executed; drift/staleness lives in the report, not the exit code.
+# Nonzero = the run itself failed (venv/vault/ssh) — worth a failed unit.
+Nice=10
