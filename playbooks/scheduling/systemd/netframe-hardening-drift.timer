@@ -1,0 +1,19 @@
+# Daily 06:30 trigger for netframe-hardening-drift.service, with catch-up.
+#
+# Persistent=true records the last trigger on disk, so a run missed because Ares
+# was suspended/off fires on the next wake instead of silently freezing the
+# report (the NF-INC-2026-07-22 failure mode). 06:30 is after backup-verify
+# (06:00) and the nightly backups, so nothing races.
+
+[Unit]
+Description=Run NETFRAME hardening drift-check daily at 06:30 (Persistent: catches up after downtime)
+Documentation=https://github.com/machismo0311/Home-Lab
+
+[Timer]
+OnCalendar=*-*-* 06:30:00
+Persistent=true
+RandomizedDelaySec=5min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
