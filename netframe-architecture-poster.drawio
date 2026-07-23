@@ -11,8 +11,14 @@
         </mxCell>
 
         <!-- Title bar -->
-        <mxCell id="titlebar" value="NetFRAME  —  Physical Equipment &amp; Node Configuration Reference" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+        <mxCell id="titlebar" value="&lt;b&gt;&lt;font color=&quot;#12324F&quot;&gt;Net&lt;/font&gt;&lt;font color=&quot;#1FA89F&quot;&gt;FRAME&lt;/font&gt;&lt;/b&gt;  —  Physical Equipment &amp; Node Configuration Reference" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=58;fontColor=#5C4300;" vertex="1" parent="1">
           <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="logo1a" value="" style="rounded=1;arcSize=24;whiteSpace=wrap;html=1;fillColor=#12324F;strokeColor=#1FA89F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="logo1b" value="NF" style="text;html=1;fillColor=none;strokeColor=none;fontColor=#1FA89F;fontStyle=1;fontSize=15;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
         </mxCell>
         <mxCell id="titleright" value="km-cluster  ·  Proxmox VE 9.2.3  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
@@ -211,8 +217,14 @@
         <mxCell id="v_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="1220" height="880" as="geometry" />
         </mxCell>
-        <mxCell id="v_titlebar" value="NetFRAME  —  Networking &amp; VLANs" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+        <mxCell id="v_titlebar" value="&lt;b&gt;&lt;font color=&quot;#12324F&quot;&gt;Net&lt;/font&gt;&lt;font color=&quot;#1FA89F&quot;&gt;FRAME&lt;/font&gt;&lt;/b&gt;  —  Networking &amp; VLANs" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=58;fontColor=#5C4300;" vertex="1" parent="1">
           <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="logo2a" value="" style="rounded=1;arcSize=24;whiteSpace=wrap;html=1;fillColor=#12324F;strokeColor=#1FA89F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="logo2b" value="NF" style="text;html=1;fillColor=none;strokeColor=none;fontColor=#1FA89F;fontStyle=1;fontSize=15;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
         </mxCell>
         <mxCell id="v_titleright" value="EX3400 802.1Q  ·  7 VLANs  ·  OPNsense L3 gateway  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="600" y="42" width="656" height="42" as="geometry" />
@@ -390,8 +402,14 @@
         <mxCell id="t_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="1520" height="810" as="geometry" />
         </mxCell>
-        <mxCell id="t_titlebar" value="NetFRAME  —  Logical Topology" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+        <mxCell id="t_titlebar" value="&lt;b&gt;&lt;font color=&quot;#12324F&quot;&gt;Net&lt;/font&gt;&lt;font color=&quot;#1FA89F&quot;&gt;FRAME&lt;/font&gt;&lt;/b&gt;  —  Logical Topology" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=58;fontColor=#5C4300;" vertex="1" parent="1">
           <mxGeometry x="42" y="42" width="1516" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="logo3a" value="" style="rounded=1;arcSize=24;whiteSpace=wrap;html=1;fillColor=#12324F;strokeColor=#1FA89F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="logo3b" value="NF" style="text;html=1;fillColor=none;strokeColor=none;fontColor=#1FA89F;fontStyle=1;fontSize=15;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
         </mxCell>
         <mxCell id="t_titleright" value="Internet → OPNsense → EX3400 → hosts / guests  ·  km-cluster  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="820" y="42" width="736" height="42" as="geometry" />
@@ -656,8 +674,14 @@
         <mxCell id="a_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="1220" height="880" as="geometry" />
         </mxCell>
-        <mxCell id="a_titlebar" value="NetFRAME  —  Access, Auth &amp; Reverse Proxy" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+        <mxCell id="a_titlebar" value="&lt;b&gt;&lt;font color=&quot;#12324F&quot;&gt;Net&lt;/font&gt;&lt;font color=&quot;#1FA89F&quot;&gt;FRAME&lt;/font&gt;&lt;/b&gt;  —  Access, Auth &amp; Reverse Proxy" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=58;fontColor=#5C4300;" vertex="1" parent="1">
           <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="logo4a" value="" style="rounded=1;arcSize=24;whiteSpace=wrap;html=1;fillColor=#12324F;strokeColor=#1FA89F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="logo4b" value="NF" style="text;html=1;fillColor=none;strokeColor=none;fontColor=#1FA89F;fontStyle=1;fontSize=15;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
         </mxCell>
         <mxCell id="a_titleright" value="Identity · TLS · reverse proxy · split DNS  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
@@ -810,8 +834,14 @@
         <mxCell id="s_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="1220" height="880" as="geometry" />
         </mxCell>
-        <mxCell id="s_titlebar" value="NetFRAME  —  Shared Storage &amp; Access" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+        <mxCell id="s_titlebar" value="&lt;b&gt;&lt;font color=&quot;#12324F&quot;&gt;Net&lt;/font&gt;&lt;font color=&quot;#1FA89F&quot;&gt;FRAME&lt;/font&gt;&lt;/b&gt;  —  Shared Storage &amp; Access" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=58;fontColor=#5C4300;" vertex="1" parent="1">
           <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="logo5a" value="" style="rounded=1;arcSize=24;whiteSpace=wrap;html=1;fillColor=#12324F;strokeColor=#1FA89F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="logo5b" value="NF" style="text;html=1;fillColor=none;strokeColor=none;fontColor=#1FA89F;fontStyle=1;fontSize=15;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
         </mxCell>
         <mxCell id="s_titleright" value="ZFS pools · NFS/PBS data paths · backups  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
@@ -1026,8 +1056,14 @@
         <mxCell id="m_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="1220" height="720" as="geometry" />
         </mxCell>
-        <mxCell id="m_titlebar" value="NetFRAME  —  Monitoring, Sync &amp; CI/CD" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+        <mxCell id="m_titlebar" value="&lt;b&gt;&lt;font color=&quot;#12324F&quot;&gt;Net&lt;/font&gt;&lt;font color=&quot;#1FA89F&quot;&gt;FRAME&lt;/font&gt;&lt;/b&gt;  —  Monitoring, Sync &amp; CI/CD" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=58;fontColor=#5C4300;" vertex="1" parent="1">
           <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="logo6a" value="" style="rounded=1;arcSize=24;whiteSpace=wrap;html=1;fillColor=#12324F;strokeColor=#1FA89F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="logo6b" value="NF" style="text;html=1;fillColor=none;strokeColor=none;fontColor=#1FA89F;fontStyle=1;fontSize=15;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
         </mxCell>
         <mxCell id="m_titleright" value="observability · replication · pipelines  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
@@ -1197,8 +1233,14 @@
         <mxCell id="p_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="1220" height="740" as="geometry" />
         </mxCell>
-        <mxCell id="p_titlebar" value="NetFRAME  —  Physical Topology, WAN &amp; Power" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+        <mxCell id="p_titlebar" value="&lt;b&gt;&lt;font color=&quot;#12324F&quot;&gt;Net&lt;/font&gt;&lt;font color=&quot;#1FA89F&quot;&gt;FRAME&lt;/font&gt;&lt;/b&gt;  —  Physical Topology, WAN &amp; Power" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=58;fontColor=#5C4300;" vertex="1" parent="1">
           <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="logo7a" value="" style="rounded=1;arcSize=24;whiteSpace=wrap;html=1;fillColor=#12324F;strokeColor=#1FA89F;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="logo7b" value="NF" style="text;html=1;fillColor=none;strokeColor=none;fontColor=#1FA89F;fontStyle=1;fontSize=15;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="56" y="47" width="32" height="32" as="geometry" />
         </mxCell>
         <mxCell id="p_titleright" value="multi-WAN · EX3400 port map · UPS/PDU  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
           <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
