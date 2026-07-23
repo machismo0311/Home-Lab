@@ -801,4 +801,220 @@
       </root>
     </mxGraphModel>
   </diagram>
+  <diagram name="Shared Storage &amp; Access" id="panel-storage">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="960" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="s_outer" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FBFBF4;strokeColor=#B8860B;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1220" height="880" as="geometry" />
+        </mxCell>
+        <mxCell id="s_titlebar" value="NetFRAME  —  Shared Storage &amp; Access" style="text;html=1;fillColor=#FFE0A3;strokeColor=#B8860B;fontStyle=1;fontSize=16;align=left;verticalAlign=middle;spacingLeft=16;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="42" y="42" width="1216" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="s_titleright" value="ZFS pools · NFS/PBS data paths · backups  ·  2026-07-23" style="text;html=1;fillColor=none;strokeColor=none;fontSize=11;align=right;verticalAlign=middle;spacingRight=18;fontColor=#5C4300;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="640" y="42" width="616" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- ============ G1 STORAGE POOLS ============ -->
+        <mxCell id="sG1" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#E1EAF7;strokeColor=#6C8EBF;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="770" height="248" as="geometry" />
+        </mxCell>
+        <mxCell id="sG1h" value="ZFS STORAGE POOLS" style="text;html=1;fillColor=#6C8EBF;strokeColor=#6C8EBF;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="770" height="26" as="geometry" />
+        </mxCell>
+        <!-- rows -->
+        <mxCell id="sp0c" value="Randy" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#6C8EBF;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="136" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sp0t" value="&lt;b&gt;datastore&lt;/b&gt; · 4× RAIDZ2 (3×6-wide 10K SAS + 1×4-wide SATA) · 36.7 T raw / ~23 T usable" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="133" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sp0b" value="AVAGO+LSI" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="136" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sp1c" value="Randy" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#6C8EBF;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="180" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sp1t" value="&lt;b&gt;bulk&lt;/b&gt; (DS4246 shelf) · 3× RAIDZ2 (8+8+6-wide) · 22× 4 TB SAS · 80 T raw / ~55 TiB" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="177" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sp1b" value="LSI 9207-8e · 2 bays free" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="180" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sp2c" value="Jarvis" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#B85450;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="224" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sp2t" value="&lt;b&gt;tank&lt;/b&gt; · raidz1 5× 2 TB (ST2000NX046x) · 7.2 T · model library + bulk (/tank)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="221" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sp2b" value="HBA330 (SAS3008 IT)" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="224" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sp3c" value="Jarvis" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#B85450;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="268" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sp3t" value="&lt;b&gt;scratch&lt;/b&gt; · 1× 200 GB SSD (ST200FM0053) · 181 G · fast scratch (/scratch)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="265" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sp3b" value="single-disk" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="268" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sp4c" value="QuarkyLab" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#D79B00;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="312" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sp4t" value="&lt;b&gt;workspace&lt;/b&gt; · 6-wide raidz1 (5× SATA + 1× SAS) · 10.9 T raw + 1 hot spare · PERC H330 JBOD" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="309" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sp4b" value="PERC H330 (JBOD)" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6C8EBF;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="312" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ============ G2 DATA PATHS & ACCESS ============ -->
+        <mxCell id="sG2" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#E3F0DE;strokeColor=#82B366;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="364" width="770" height="248" as="geometry" />
+        </mxCell>
+        <mxCell id="sG2h" value="DATA PATHS &amp; ACCESS" style="text;html=1;fillColor=#82B366;strokeColor=#82B366;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="364" width="770" height="26" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sa0c" value="NFS" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#82B366;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="400" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sa0t" value="Randy &lt;b&gt;/datastore&lt;/b&gt; exported over VLAN 30 (10G) → mounted by QuarkyLab &amp; Jarvis as /data" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="397" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sa0b" value="192.168.30.187" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="400" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sa1c" value="MEDIA" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#82B366;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="444" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sa1t" value="Jellyfin media at &lt;b&gt;/datastore/media/{movies,tv,music}&lt;/b&gt; (Randy host, :8096)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="441" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sa1b" value="Randy :8096" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="444" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sa2c" value="MODELS" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#82B366;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="488" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sa2t" value="Ollama &lt;b&gt;OLLAMA_MODELS → tank/models&lt;/b&gt; (Jarvis) — 72B / Qwen served straight off ZFS" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="485" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sa2b" value="Jarvis tank" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="488" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sa3c" value="K8s" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#82B366;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="532" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sa3t" value="RKE2 default StorageClass &lt;b&gt;nfs-client&lt;/b&gt; → Randy &lt;b&gt;datastore/k8s&lt;/b&gt; (nfs-subdir provisioner)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="529" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sa3b" value="VIP .54" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="532" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sa4c" value="SYNC" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#82B366;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="576" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sa4t" value="Hourly rsync &lt;b&gt;~/.claude → randy:/datastore/ares-claude&lt;/b&gt; (Claude memory backup; secrets excluded)" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="573" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sa4b" value="hourly · persistent" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82B366;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="576" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ============ G3 BACKUP (PBS) ============ -->
+        <mxCell id="sG3" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#EEE6F5;strokeColor=#9673A6;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="628" width="770" height="204" as="geometry" />
+        </mxCell>
+        <mxCell id="sG3h" value="BACKUP  —  Proxmox Backup Server (Randy)" style="text;html=1;fillColor=#9673A6;strokeColor=#9673A6;fontColor=#ffffff;fontStyle=1;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="628" width="770" height="26" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb0c" value="PBS" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#9673A6;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="664" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sb0t" value="&lt;b&gt;Proxmox Backup Server&lt;/b&gt; v4.2.2 — ZFS datastore ~23 T · 7d + 4w retention" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="661" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sb0b" value="192.168.10.187:8007" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="664" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb1c" value="job · V1" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#9673A6;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="708" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sb1t" value="&lt;b&gt;randy-pbs&lt;/b&gt; (.10.187, VLAN 1) — reachable by every node on vmbr0. VM 100 + LXCs 101/102/103/105/106/107" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="705" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sb1b" value="192.168.10.187" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="708" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb2c" value="job · 10G" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#9673A6;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="752" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sb2t" value="&lt;b&gt;randy-pbs-10g&lt;/b&gt; (.30.187, VLAN 30, 10G) — QuarkyLab / Jarvis / Randy only. Wazuh VM 104 backs up here" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="749" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sb2b" value="192.168.30.187" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="752" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb3c" value="schedule" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#9673A6;strokeColor=#ffffff;fontColor=#ffffff;fontStyle=1;fontSize=9;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="72" y="796" width="94" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sb3t" value="&lt;b&gt;Schedule:&lt;/b&gt; LXCs 02:00 · VMs 03:00 · Home Assistant 03:30 — all daily" style="text;html=1;fillColor=none;strokeColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=10;spacingLeft=4;" vertex="1" parent="1">
+          <mxGeometry x="180" y="793" width="430" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sb3b" value="daily" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673A6;fontFamily=monospace;fontSize=9;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="796" width="196" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ============ NOTES COLUMN ============ -->
+        <mxCell id="sn1h" value="NOTE  ·  RANDY — TWO STORAGE CONTROLLERS" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="100" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="sn1b" value="Boot = RAID-1 on &lt;b&gt;AVAGO 3108 MegaRAID&lt;/b&gt; (do not reconfigure). Data pools use a separate &lt;b&gt;LSI 9207-8e&lt;/b&gt; (IT mode) + multipath to the DS4246. JBOD may reset on reboot — re-run storcli64 set jbod=on. Original 3108 slot is DEAD; do not reuse." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="124" width="392" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sn2h" value="NOTE  ·  PBS VLAN-30 REPOINT GOTCHA" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="266" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="sn2b" value="The VLAN 30 migration silently repointed PBS storage to .30.187 and broke all pve-node (VLAN 1) backups 07-02 → 07-06. Keep &lt;b&gt;randy-pbs on .10.187&lt;/b&gt; (reachable by every node); only the GPU/storage nodes use the .30.187 10G path." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="290" width="392" height="118" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sn3h" value="NOTE  ·  3-2-1 GAP (R-04)" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="420" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="sn3b" value="Randy is currently the single backup target. A Dell &lt;b&gt;R730xd&lt;/b&gt; is being added as a second PBS target to close the 3-2-1 independent-copy gap." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="444" width="392" height="96" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sn4h" value="NOTE  ·  DS4246 EXPANSION CHECK" style="text;html=1;fillColor=#F5C518;strokeColor=#B8860B;fontStyle=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#5C4300;" vertex="1" parent="1">
+          <mxGeometry x="852" y="552" width="392" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="sn4b" value="On any DS4246 drive add, bump &lt;b&gt;backup_verify_ds4246_expected&lt;/b&gt; in the backup-verify role (16 → 22 on the 07-17 expand) or the health check fails on a healthy shelf." style="text;html=1;fillColor=#FFFBEA;strokeColor=#B8860B;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=10;spacingLeft=10;spacingTop=8;spacingRight=8;" vertex="1" parent="1">
+          <mxGeometry x="852" y="576" width="392" height="96" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s_legend" value="Left chip = owning host / access type   ·   capacities are ZFS raw vs usable as noted   ·   Source: Home-Lab/CLAUDE.md (2026-07-23)" style="text;html=1;fillColor=none;strokeColor=none;fontSize=10;align=left;verticalAlign=middle;fontColor=#7A6A2A;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="852" y="684" width="392" height="80" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
 </mxfile>
