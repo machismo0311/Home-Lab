@@ -1,0 +1,25 @@
+id,source,system,path_or_command,collection_time,age,reliability,type,conflicts,limitations
+E-01,Live SSH,pve3,"pvecm status; corosync-cfgtool -s",2026-07-23T09:27Z,live,high,live,none,transient runtime state
+E-02,Live SSH,quarkylab,"nvidia-smi; zpool list; qm list; sinfo",2026-07-23T09:27Z,live,high,live,confirms GPU vs stale spec,point-in-time
+E-03,Live SSH,jarvis,"nvidia-smi; zpool list; systemctl is-active llm_router ollama",2026-07-23T09:27Z,live,high,live,confirms 2x RTX 6000,point-in-time
+E-04,Live SSH,randy,"zpool status bulk/datastore; proxmox-backup-manager datastore list",2026-07-23T09:27Z,live,high,live,confirms mpathv FAULTED,multipath -ll returned empty
+E-05,Live SSH,pve1,"pveversion; pct list; apt list --upgradable",2026-07-23T09:27Z,live,high,live,142 pending vs audit 133,standalone node
+E-06,Live SSH,pve3,"pvesh get /cluster/resources --type vm; cat /etc/pve/storage.cfg; ha-manager status",2026-07-23T09:28Z,live,high,live,none,cluster-wide snapshot
+E-07,Live SSH,pve3,"upsc tripplite; upsc midatlantic",2026-07-23T09:30Z,live,high,live,UPS-A 59% load confirms imbalance,instantaneous load only
+E-08,Live SSH,randy,"ls -dt /datastore/{ct,vm,host}/*/2026-07-23*",2026-07-23T09:30Z,live,high,live,14 snapshots dated today,filesystem listing
+E-09,Repo audit,Home-Lab,audit/findings/*.md (commit 65f3681),2026-07-22T14:00Z,1 day,high,generated,two spec corrections inverted,Phase-2 live verify partial
+E-10,Repo audit,Home-Lab,audit/live/*.txt,2026-07-22T14:00Z,1 day,high,live-captured,agents line bash error harmless,superseded by E-01..E-08 where re-run
+E-11,Repo audit,Home-Lab,audit/facts/ledger.yaml,2026-07-22T14:00Z,1 day,high,inferred,canonical-vs-stale table,pending_verify flags
+E-12,Repo,Home-Lab,CLAUDE.md,2026-07-21T23:18Z,2 days,high,manual,most-accurate doc; ahead of README/topology,operator-maintained
+E-13,Repo,Home-Lab,README.md / topology/ / vault/00-Homelab MOC.md,2026-07-22,1 day,medium,manual,lags CLAUDE.md (drift D-01..D-09),one-directional drift
+E-14,Code read,netframe-monitor,"*.py + constitution/ + eval/",2026-07-16..22,live,high,inferred,code ahead of jarvis-ai-ops .tex,static read not runtime trace
+E-15,Code read,netframe-monitoring-stack,grafana-provisioning/alerting/*.yaml,2026-07-22,1 day,high,inferred,none,rules not eval-traced live
+E-16,Code read,netframe-dashboard,serve.py + README.md,2026-07-22,1 day,high,inferred,access model least-priv,some sources fall back to mock
+E-17,Secrets sweep,home dir,"grep + git ls-files across all repos",2026-07-23T09:22Z,live,high,live,PAT at rest in ~/github_helper.py,binary PDFs not text-scanned
+E-18,Prior assessment,netframe-enterprise-assessment,report/*.tex + risk-register.tex,2026-07-13,10 days,medium,generated,4 CRIT/8 HIGH pre-remediation,some items since resolved
+E-19,Prior assessment,netframe-security-assessment,report/*.tex + remediation/MASTER-TODO.md,2026-07-13..22,live,high,generated,remediation status reconciled 07-22,some items open/blocked
+E-20,Prior assessment,netframe-reliability-assessment,report/*.tex,2026-07-14,9 days,medium,generated,CP-001/002 power items done,windowed items pending
+E-21,Repo docs,Home-Lab,"vault/Runbook/*.md (AARs, DR, CARP plan)",2026-07-01..22,live,high,manual,none,operator narrative
+E-22,Live SSH,ex3400,"ssh ex3400 (show version) -> DENIED",2026-07-23T09:28Z,live,high,access-limit,confirms R-09 SSH broken,switch not live-inspectable via SSH
+E-23,Not collected,opnsense,"no API creds used; VM 100 untouched by design",n/a,n/a,n/a,not-collected,25.1.12 per AAR-2026-07-20,version documented not re-verified live
+E-24,Repo,ansible playbooks,playbooks/roles/{hardening,backup_verify},2026-07-22,1 day,high,manual,hardening --check only not applied,not runtime-applied to nodes

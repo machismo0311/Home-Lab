@@ -1,0 +1,66 @@
+\section{Limitations and Confidence}\label{sec:limits}
+
+This was a read-only review conducted in a single working session. Its conclusions
+are only as strong as the read-only evidence that supports them, and several areas
+could not be examined to the depth a change-authorized or longer engagement would
+allow. The limitations below are stated plainly so that the reader can calibrate
+each conclusion.
+
+\subsection{Access and method limitations}
+
+\begin{itemize}
+  \item \textbf{Read-only ceiling.} No configuration-changing or service-affecting
+  command was run, so any finding that would require mutating state to confirm (for
+  example, an actual restore test, a failover, or a UPS self-test) is assessed from
+  configuration and documentation rather than demonstrated behavior.
+  \item \textbf{OPNsense not live-inspected (E-23).} By design, no OPNsense API
+  credential was used and VM 100 was not touched. Firewall rules, the running
+  version, DHCP reservations, and gateway status therefore rest on the repository
+  and the operator's AARs. The version 25.1.12 is documented but not re-verified
+  live; confidence in firewall specifics is \textbf{medium}.
+  \item \textbf{EX3400 not live-inspected (E-22 / R-09).} SSH key authentication to
+  the switch is broken (it fell through to password authentication and was denied),
+  so switch config, VLAN membership, spanning-tree state, optics status, and error
+  counters could not be pulled. Switch facts are \textbf{medium} confidence and rest
+  on documentation; the one live-adjacent signal is the SNMP data the dashboard
+  already collects.
+  \item \textbf{Alert delivery not verifiable (QL-R11).} Whether the critical
+  \code{ZfsPoolDegraded} rule actually reached Discord could not be confirmed, as
+  the Grafana alert history requires authentication. This is called out as an open
+  item (QL-REC02) rather than assumed either way.
+  \item \textbf{Faulted-drive identity.} Live \code{multipath -ll mpathv} returned
+  empty during this session (E-04); the drive's WWN (\code{5000c500631a54fb}) and
+  model (Seagate ST4000NM0023) are taken from the prior audit, which is corroborated
+  by the live FAULTED state and the NF-INC-2026-07-22 record. Confidence in the
+  fault is \textbf{high}; in the exact device identity, \textbf{medium-high}.
+  \item \textbf{Binary artifacts not text-scanned.} Roughly 50 committed PDFs
+  (concentrated in the assessment repositories) were not decoded for embedded
+  secrets. The identity/secrets and IPAM PDFs in the enterprise-assessment repo
+  warrant a human eyes-on for sensitivity (E-17).
+  \item \textbf{Point-in-time metrics.} Live CPU, memory, UPS load, and job-queue
+  readings are instantaneous. UPS runtime in particular is a load-dependent estimate
+  and will vary; the imbalance conclusion (QL-R17) is robust, but the exact minutes
+  are a snapshot.
+  \item \textbf{Prior-assessment age.} The enterprise (E-18) and reliability (E-20)
+  assessments are roughly 9 to 10 days old; some of their items have since been
+  remediated (for example the GPU-persistence power fix). Their findings are used as
+  corroboration and history, reconciled against current state where possible.
+\end{itemize}
+
+\subsection{Confidence by major conclusion}
+
+\begin{itemize}
+  \item \textbf{High:} cluster quorum and membership; GPU assignment; ZFS pool
+  health including the \code{bulk} fault; backup freshness; UPS online state and the
+  load imbalance; repository secrets-cleanliness of tracked content; the at-rest
+  workstation credential findings.
+  \item \textbf{Medium-high:} the faulted device's precise identity; storage
+  geometry details on the DS4246; the AI-ops safety controls (read from code, not
+  runtime-traced).
+  \item \textbf{Medium:} network control-plane specifics (OPNsense and EX3400);
+  alert-rule delivery; the true applied state of the Ansible hardening role, which
+  is \code{--check}-only and not enforced on nodes (E-24 / DR-12).
+\end{itemize}
+
+No unauthorized change was made at any point during this review, and no discovered
+credential was used or reproduced in full.

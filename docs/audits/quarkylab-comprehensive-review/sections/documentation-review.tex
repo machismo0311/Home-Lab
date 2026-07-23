@@ -1,0 +1,67 @@
+\section{Documentation and Operational Readiness}\label{sec:documentation}
+
+The operative question for this phase is whether a competent administrator who has never seen NetFRAME could operate and recover it from the written record alone. The short answer is: for day-to-day operation and most single-service recovery, yes; for a full cold rebuild, mostly, provided they know that \code{CLAUDE.md} and the recent vault AARs supersede the front-facing documents.
+
+\subsection{Strengths}
+
+The documentation culture here is well above the home-lab norm and is a genuine portfolio asset.
+
+\begin{itemize}
+  \item \code{CLAUDE.md} is the single most accurate document in the estate and is consistently ahead of every other source (E-12). It carries the authoritative node, IP, service, storage, and safety-note tables and reads as a living operations context file.
+  \item A disciplined change record: roughly sixty dated runbooks and AARs under \code{vault/Runbook/}, ten Architecture Decision Records with context, decision, consequences, and alternatives, and formal post-incident RCAs (pve3 e1000e NIC hang, DHCP/Kea outage, backup-verify scheduler, Randy PCIe slot).
+  \item Real disaster-recovery material: OPNsense serial-console DR with an age-encrypted config repository, a break-glass credential snapshot on both Ares and Randy that does not depend on the cluster, a node-unreachable triage guide, and a full laptop-recovery runbook (E-21).
+  \item The Obsidian vault at \code{Home-Lab/vault/} is declared the authoritative knowledge base and is structured into ADR, Compute, Infrastructure, Networking, and Runbook areas with a master map of content.
+  \item Documentation-as-code with CI enforcement: a GitHub Actions job regenerates the topology Mermaid from \code{topology/inventory.yml} and fails the build if the drawing drifts from source.
+\end{itemize}
+
+\subsection{Weaknesses}
+
+The dominant defect is \sevmed one-directional drift (QL-R19): recent changes land in \code{CLAUDE.md} and the AARs but do not propagate outward to \code{README.md}, \code{topology/}, \code{vault/00 - Homelab MOC.md}, and the \code{docs/} mirror.
+
+\begin{itemize}
+  \item Stale clusters D-01 through D-10: Grafana still drawn on pve3 (moved to pve4), Headscale still on pve3 (moved to pve5), Randy CPU still v4/28c (corrected to v3/24c/48t), the DS4246 \code{bulk} pool still 58.2\,T/2-vdev (expanded to 80\,T/3-vdev), OPNsense still 25.7 in about twelve places (live is 25.1.12; 25.7 is the future CARP target), homepage still shown on pve1 CT104 (now pve3 CT106), and the EX3400 \code{native-vlan-id} note still wrong.
+  \item Duplicate sources of truth: the same runbook lives in three homes (\code{runbooks/}, \code{docs/}, and \code{vault/Runbook/}) with real content drift in the Randy commissioning runbook and cosmetic drift elsewhere.
+  \item Historical documents presented in the present tense: \code{runbooks/EX3400-SSH-Auth-Failure-RCA.md} (references the switch at \code{.10.2}, now the UniFi Dream Router) and \code{homelab-setup.md} need clear "historical/superseded" banners (D-10).
+\end{itemize}
+
+\subsection{Documentation Gap Register}
+
+State key: \textbf{OK} well documented and current, \textbf{DRIFT} documented but stale in secondary sources, \textbf{THIN} exists but incomplete, \textbf{TRIBAL} lives mainly in the operator's head or chat history.
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.30\linewidth} p{0.12\linewidth} p{0.50\linewidth}@{}}
+\toprule
+\rh{Category} & \rh{State} & \rh{Recommended canonical source} \\
+\midrule
+\endhead
+Architecture / topology & DRIFT & \code{topology/} generated from \code{inventory.yml}; reconcile with CLAUDE.md \\
+Physical inventory / asset & THIN & Asset register (this review, Appendix B) + CLAUDE.md tables \\
+Rack layout & THIN & \code{vault/Rack Layout.md} (add rack SVG, open loop) \\
+IP address management (IPAM) & OK & CLAUDE.md network tables; consider a dedicated IPAM note \\
+VLAN / trunk design & DRIFT & \code{vault/Networking/} + EX3400 config once captured (QL-REC09) \\
+Firewall policy & OK & \code{vault/Runbook/Security-VLAN-Segmentation-*} \\
+DNS / DHCP & OK & CLAUDE.md safety notes + DNS-HA runbook \\
+Proxmox / virtualization & OK & CLAUDE.md + Cluster-Update-Procedure \\
+Storage & DRIFT & CLAUDE.md Storage section (docs mirror lags) \\
+Backup & OK & backup-verify role + this review Appendix E \\
+Kubernetes / RKE2 & OK & RKE2 phase runbooks \\
+AI services / Jarvis & OK & \code{netframe-monitor/constitution/} + jarvis-ai-ops .tex \\
+Monitoring / alerting & OK & \code{netframe-monitoring-stack} repo (config-as-code) \\
+UPS / power & THIN & \code{vault/Power Distribution.md} + this review Section~\ref{sec:power} \\
+Startup / shutdown sequence & THIN & Formalize from recovery-dependencies diagram + NUT plan \\
+Incident response & OK & AAR corpus \\
+Disaster recovery & OK & OPNsense DR, break-glass, laptop-recovery \\
+User access & OK & QuarkyLab account onboarding runbook \\
+Student onboarding / offboarding & THIN & \code{add-cluster-key.sh}; offboarding automation planned \\
+Scientific workload deploy & THIN & Researcher guide (.tex) + SLURM phase docs \\
+Change management & OK & Manual-deploy policy + CI/CD runbook \\
+Secret rotation & TRIBAL & Vaultwarden is the store; rotation procedure undocumented \\
+Certificate renewal & THIN & step-ca; only registry cert monitored (QL-REC07) \\
+Firmware / lifecycle & THIN & Per-node BIOS/iDRAC notes scattered; consolidate \\
+Hardware replacement & OK & Randy PCIe slot + storage expansion runbooks \\
+\bottomrule
+\end{longtable}}
+
+\subsection{Recommendation}
+
+Adopt a single-source generation model for the \code{docs/} tree so that the vault (or \code{CLAUDE.md}) is the sole authority and \code{docs/} and \code{runbooks/} are generated or reduced to pointers (QL-REC11). The immediate action is to land the D-01 through D-10 documentation reconciliation, which is already staged on the \code{audit/2026-07-22-reconciliation} branch, flowing corrections from \code{CLAUDE.md} outward and keeping the 25.7 reference only in the CARP HA plan. Secret-rotation and certificate-renewal procedures are the two categories most reliant on tribal knowledge and should be written down next.

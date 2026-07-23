@@ -1,0 +1,49 @@
+\section{Port and VLAN Register}\label{app:port-vlan}
+
+VLAN plan and EX3400 core-switch port assignment. The switch was not live-inspected
+this review (SSH key auth is broken, evidence E-22 / risk QL-R16); the port map below is
+reconstructed from repository topology docs and the 2026-06-25 VLAN-activation runbook,
+and should be re-verified once switch access is restored (QL-REC09).
+
+\subsection{VLANs}
+
+{\footnotesize\sansfont
+\begin{longtable}{p{1cm}p{2.4cm}p{3.2cm}p{8.2cm}}
+\toprule
+\rh{ID} & \rh{Name} & \rh{Subnet} & \rh{Purpose} \\
+\midrule
+\endhead
+1 & mgmt / default & 192.168.10.0/24 & Proxmox hosts, corosync, services, switch management (dense) \\
+20 & trusted / OOB & 192.168.20.0/24 & iDRAC x2 + IPMI (BMCs) + Ares jump leg; inbound clamped to Ares; egress-clamped \\
+30 & servers & 192.168.30.0/24 & NFS / PBS / GPU egress; dual-homed GPU and storage nodes; blocked to VLAN 1 except :9100 \\
+40 & IoT & 192.168.40.0/24 & smart-home, IMUs; isolated, DNS pinhole only \\
+50 & VoIP & 192.168.50.0/24 & CP-8841 phones, FreePBX (deferred) \\
+60 & guest & 192.168.60.0/24 & isolated guest WiFi \\
+70 & lab & 192.168.70.0/24 & CCNA / experimental; standalone sandbox node \\
+\bottomrule
+\end{longtable}}
+
+\subsection{EX3400-48P port map}
+
+{\footnotesize\sansfont
+\begin{longtable}{p{2.4cm}p{4.6cm}p{2.4cm}p{5cm}}
+\toprule
+\rh{Port} & \rh{Attachment} & \rh{Mode} & \rh{VLANs} \\
+\midrule
+\endhead
+ge-0/0/22 & Jarvis nic2 (onboard 1G) & Trunk & native 1 (+ tagged 30, now vestigial) \\
+ge-0/0/24 & QuarkyLab nic2 & Trunk & native 1 + tagged 30 \\
+ge-0/0/30, /32, /44 & iDRAC / IPMI OOB & Access & 20 only \\
+ge-0/0/38 & APC AP7901 PDU & Access & 1 \\
+ge-0/0/41 & Ares mgmt / jump & Dual & native 1 + tagged 20 \\
+ge-0/0/45 & EX2300 uplink & Trunk & all \\
+ge-0/0/46 & UniFi USW-24 Port 24 & Trunk & native 1 + tagged 20/30/40/50/60/70 \\
+xe-0/2/0 & Randy nic3 (10G ConnectX-3) & Trunk & 1 + 30 (storage / NFS) \\
+xe-0/2/2 & Jarvis enp132s0 (10G ConnectX) & Access & 30 (dedicated storage / egress) \\
+xe-0/2/3 & UniFi SFP2 DAC & DOWN & EEPROM 10G/1G speed mismatch (DR-14); fix = fiber SFP+ both ends \\
+\bottomrule
+\end{longtable}}
+
+Note: \code{native-vlan-id} is set at the physical-interface level on this ELS switch, and it
+IS supported (contrary to a stale note in several docs, D-08). RSTP root is the EX3400
+(bridge priority 4096).

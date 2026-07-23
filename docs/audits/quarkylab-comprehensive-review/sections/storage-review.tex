@@ -1,0 +1,84 @@
+\section{Storage and Data Integrity}\label{sec:storage}
+
+\subsection{Live pool health}
+
+Five ZFS pools were inspected live (E-02, E-03, E-04). Four are healthy; one carries a
+faulted device.
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}p{2.0cm}p{1.5cm}p{1.2cm}p{3.0cm}X@{}}
+\toprule
+\rh{Pool} & \rh{Host} & \rh{Size} & \rh{Geometry} & \rh{State} \\
+\midrule
+datastore & Randy & 36.7\,T & 4$\times$ RAIDZ2 (three 6-wide + one 4-wide Seagate) & ONLINE, 0 errors \\
+bulk & Randy & 80.0\,T & 3$\times$ RAIDZ2 (8+8+6-wide) & DEGRADED - \code{mpathv} FAULTED \\
+workspace & QuarkyLab & 10.9\,T & 6-wide RAIDZ1 + 1 hot spare (PERC H330 JBOD) & ONLINE, 0 errors \\
+tank & Jarvis & 9.09\,T & 5-wide RAIDZ1 (HBA330 IT) & ONLINE, 0 errors \\
+scratch & Jarvis & 186\,G & single SSD & ONLINE, 0 errors \\
+\end{tabularx}}
+
+The live \code{datastore} layout confirms the disputed documentation fact D-04: the fourth
+vdev (\code{raidz2-3}) is four Seagate drives by-WWN, in-pool, with no unallocated spares.
+The \code{bulk} geometry confirms D-05: three vdevs totalling 80\,T, superseding the stale
+"2$\times$8-wide / 58.2\,T" still in topology and \code{Proxmox Cluster.md}.
+
+\subsection{The faulted bulk drive}\label{sub:mpathv}
+
+\sevcrit\; \textbf{QL-R01 - top operational priority.}
+\code{zpool status bulk} (E-04) shows device \code{mpathv} in vdev \code{raidz2-2} as
+\code{FAULTED} with \code{3} read / \code{14} write errors and "too many errors". The device
+is a SEAGATE ST4000NM0023 (4\,TB SAS), WWN \code{5000c500631a54fb}; both SAS paths are dead,
+so this is a failed physical drive, not a multipath flap. It corresponds to the DS4246 slot-15
+drive that failed 2026-07-21 (incident NF-INC-2026-07-22).
+
+Key mitigating facts, all live-verified: the pool reports \code{errors: No known data errors};
+RAIDZ2 tolerates one drive loss per vdev, so \code{raidz2-2} still has one parity drive of
+protection remaining; the last scrub (Sun Jul 19) completed with zero errors; and two DS4246
+bays are free for an immediate \code{zpool replace}. The exposure is the window until
+replacement: a second failure in \code{raidz2-2} before the resilver completes would lose the
+\code{bulk} pool.
+
+\begin{callout}[title=Why this is severe despite being tolerated]
+The \code{bulk} pool holds media, archive, and - critically - researcher \code{fernanda}'s
+DUNE data, and \code{bulk} is neither a PBS source nor a PBS target (QL-R02). It has no
+second copy anywhere. A degraded single-parity vdev protecting data that has no backup is the
+pairing that elevates this from routine to urgent. Recommended action QL-REC01: replace
+\code{mpathv}, scrub, and confirm Scrutiny actually flagged the failing drive.
+\end{callout}
+
+\subsection{Controllers and multipath topology}
+
+Randy uses two distinct controllers by design: an AVAGO 3108 MegaRAID for the boot mirror
+(relocated 2026-07-01 after its original slot died - do not reuse the dead slot) and an
+LSI 9207-8e in IT mode for the DS4246 data path. The DS4246 is dual-SAS cabled with
+\code{multipath}, so every shelf drive presents as an \code{mpathX} device. The single
+enclosure is itself a single point of failure for \code{bulk} (H-09, QL-R05 context):
+loss of the shelf or its cabling takes the whole pool offline.
+
+\subsection{Redundancy posture and aged media}
+
+The two GPU-node pools are RAIDZ1 (QL-R21): \code{workspace} tolerates one loss but carries a
+hot spare; \code{tank} tolerates one loss with no spare; \code{scratch} is a single SSD with
+no redundancy (scratch by intent). Several disks are aged SAS. RAIDZ1 on old disks carries
+resilver-window risk - a second fault during rebuild loses the pool. This is an accepted risk
+today given clean scrubs and low utilisation, but future rebuilds should prefer RAIDZ2 and
+keep spares on hand.
+
+\subsection{Data integrity and capacity}
+
+Scrubs are scheduled and recent (datastore and bulk both scrubbed Jul 19, zero repaired).
+Scrutiny monitors roughly 79 drives across Randy, QuarkyLab, and Jarvis; the one open
+verification item is confirming it surfaced \code{mpathv} rather than staying silent
+(paired with QL-R11 on alert delivery). Utilisation is low across the board -
+\code{datastore} 176\,G of 36.7\,T, \code{bulk} 80.7\,G of 80\,T, \code{workspace} 144\,G of
+10.9\,T - so there is no near-term capacity pressure; the risk is redundancy and backup, not
+space.
+
+\subsection{Recoverability by dataset}
+
+Guest images and configs are recoverable from PBS within roughly 24\,h RPO (Section~\ref{sec:backup}).
+The exceptions are the two datasets with no independent copy: \code{bulk} (including research
+data) and pve1's CT103/CT104. Ares' own \code{restic} backup, notably, targets
+\code{sftp:randy:/mnt/bulk/backups/ares} - it lands on the degraded \code{bulk} pool, so the
+workstation backup shares the same at-risk failure domain and should be repointed once a
+second target exists.

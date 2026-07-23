@@ -1,0 +1,55 @@
+\section{Failure-Mode and Dependency Analysis}\label{sec:fma}
+
+This section walks the credible failure scenarios for the estate. It is analytical only:
+\textbf{no failure injection was performed}, consistent with the read-only mandate. The
+dependency structure it draws on is in \code{diagrams/service-dependencies.mmd} and the
+recovery order in \code{diagrams/recovery-dependencies.mmd}.
+
+The single most important structural observation is a small set of keystone dependencies:
+OPNsense (routing/DHCP/DNS egress), Randy (all backups, NFS, and k8s storage), the single
+Unbound resolver, and the co-located observability stack. Most high-impact scenarios below
+trace back to one of these four.
+
+\begin{tabularx}{\linewidth}{@{}p{2.5cm} p{2.6cm} p{2.6cm} X p{1.3cm}@{}}
+\toprule
+\rh{Scenario} & \rh{Detection} & \rh{User impact} & \rh{Response / mitigation gap} & \rh{Safe test?} \\
+\midrule
+\endhead
+Loss of 1 PVE node & InstanceDown, quorum votes & guests on that node down until manual action & Quorum holds (4/7+); no HA groups so restart guests elsewhere manually (QL-R18) & Yes (drain in window) \\
+Loss of 2 PVE nodes & quorum + InstanceDown & possible quorum loss depending on nodes & 5/7 still quorate; below 4 votes cluster read-only; recover a node & No \\
+Loss of quorum & ClusterNotQuorate & config read-only, no guest changes & Restore a node or set expected votes; documented & No \\
+Loss of OPNsense (QL-R04) & InstanceDown, WAN alerts, user reports & whole LAN: no routing/DHCP/egress & Serial console DR + age config restore; CARP HA planned (QL-REC10) & No \\
+Loss of DNS & Pihole probes & name resolution fails for single-resolver clients & Dual Pi-hole HA + both handed out; single Unbound is the residual risk (R-03) & Yes (fail one Pi-hole) \\
+Loss of DHCP & user reports, Kea health & new leases fail; static-in-container svcs unaffected & Kea on OPNsense; critical hosts static; restore OPNsense & Partial \\
+Loss of EX3400 & everything dark, no alert egress & full L2 outage & No switch redundancy; config not captured (QL-R16); manual rebuild & No \\
+Loss of a trunk & link/port down (if monitored) & VLAN reachability degraded & Redundant UniFi path partly lost (xe-0/2/3 down, DR-14) & Yes (in window) \\
+Loss of a corosync link & corosync ring status & ring degraded, quorum may wobble & knet single-link per node; ring on stable VLAN 1 & No \\
+Loss of Randy / storage (QL-R05) & InstanceDown, NFS/PBS errors & backups, NFS /data, k8s PVs all gone at once & Second target planned (R730xd); no live failover today & No \\
+Loss of DS4246 & zpool import fail, bulk offline & bulk data (research+media) unavailable & Single enclosure SPOF; bulk has no second copy (QL-R02) & No \\
+Loss of Jarvis & NetframeMonitorStale, llm down & LLM inference + AI-ops reporting down & Deterministic alerter still runs; non-critical to core infra & Yes (stop svc) \\
+Loss of QuarkyLab & InstanceDown, SLURM down & research + student GPU + Wazuh down & Wazuh migratable; workspace pool local; students queue & No \\
+Loss of Grafana (QL-R10) & dead-man heartbeat & no metrics/logs/alert evaluation & Stack co-located on CT103; heartbeat can catch total loss & Yes (in window) \\
+Loss of Headscale & tailnet coordination fails & admin mesh only; no user impact & Existing nodes keep working; rebuild from backup & Yes \\
+Loss of NPM & reverse-proxy 502s & public hostnames down; internal IPs still work & Restore CT101; static backends reachable directly & Yes \\
+Loss of internet & WAN alerts & no egress; alerting via Discord also blinded (QL-R09) & WAN2 5G failover; add 2nd OOB alert channel (QL-REC14) & Yes (unplug WAN1) \\
+Loss of 1 UPS (QL-R17) & UPS status via NUT & that plane loses ride-through & UPS-A at ~9.5 min is the tighter margin; rebalance (QL-REC08) & Yes (on battery test) \\
+Extended power outage & UPS runtime alerts & staged shutdown then full stop & NUT graceful shutdown to audit (R-07); startup order documented & No (real outage) \\
+Battery failure & UPS self-test/charge alerts & no ride-through on that UPS & Both 100\% now; batteries age unknown; schedule test & No (needs approval) \\
+Certificate expiry & RegistryCertExpiring (registry only) & TLS breaks for un-monitored certs & Broaden cert monitoring (QL-REC07); step-ca renewal & Yes \\
+GitHub unavailable & push/pull fails & no config-as-code sync; infra unaffected & Local clones remain; manual deploy already the norm & Yes \\
+Credential loss (QL-R08) & operator-detected & cannot unlock services & Break-glass age snapshot on Ares+Randy (offline) & Yes (test decrypt) \\
+Accidental config deletion & drift/audit, user reports & service or rule removed & Git history + PBS + OPNsense config backup; restore & Yes (in test) \\
+Failed k8s/PVE upgrade & node/pod failures & control plane or node degraded & Rolling upgrades keep quorum; kernel holds protect GPU nodes (QL-REC19) & Partial \\
+Compromised student account & Wazuh/SLURM anomalies & contained by apptainer + cgroups + no sudo & Batch-only, network=none, VRAM caps; guest SIEM blind spot (QL-R22) & Yes (test acct) \\
+AI hallucination / unsafe rec & policy screen, audit ledger & none: no autonomous action possible & Deterministic evidence engine + human-gated allowlist remediation & Yes (eval harness) \\
+Monitoring failure (QL-R11) & dead-man heartbeat & silent blind spot; a real risk here & ZfsPoolDegraded delivery unverified; verify path (QL-REC02) & Yes (synthetic) \\
+Backup corruption & PBS verify failures & restore may fail & Weekly verify + GC; add stale/verify alerts (QL-REC07) & Yes (verify job) \\
+\bottomrule
+\end{tabularx}
+
+\begin{callout}
+Several of these are safely testable in production with a maintenance window (fail one
+Pi-hole, unplug WAN1 to exercise 5G failover, drain a node, restore a guest to a scratch
+VMID, test-decrypt break-glass). The genuinely unsafe tests - dual-node loss, storage
+loss, real power outage, battery failure - should only be modeled, never injected.
+\end{callout}

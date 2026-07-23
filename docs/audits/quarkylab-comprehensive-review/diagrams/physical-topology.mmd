@@ -1,0 +1,41 @@
+%% Physical topology - NetFRAME / km-cluster (2026-07-23). Inferred links marked.
+graph TD
+  subgraph EDGE[Edge / WAN]
+    WAN1[Spectrum public /19]
+    WAN2[FirstNet 5G hotspot 192.168.1.0/24]
+  end
+  subgraph CORE[Core switching]
+    EX3400["Juniper EX3400-48P<br/>192.168.10.50 - RSTP root - dual PSU"]
+    UNIFI["UniFi USW-24-250W<br/>+ UDR controller .2"]
+    EX2300["Juniper EX2300-48P (lab)"]
+  end
+  subgraph CLUSTER[km-cluster - 7 nodes]
+    PVE2["pve2 EliteDesk .204<br/>OPNsense host"]
+    PVE3["pve3 EliteDesk .201<br/>core svcs + rke2-cp1"]
+    PVE4["pve4 EliteDesk .202<br/>Grafana + rke2-cp2"]
+    PVE5["pve5 EliteDesk .203<br/>Headscale/pihole2 + rke2-cp3"]
+    QL["QuarkyLab R730 .179<br/>RTX 8000 - ML/DUNE/students"]
+    JV["Jarvis R730 .31<br/>2x RTX 6000 - LLM"]
+    RANDY["Randy SuperMicro .187<br/>PBS + ZFS + storage worker"]
+  end
+  PVE1["pve1 Mac Mini .193<br/>STANDALONE - Pi-hole CT103"]
+  DS4246["NetApp DS4246 shelf<br/>22x 4TB - bulk pool (DEGRADED)"]
+
+  WAN1 --> EX3400
+  WAN2 -. failover .-> EX3400
+  EX3400 ---|ge-0/0/46 trunk| UNIFI
+  EX3400 ---|ge-0/0/45 trunk| EX2300
+  EX3400 ---|ge-0/0/24 trunk 1+30| QL
+  EX3400 ---|ge-0/0/22 + xe-0/2/2 10G| JV
+  EX3400 ---|xe-0/2/0 10G trunk 1+30| RANDY
+  EX3400 --- PVE2 & PVE3 & PVE4 & PVE5
+  EX3400 -. mgmt VLAN1 .- PVE1
+  RANDY ===|dual SAS + multipath| DS4246
+  EX3400 -.->|xe-0/2/3 DOWN - SFP EEPROM mismatch| UNIFI
+
+  subgraph POWER[Power]
+    UPSB["Middle Atlantic UPS-OL2200R (UPS-B)<br/>load 36% ~29min"]
+    UPSA["Tripp Lite SMART1500 (UPS-A)<br/>load 59% ~9.5min"]
+  end
+  UPSB -. feeds .-> QL & JV & RANDY & DS4246
+  UPSA -. feeds .-> EX3400 & UNIFI & PVE2 & PVE3 & PVE4 & PVE5

@@ -1,0 +1,84 @@
+\section{Proxmox and Virtualization Review}\label{sec:virt}
+
+\subsection{Cluster health}
+
+The cluster is healthy and fully quorate. Live \code{pvecm status} from pve3 (E-01) reports
+seven nodes, seven votes, \code{Quorate: Yes}, expected votes 7, quorum 4, config version 13,
+ring ID \code{1.9eda7}. \code{corosync-cfgtool -s} shows every peer \code{connected} on the
+single knet link over VLAN 1. Node IDs map to pve2 (\code{.204}), pve5 (\code{.203}),
+pve4 (\code{.202}), pve3 (\code{.201}), QuarkyLab (\code{.179}), Jarvis (\code{.31}),
+and Randy (\code{.187}). pve1 (\code{.193}) is correctly absent - it is a standalone host,
+not a cluster member.
+
+\subsection{Node consistency}
+
+All seven cluster members run PVE 9.2.3. The four EliteDesk nodes and Randy run kernel
+\code{7.0.12-1-pve}; the two GPU nodes run the pinned \code{6.14.11-9-pve}. The standalone
+pve1 lags at PVE 9.1.9 / kernel \code{7.0.0-3-pve}. The only version anomaly inside the
+cluster is Randy's package set reporting 9.2.3 while documentation still records 9.1.1
+(DR-10); functionally the node is healthy.
+
+\subsection{Guest inventory}
+
+Cluster-wide guest state from \code{pvesh get /cluster/resources} (E-06):
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{1.3cm}p{2.4cm}p{1.4cm}p{4.4cm}p{1.2cm}p{2.0cm}@{}}
+\toprule
+\rh{ID} & \rh{Name} & \rh{Node} & \rh{Purpose} & \rh{onboot} & \rh{Backup} \\
+\midrule
+\endfirsthead
+\toprule
+\rh{ID} & \rh{Name} & \rh{Node} & \rh{Purpose} & \rh{onboot} & \rh{Backup} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+CT101 & nginx-proxy & pve3 & Reverse proxy (NPM) & 1 & randy-pbs \\
+CT102 & vaultwarden & pve3 & Secrets manager & 1 & randy-pbs \\
+CT103 & grafana & pve4 & Metrics/logs/alerting stack & 1 & randy-pbs \\
+CT105 & headscale & pve5 & Tailnet coordinator & 1 & randy-pbs \\
+CT106 & homepage & pve3 & Dashboard & 1 & randy-pbs \\
+CT107 & openwebui & pve3 & Chat UI to llm\_router & 1 & randy-pbs \\
+CT108 & netframe-pihole2 & pve5 & Secondary DNS & 1 & randy-pbs \\
+VM100 & OPNsense & pve2 & Router / firewall / DHCP & 1 & randy-pbs \\
+VM104 & wazuh & QuarkyLab & SIEM & 1 & randy-pbs-10g \\
+VM110 & homeassistant & pve5 & Home automation (HAOS) & 1 & randy-pbs \\
+VM201 & rke2-cp1 & pve3 & Kubernetes control plane & 1 & randy-pbs \\
+VM202 & rke2-cp2 & pve4 & Kubernetes control plane & 1 & randy-pbs \\
+VM203 & rke2-cp3 & pve5 & Kubernetes control plane & 1 & randy-pbs \\
+\end{longtable}}
+
+Every production guest has \code{onboot=1} and a nightly backup job. The cluster-side
+counterpart to CT103 Grafana and CT105 Headscale confirms both moved to pve4 and pve5
+respectively (the 2026-07-16 de-concentration), contradicting README/topology which still
+draw them on pve3 (DR-03, DR-04).
+
+\subsection{High availability, replication, and storage definitions}
+
+\code{ha-manager status} reports \code{quorum OK} but \code{fencing standby (CRM watchdog
+standby)} with no HA groups defined (E-06). A node failure therefore does not auto-migrate
+guests; recovery is manual (QL-R18) - a defensible choice on consumer EliteDesk hardware,
+but it should be an explicit, documented decision. \code{pvesr status} shows no replication
+jobs.
+
+Two PBS storage targets are defined in \code{/etc/pve/storage.cfg}: \code{randy-pbs}
+(server \code{192.168.10.187}, \code{keep-all=1}) carries the LXCs and VM100/VM110/rke2;
+\code{randy-pbs-10g} (server \code{192.168.30.187} over the 10G VLAN 30 path,
+\code{keep-daily=7,keep-weekly=4}, restricted to nodes QuarkyLab/Jarvis/Randy) carries the
+Wazuh VM. Both point at the same datastore and fingerprint. Enterprise repositories are
+disabled and the no-subscription repo is enabled on cluster nodes.
+
+\subsection{Orphans, stale objects, and discipline}
+
+The only orphan of note is CT104 on pve1 (old homepage), which documentation records as
+retired 2026-06-24 but which is still running (DR-11, R-12). No orphaned disks, stale
+snapshots, or abandoned templates were surfaced by the live captures.
+
+\begin{callout}[title=Strength: kernel-pin discipline]
+The GPU nodes hold their kernel via \code{GRUB\_DEFAULT} and (on QuarkyLab) the full
+\code{nvidia-*} package set, deliberately protecting a validated driver stack from an
+incidental \code{apt} upgrade. This is mature change control. The one gap is that Jarvis
+holds only the kernel, not the \code{nvidia-*} packages - it should mirror QuarkyLab's
+fuller hold set (QL-R12, QL-REC12).
+\end{callout}

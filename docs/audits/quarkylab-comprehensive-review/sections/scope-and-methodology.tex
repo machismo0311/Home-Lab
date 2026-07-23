@@ -1,0 +1,86 @@
+\section{Scope and Methodology}\label{sec:scope}
+
+\subsection{Scope}
+
+This review evaluated the QuarkyLab / NetFRAME home lab across 21 assessment
+dimensions: reliability, availability, recoverability, security, network
+correctness, configuration consistency, monitoring quality, alert quality, storage
+integrity, backup quality, power resilience, energy efficiency, capacity planning,
+operational maturity, documentation quality, automation safety, AI-system
+reliability, scientific-workload support, student-environment isolation, recruiter
+and hiring-manager presentation, and Fortune-100 enterprise alignment.
+
+In scope were only systems, repositories, and services that belong to the home lab:
+the 7-node km-cluster plus the standalone pve1 host, Randy and the DS4246 shelf, the
+Juniper and UniFi switching, OPNsense, Headscale, the RKE2 cluster, the Docker/LXC
+service estate, the Ollama/Open WebUI/llm\_router AI stack, the Grafana and Wazuh
+observability planes, the UPS/PDU/power layer, and the operator's GitHub
+repositories. No unrelated external system was probed. External services already
+used by the environment (package repositories, GitHub, container registries,
+certificate authorities, DNS resolvers) were treated as passive dependencies, not
+targets.
+
+\subsection{Operating posture: read-only by classification}
+
+Every command was classified before execution as read-only/low-risk,
+read-only/resource-intensive, configuration-changing, service-affecting,
+destructive, or external-target interaction. Only read-only/low-risk commands were
+run without approval. No configuration-changing, service-affecting, destructive, or
+external-interaction command was executed. Concretely, this review performed no
+restarts, reboots, reloads, migrations, deletions, rotations, or deployments; used
+no discovered credential; injected no failures; and did not enforce the VLAN 1
+egress lockdown, in line with the standing decision that its prerequisites are not
+yet met. Where confidence that an action was non-disruptive fell below the required
+threshold, the action was not taken and the limitation was recorded (see
+Section~\ref{sec:limits}).
+
+\subsection{Evidence approach}
+
+The review compared five state layers where possible: declared (the review
+specification and prior intent), configured (files and definitions), deployed
+(running processes and guests), observed (live telemetry), and documented (the
+repository). Documentation was not treated as true merely because it exists, and
+live output was not treated as authoritative where it represents only transient
+runtime state.
+
+A key input was the operator's own prior audit (commit \code{65f3681}, 2026-07-22),
+which had already captured per-node live evidence and built a canonical fact ledger.
+That corpus is one day old and was used as generated evidence to be re-verified, not
+trusted blindly. This review independently re-ran the highest-stakes checks against
+current live hardware.
+
+\subsection{Independent validation (multi-method)}
+
+For every high-severity conclusion, at least two independent read-only methods were
+used. Examples actually applied in this review:
+
+\begin{itemize}
+  \item \textbf{GPU assignment:} live \code{nvidia-smi} on both R730s (E-02, E-03)
+  versus the review specification and the fact ledger. The live reading settled the
+  contradiction in favor of the repository (DR-01).
+  \item \textbf{Storage health:} live \code{zpool status} on Randy (E-04) versus the
+  ledger's canonical geometry and the prior audit's finding on \code{mpathv}.
+  \item \textbf{Cluster and guests:} live \code{pvecm status} plus
+  \code{pvesh get /cluster/resources} (E-01, E-06) versus the documented node and
+  service placement, which surfaced the Grafana/Headscale relocation drift.
+  \item \textbf{Power:} live \code{upsc} readings (E-07) versus the reliability
+  assessment's UPS-imbalance finding, which confirmed UPS-A is the loaded unit.
+  \item \textbf{Backups:} live PBS snapshot listing dated 2026-07-23 (E-08) versus
+  the documented backup schedule.
+\end{itemize}
+
+\subsection{What was not done}
+
+No failure injection, no restore into production, no restarts, no configuration
+changes, no credential use, and no live query of OPNsense (E-23) or the EX3400
+(E-22). These boundaries are honored throughout; findings that depend on them are
+marked medium-confidence and carry a precise follow-up request.
+
+\subsection{Deliverable structure}
+
+The deliverables are this LaTeX report (sections plus appendices), a set of
+machine-readable registers under \code{data/} (evidence, assets, services, drift,
+risk, recommendations, backup matrix, alert matrix), and text-based topology
+diagrams under \code{diagrams/} (physical, logical, service-dependency,
+recovery-dependency, power). The \code{evidence/} directory describes evidence
+locations and collection methods rather than copying sensitive output.

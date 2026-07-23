@@ -1,0 +1,17 @@
+asset,what,target,mechanism,schedule,retention,encryption,offsite,last_success,last_verified_restore,rto_estimate,rpo_estimate,failure_domain,gap
+OPNsense VM100,config.xml + full VM,randy-pbs (.10.187) + machismo0311/opnsense-config-backup,vzdump + nightly age-encrypted config,03:00 daily + 03:17 config,7d/4w,age (config repo) / PBS unencrypted,GitHub (config only),2026-07-23,DR-tested decrypt,~15-30 min (config restore),24h (VM) / 24h (config),Randy,VM image only on Randy
+CT101 NPM,container,randy-pbs,vzdump,02:00 daily,7d/4w,no,no,2026-07-23,no,~15 min,24h,Randy,single copy
+CT102 Vaultwarden,container+data,randy-pbs,vzdump,02:00 daily,7d/4w,no,no,2026-07-23,no,~15 min,24h,Randy,secrets single-copy; break-glass offline mitigates
+CT103 Grafana,container,randy-pbs,vzdump,02:00 daily,7d/4w,no,no,2026-07-23,no,~20 min,24h,Randy,single copy
+CT105 Headscale,container,randy-pbs,vzdump,02:00 daily,7d/4w,no,no,2026-07-23,no,~10 min,24h,Randy,single copy
+CT106 Homepage,container,randy-pbs,vzdump,02:00 daily,7d/4w,no,no,2026-07-23,no,~10 min,24h,Randy,single copy
+CT107 OpenWebUI,container,randy-pbs,vzdump,02:00 daily,7d/4w,no,no,2026-07-23,no,~10 min,24h,Randy,single copy
+CT108 pihole2,container,randy-pbs,vzdump,02:00 daily,7d/4w,no,no,2026-07-23,no,~10 min,24h,Randy,mirrors CT103 config
+VM104 Wazuh,VM,randy-pbs-10g (.30.187),vzdump 10G,03:00 daily,7d/4w,no,no,2026-07-23,no,~30 min,24h,Randy,single copy
+VM110 HomeAssistant,VM,randy-pbs,vzdump,03:30 daily,7d/4w,no,no,2026-07-23,no,~20 min,24h,Randy,single copy
+VM201/202/203 RKE2,VMs,randy-pbs,vzdump,04:00 daily,7d/4w,no,no,2026-07-23,no,~30 min/node,24h,Randy,etcd not separately backed up
+QuarkyLab workspace,host pool datasets,PBS host backup,pbs-workspace-backup.timer,05:30 (01:30 doc) daily,per-job,no,no,2026-07-23T05:33Z,no,varies,24h,Randy,fernanda refreservation floor
+CT103/CT104 pve1,primary Pi-hole + old homepage,NONE,none,none,none,n/a,n/a,NEVER,n/a,rebuild from CT108,total (config recoverable via CT108),pve1,NO BACKUP (R-03)
+bulk pool,media + fernanda research + archive,NONE (not a PBS source/target),ZFS raidz2 only,n/a,n/a,no,no,NEVER,n/a,depends on rebuild,total on pool loss,DS4246 (degraded),NO SECOND COPY (R-04/F-B2)
+Ares ~/.claude,memory+transcripts,randy:/datastore/ares-claude,rsync hourly Persistent,hourly,accumulate,no (secrets excluded),no,2026-07-23,n/a,minutes,1h,Randy,laptop-local otherwise
+Ares /home,workstation,restic sftp:randy:/mnt/bulk/backups/ares,restic,daily 04:03,restic,yes (restic),no,2026-07-23,restore drill done,hours,24h,Randy (bulk - degraded!),on degraded bulk pool

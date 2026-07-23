@@ -1,0 +1,102 @@
+\section{Backup and Disaster Recovery}\label{sec:backup}
+
+Backup execution is healthy and current; backup \emph{architecture} is the weak point.
+Live evidence (E-08) shows 14 snapshots dated 2026-07-23 from the previous night's runs,
+with the PBS datastore at 97\,GB used of 23\,TB. Every cluster guest is protected daily.
+The problem is that all of those copies live on one node.
+
+\subsection{Backup Posture}
+
+\begin{tabularx}{\linewidth}{@{}p{3.0cm} p{2.6cm} p{2.4cm} X@{}}
+\toprule
+\rh{Asset} & \rh{Target} & \rh{Schedule / retention} & \rh{Notes} \\
+\midrule
+\endhead
+LXC 101/102/106/107 & randy-pbs \code{.10.187} & 02:00 daily, 7d/4w & NPM, Vaultwarden, Homepage, Open WebUI \\
+LXC 103 Grafana & randy-pbs & 02:00 daily & observability stack \\
+LXC 105 Headscale, 108 pihole2 & randy-pbs & 02:00 daily & pihole2 mirrors CT103 config \\
+VM 100 OPNsense & randy-pbs + config repo & 03:00 daily + 03:17 & config also age-encrypted to GitHub \\
+VM 104 Wazuh & randy-pbs-10g \code{.30.187} & 03:00 daily & 10G path \\
+VM 110 HomeAssistant & randy-pbs & 03:30 daily & HAOS \\
+VM 201/202/203 RKE2 & randy-pbs & 04:00 daily & etcd not separately backed up \\
+QuarkyLab workspace & PBS host backup & 05:30 daily & fernanda refreservation floor \\
+pve1 CT103/CT104 & \sevhigh NONE & never & primary Pi-hole + old homepage unbacked (QL-R06) \\
+\code{bulk} pool data & \sevhigh NONE & never & media + fernanda research, no second copy (QL-R02) \\
+Ares \code{/home} & restic to \code{randy:/mnt/bulk/...} & daily 04:03 & encrypted, but lands on the DEGRADED bulk pool \\
+Ares \code{\textasciitilde/.claude} & \code{randy:/\allowbreak datastore/\allowbreak ares-claude} & hourly & memory/transcripts, secrets excluded \\
+\bottomrule
+\end{tabularx}
+
+\subsection{3-2-1 Analysis}
+
+The estate is effectively 1-1-1: one PBS instance, on one ZFS pool, in one rack, on one
+UPS bus (QL-R03, \sevhigh). Three specific exposures compound it:
+
+\begin{itemize}
+\item \textbf{pve1 guests are unprotected} (QL-R06 / R-03): the primary Pi-hole CT103 and
+the retired CT104 have no vzdump job. This is partly mitigated because the secondary
+Pi-hole CT108 is backed up and nebula-syncs the primary's config, so DNS state is
+rebuildable.
+\item \textbf{The \code{bulk} pool has no second copy} (QL-R02): it is neither a PBS
+source nor a target, so the DUNE research data and media it holds exist only on the
+currently degraded DS4246 shelf.
+\item \textbf{The Ares restic repository lands on \code{bulk}} (\code{randy:/mnt/bulk/
+backups/ares}), the same degraded pool, so the workstation backup shares the shelf's
+fault domain.
+\end{itemize}
+
+Encryption is partial: the OPNsense config backup is age-encrypted and the Ares restic
+repository is encrypted, but the PBS datastore itself is not encrypted at rest.
+
+\begin{callout}[title=Do not assume a green job is a recoverable backup]
+PBS reports success and runs a weekly verify plus garbage collection, which is good, but
+no full restore has been rehearsed for most guests. A backup that has never been restored
+is an untested backup.
+\end{callout}
+
+\subsection{Recovery Priority and Objectives}
+
+Recovery priority, highest first: (1) power and core network, (2) OPNsense routing and
+DHCP, (3) DNS, (4) Randy storage and PBS, (5) Vaultwarden and certificates, (6) the app
+and AI tiers, (7) research and student services. Estimated objectives from the backup
+matrix: RPO is 24\,h for guest images (daily vzdump) and 1\,h for Ares memory; RTO ranges
+from roughly 10-30 minutes per guest restore to several hours for a full cluster rebuild.
+The OPNsense config RPO is effectively 24\,h with a 15-30 minute restore.
+
+\subsection{Non-Destructive Restore Validation Plan}
+
+No restore was performed during this review. The recommended validation, all
+non-destructive and to be scheduled with operator approval, is: (a) run a PBS
+\code{verify} job and confirm zero failures; (b) restore one representative guest to a
+scratch VMID on a node with free space, boot it isolated, confirm it starts, then destroy
+the scratch guest; (c) test-decrypt the OPNsense age config and the break-glass snapshot.
+Never restore into a production VMID.
+
+\subsection{Per-Domain Recovery Procedures}
+
+The estate has an unusually strong recovery-documentation culture; the procedures below
+already exist and were reviewed:
+
+\begin{itemize}
+\item \textbf{OPNsense:} serial console via \code{qm terminal 100} from pve2 plus a
+DR-tested age-encrypted \code{config.xml} restore; SSH is disabled by design so console
+is the only shell.
+\item \textbf{DNS:} \code{pct start 103} on pve1, or fail to the secondary \code{.178};
+\code{pihole restartdns} if the container is up but DNS is stuck.
+\item \textbf{Cluster/secrets loss:} the break-glass age snapshot held on both Ares and
+Randy breaks the Vaultwarden-in-cluster circular dependency (QL-R08), letting an operator
+read credentials with Vaultwarden, NPM, and the cluster all down.
+\item \textbf{Network device:} the EX3400 config is not automatically captured, so switch
+rebuild is slow and manual (gap, QL-REC09).
+\item \textbf{RKE2:} rebuild rests on etcd quorum; etcd is not separately snapshotted
+beyond VM-level backup.
+\item \textbf{Git and docs:} GitHub plus local clones; the repos are the source of truth
+for config-as-code.
+\end{itemize}
+
+\subsection{Recommendations}
+
+Add a second, independent backup target (QL-REC03): the planned R730xd running its own
+PBS with PBS-to-PBS remote sync, plus an offsite copy to Backblaze B2 for the datastore
+and \code{bulk/fernanda}. Add the pve1 vzdump job (QL-REC04). See
+\code{diagrams/recovery-dependencies.mmd}.

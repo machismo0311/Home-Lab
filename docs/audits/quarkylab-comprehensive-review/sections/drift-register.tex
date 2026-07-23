@@ -1,0 +1,36 @@
+\section{Drift and Contradiction Register}\label{sec:drift}
+
+This phase compares five views of the estate: the state \emph{declared} by the review specification, the state \emph{configured} on devices, the state \emph{observed} live on 2026-07-23, the state \emph{documented} in the repository, and the \emph{most likely correct} value adjudicated from the strongest evidence. No drift was resolved during this read-only review; each row records the recommended resolution and whether operator approval is required. The full field set is in \code{data/drift-register.csv}.
+
+\begin{callout}
+Two of the review specification's own "known corrections" are inverted versus live reality and must \textbf{not} be applied: DR-01 (GPU assignment) and DR-02 (OPNsense version direction). Live evidence and the repository agree against the specification on both.
+\end{callout}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.06\linewidth} p{0.20\linewidth} p{0.24\linewidth} p{0.24\linewidth} p{0.10\linewidth} p{0.06\linewidth}@{}}
+\toprule
+\rh{ID} & \rh{Item} & \rh{Observed / configured} & \rh{Documented} & \rh{Correct} & \rh{Appr.} \\
+\midrule
+\endhead
+DR-01 & GPU assignment & QuarkyLab RTX 8000; Jarvis 2x RTX 6000 (E-02/E-03) & CLAUDE.md correct; 1 stale vault log & Live/repo & No \\
+DR-02 & OPNsense version & Not re-verified live (E-23) & 25.1.12 vs 12 refs at 25.7 & 25.1.12 & No \\
+DR-03 & Grafana node & CT103 on pve4 (E-06) & README/topology say pve3 & pve4 & No \\
+DR-04 & Headscale node & CT105 on pve5 (E-06) & README/ADR say pve3 & pve5 & No \\
+DR-05 & Randy CPU & E5-2690 v3 24c/48t & docs say v4 28c/56t & v3 & No \\
+DR-06 & Randy Seagate drives & 4 in raidz2-3 (E-06) & docs say 2 spare & 4 in-pool & No \\
+DR-07 & bulk geometry & 3x RAIDZ2 80\,T (E-04) & 2x8-wide 58.2\,T & 3-vdev 80\,T & No \\
+DR-08 & EX3400 native-vlan-id & Not live (SSH broken E-22) & docs say unsupported & Supported (ELS) & No \\
+DR-09 & Homepage location & CT106 on pve3 (E-06) & pve1 CT104 & pve3 CT106 & No \\
+DR-10 & Randy PVE version & \textbf{9.2.3} live (E-04) & docs say 9.1.1 & 9.2.3 & No \\
+DR-11 & pve1 CT104 homepage & \textbf{running} (E-05) & docs say retired 06-24 & stop/disable & Yes \\
+DR-12 & Ansible hardening & \code{--check} only (E-24) & role exists & not enforced & Yes \\
+DR-13 & DS4246 cabling & Not live-inspected & repo vs spec differ & verify at HW & No \\
+DR-14 & xe-0/2/3 SFP link & \textbf{DOWN} (arch digest) & intended 10G & fiber SFP+ fix & Yes \\
+\bottomrule
+\end{longtable}}
+
+\subsection{Interpretation}
+
+DR-03 through DR-09 are the classic one-directional documentation drift: an unambiguous, doc-recorded canonical value exists and the fix is doc-only, already staged on the reconciliation branch. DR-01 and DR-02 are the reverse trap, where the incoming specification is stale and applying its "correction" would introduce error; live \code{nvidia-smi} (E-02/E-03) and the operator's own AAR settle both.
+
+Four items are newly surfaced by this review's live pass rather than the prior repo audit. DR-10 (Randy running PVE 9.2.3 while every document still says 9.1.1) is a benign but real configuration-versus-documentation gap and should be reconciled after confirming the upgrade was intended. DR-11 (the retired homepage container CT104 still running on pve1) and DR-12 (the hardening role never actually applied to nodes, only \code{--check} verified) are drift between assumed and actual runtime state and both require approval to resolve because they are service- or configuration-affecting. DR-14 (the UniFi SFP uplink down on an EEPROM speed mismatch) is a lost redundant path needing a hardware change.

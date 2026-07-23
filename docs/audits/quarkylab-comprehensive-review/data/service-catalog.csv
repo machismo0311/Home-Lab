@@ -1,0 +1,27 @@
+id,service,purpose,host,guest,ip,port,auth,tls,external_exposure,backup,monitoring,restart_policy,current_state,recovery_doc
+S-01,OPNsense,Router/firewall/DHCP(Kea)/inter-VLAN gw,pve2,VM100,192.168.10.1,443/53,local+API,yes,no (LAN edge; dual-WAN),randy-pbs nightly 03:00,InstanceDown+PrimaryWANDown,onboot=1,running,vault/Runbook/DNS-HA-OPNsense-Resilience + CARP plan
+S-02,Pi-hole primary,DNS + adblock,pve1,CT103,192.168.10.177,53/80,app-pw,no,no,NONE (pve1 unbacked),blackbox DNS probe,onboot=1,running,pve1-pihole-topology; recover pct start 103
+S-03,Pi-hole secondary,DNS HA mirror,pve5,CT108,192.168.10.178,53/80,app-pw,no,no,randy-pbs nightly,blackbox DNS probe,onboot=1,running,nebula-sync /15min from .177
+S-04,Unbound,Recursive resolver,pve2,VM100,192.168.10.1,53,-,no,no,with OPNsense,none (no stats - D-03),onboot=1,running,single recursion point
+S-05,Headscale,Self-hosted tailnet coordinator,pve5,CT105,192.168.10.186,8080,keys,internal,no,randy-pbs nightly,none direct,onboot=1,running,admin mesh only (9 nodes)
+S-06,Nginx Proxy Manager,Reverse proxy,pve3,CT101,192.168.10.181,80/443/81,admin+basic,LE CF DNS-01,yes (proxy front),randy-pbs nightly,none direct,onboot=1,running,admin :81 firewalled to Ares (F-05)
+S-07,Vaultwarden,Secrets manager,pve3,CT102,192.168.30.182,80,login,via NPM,yes (vault.kylemason.org),randy-pbs nightly,none direct,onboot=1,running,break-glass age snapshot (Ares+Randy)
+S-08,Homepage,Dashboard,pve3,CT106,192.168.10.148,3000,basic,LE,yes (homepage.kylemason.org),randy-pbs nightly,none direct,onboot=1,running,also hosts PeaNUT UPS bridge :8081
+S-09,Homepage (dead),Retired skeleton,pve1,CT104,-,-,-,-,no,NONE,none,onboot,running (R-12 should be off),docs say shut down 2026-06-24
+S-10,Open WebUI,Chat UI to llm_router,pve3,CT107,192.168.30.185,8080,admin acct,via NPM,yes (chat.netframe.local),randy-pbs nightly,none direct,onboot=1,running,-> llm_router :8000
+S-11,Grafana stack,Metrics/logs/alerting,pve4,CT103,192.168.10.183,3000,admin,internal,yes (grafana.kylemason.org),randy-pbs nightly,self (dead-man),onboot=1,running,Prom+Loki+InfluxDB+Scrutiny co-located = SPOF
+S-12,Prometheus,Metrics TSDB,pve4,CT103,192.168.10.183,9090,localhost,no,no,with Grafana,self,onboot=1,running,15/15 targets up
+S-13,Loki,Log aggregation,pve4,CT103,192.168.10.183,3100,auth_enabled=false,no,no,with Grafana,self,onboot=1,running,unauthenticated on VLAN1
+S-14,Scrutiny,Drive SMART health,pve4,CT103,192.168.10.183,8080,none,no,no,with Grafana,self,onboot=1,running,~79 drives (Randy43/QuarkyLab7/Jarvis1)
+S-15,Wazuh,SIEM,QuarkyLab,VM104,192.168.10.184,443/9200/55000,login,self-signed,yes (wazuh.kylemason.org),randy-pbs-10g nightly,qemu-agent graceful,onboot=1,running,agents on 8 hypervisors only (guest blind spot)
+S-16,step-ca,Internal CA (*.netframe.local),pve2,-,192.168.10.204,443,CA pw,yes,no,with pve2,-,RegistryCertExpiring,active,running,CA pw in Vaultwarden
+S-17,PBS,Proxmox Backup Server,Randy,-,192.168.10.187,8007,token,yes,no,-,GC+verify weekly,none (no stale-alert til R-05),active,running,single target - 3-2-1 gap
+S-18,Jellyfin,Media server,Randy,-,192.168.10.187,8096,login,no,no,-,-,none,active,running,GPU transcode pending RX580 power cable
+S-19,Ollama,Local LLM runtime,Jarvis,-,192.168.10.31,11434,none,no,LAN (unauth AI-01),-,GPU exporter,onboot,active,qwen2.5:72b on 2x RTX 6000; tank/models
+S-20,llm_router,OpenAI-compatible router,Jarvis,-,192.168.10.31,8000,none (lock.sh),via NPM,yes (llm.netframe.local),scripts in git,NetframeMonitorStale,systemd,active,Ollama local + Claude fallback; :8000 iptables-locked
+S-21,netframe-monitor,AI-ops collector/reporter,Jarvis,-,192.168.10.31,8808/8809,iptables-lock,via NPM,internal,scripts in git,dead-man heartbeat,systemd 15min,active,deterministic evidence engine; human-gated remediation
+S-22,Home Assistant,Home automation,pve5,VM110,192.168.10.60,8123,login,via NPM,internal,randy-pbs 03:30,none direct,onboot=1,running,HAOS 18.1; onboarding pending
+S-23,RKE2,Kubernetes HA control plane,pve3/4/5,VM201/202/203,192.168.10.51-53 (VIP .54),6443/9345,kubeconfig+SA,step-ca,no,randy-pbs 04:00 (VM-level),none native,onboot=1,running,Cilium+MetalLB .71-75; CPU-only; Randy bare-metal storage worker
+S-24,Private registry,Container registry,RKE2,-,registry.netframe.local,443,none (K8S-01),step-ca,no,in-cluster,cert-expiry alert,-,running,anonymous/single replica
+S-25,Cloudflare Tunnel,Student/researcher ingress,QuarkyLab,-,quarkylab.kylemason.org,-,SSH key,CF,yes (no inbound ports),-,researcher-alert timer,cloudflared,active,students reach GPU here (not Headscale)
+S-26,SLURM,GPU job scheduler,QuarkyLab,-,192.168.10.179,-,PAM+sacctmgr,-,no,-,quarkylab-metrics timer,systemd,active,gres/shard(8)+per-job MPS VRAM cap+apptainer isolation

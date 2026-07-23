@@ -1,0 +1,82 @@
+\section{Infrastructure Inventory}\label{sec:inventory}
+
+Every entry below is confirmed from live read-only SSH evidence collected 2026-07-23
+(E-01 through E-08) unless explicitly flagged as documented-only. Where the live reading
+disagrees with a repository document, the live value is treated as canonical and the
+discrepancy is carried into the drift register (Section~\ref{sec:drift}).
+
+\subsection{Compute and storage hosts}
+
+The estate is a seven-node Proxmox VE cluster (\code{km-cluster}) plus one standalone
+Proxmox host (\code{pve1}). The two Dell R730 servers and the SuperMicro storage node
+carry the production research, inference, and storage workloads; the four HP EliteDesk
+nodes carry the network edge and core services.
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{1.6cm}p{2.4cm}p{3.3cm}p{2.2cm}p{1.5cm}p{3.2cm}@{}}
+\toprule
+\rh{Host} & \rh{Role} & \rh{CPU / RAM} & \rh{GPU} & \rh{PVE} & \rh{Kernel / status} \\
+\midrule
+\endfirsthead
+\toprule
+\rh{Host} & \rh{Role} & \rh{CPU / RAM} & \rh{GPU} & \rh{PVE} & \rh{Kernel / status} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+pve1 & Standalone Pi-hole / homepage host (NOT a cluster member) & Mac Mini, 16\,GB & none & 9.1.9 & 7.0.0-3-pve; 142 pending updates; \code{openipmi} failed (no BMC) \\
+pve2 & OPNsense host + cluster node & i7-8700, 32\,GB & none & 9.2.3 & 7.0.12-1-pve; reboot-required; excluded from hardening role \\
+pve3 & Core services + rke2-cp1 & i7-8700, 48\,GB & none & 9.2.3 & 7.0.12-1-pve; e1000e TSO/GSO-off mitigation persisted \\
+pve4 & Grafana stack + rke2-cp2 & i5-7500T, 32\,GB & none & 9.2.3 & 7.0.12-1-pve; sustained load $\sim$5 \\
+pve5 & Headscale, Pi-hole2, rke2-cp3, HAOS & i5-7500T, 32\,GB & none & 9.2.3 & 7.0.12-1-pve \\
+QuarkyLab & ML / DUNE research / student GPU & 2$\times$ E5-2699 v4 (44c/88t), 512\,GB & 1$\times$ RTX 8000 48\,GB & 9.2.3 & 6.14.11-9-pve (pinned); kernel + full \code{nvidia-*} held \\
+Jarvis & LLM inference & 2$\times$ E5-2687W v4, 384\,GB & 2$\times$ RTX 6000 24\,GB & 9.2.3 & 6.14.11-9-pve (pinned); kernel held only (QL-R12) \\
+Randy & Storage / PBS / Jellyfin / rke2 storage worker & 2$\times$ E5-2690 v3 (24c/48t), 128\,GB ECC & RX 580 (transcode) & 9.2.3 & 7.0.12-1-pve; docs say 9.1.1 (DR-10) \\
+\end{longtable}}
+
+\begin{callout}[title=Live confirmations of contested facts]
+\begin{itemize}
+\item \textbf{GPU assignment (DR-01):} \code{nvidia-smi} confirms QuarkyLab carries the single
+RTX 8000 (46080\,MiB) and Jarvis carries two RTX 6000 (24576\,MiB each), driver 550.163.01.
+The review specification's "correction" inverting these is wrong and must not be applied.
+\item \textbf{Kernel pins intact:} both GPU nodes run the pinned \code{6.14.11-9-pve}; the pin
+protects the NVIDIA 550 stack. Never upgrade the kernel or change \code{GRUB\_DEFAULT} on either
+node (QL-REC20).
+\item \textbf{Randy PVE version (DR-10):} live \code{pveversion} reports \code{pve-manager/9.2.3},
+whereas CLAUDE.md, README, and the fact ledger still state 9.1.1. New drift found by this review.
+\item \textbf{Patch lag:} pending-update counts range 63 (Randy) to 142 (pve1); all cluster nodes
+report reboot-required (QL-R13).
+\end{itemize}
+\end{callout}
+
+\subsection{Network devices}
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}p{2.6cm}p{2.4cm}p{1.8cm}X@{}}
+\toprule
+\rh{Device} & \rh{Model} & \rh{Mgmt IP} & \rh{Role / status} \\
+\midrule
+EX3400-48P & Juniper EX3400 & 192.168.10.50 & Core switch, JunOS 23.4R2-S7.4, RSTP root (priority 4096), dual PSU. SSH key auth broken (QL-R16). \code{xe-0/2/3} DOWN - SFP EEPROM speed mismatch (DR-14). \\
+USW-24-250W & UniFi & via UDR & Access switch, trunk to \code{ge-0/0/46}. \\
+UDR & UniFi Dream Router & 192.168.10.2 & VLAN 1 wireless controller / AP - NOT the WAN edge. \\
+EX2300-48P & Juniper EX2300 & - & Lab / CCNA access switch. \\
+AP7901 & APC & - & Managed PDU on \code{ge-0/0/38}. \\
+\end{tabularx}}
+
+The EX3400 could not be inspected live: SSH refused the offered key (E-22), confirming the
+open reconciliation item R-09. Switch state is therefore taken from repository runbooks and
+the SNMP feed the dashboard already scrapes, not from a live console pull.
+
+\subsection{Power devices}
+
+Two UPS units protect the estate (live readings in Section~\ref{sec:power}):
+Middle Atlantic UPS-OL2200R (UPS-B, servers and shelf) and Tripp Lite SMART1500VA
+(UPS-A, switch, UniFi, EliteDesk nodes). Both are online at full charge.
+
+\subsection{Hardware roadmap}
+
+Two hardware changes are in flight and should be tracked as capacity/redundancy items:
+Randy RAM expansion 128\,GB $\rightarrow$ 192\,GB (+64\,GB on hand), and a Dell R730xd
+being commissioned as a second PBS/backup target and Jellyfin transcode node. The R730xd
+directly addresses the single-backup-node gap (QL-R03, QL-REC03) and its power impact is
+estimated in Section~\ref{sec:power}.

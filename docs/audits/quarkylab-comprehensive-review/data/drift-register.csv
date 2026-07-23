@@ -1,0 +1,15 @@
+id,item,declared_state,observed_live_state,documented_state,most_likely_correct,confidence,operational_impact,recommended_resolution,approval_required
+DR-01,GPU assignment,"spec: RTX8000->Jarvis, 2xRTX6000->QuarkyLab (inverted)","QuarkyLab=RTX8000 46GB, Jarvis=2x RTX6000 24GB (E-02/E-03)",CLAUDE.md correct; 1 stale vault log,Live/repo (RTX8000->QuarkyLab),High,None operationally; spec correction must NOT be applied,Fix stale vault netframe_update_2026-06-22 log; ignore spec inversion,No
+DR-02,OPNsense version,spec: upgrade 25.1->25.7,not live re-verified (E-23),CLAUDE.md 25.1.12; ~12 refs say 25.7,25.1.12 live; 25.7=future CARP target,High,Stale refs mislead; keep 25.7 only in CARP plan,Land D-06 doc fix,No (docs only)
+DR-03,Grafana stack node,-,CT103 on pve4 (E-06),README/topology/MOC say pve3,pve4 (moved 2026-07-16),High,Wrong node in an outage,Land D-01 doc fix,No (docs only)
+DR-04,Headscale node,-,CT105 on pve5 (E-06),README/topology/ADR/HEADSCALE.md say pve3,pve5 (moved 2026-07-16),High,Wrong node in an outage,Land D-02 doc fix,No (docs only)
+DR-05,Randy CPU,-,2x E5-2690 v3 24c/48t (nproc=48),docs say v4 28c/56t,v3/24c/48t (corrected 2026-07-11),High,Capacity mis-estimate,Land D-03 doc fix,No (docs only)
+DR-06,Randy datastore Seagate drives,-,4x Seagate in raidz2-3 (E-06 wwn),docs say 2 spare/unallocated,4 in-pool no spares,High,Storage layout mis-doc,Land D-04 doc fix,No (docs only)
+DR-07,bulk pool geometry,-,3x RAIDZ2 (8+8+6) 80T (E-04),topology/Proxmox Cluster.md say 2x8-wide 58.2T,3-vdev 80T (expanded 2026-07-17),High,Capacity mis-estimate,Land D-05 doc fix,No (docs only)
+DR-08,EX3400 native-vlan-id support,-,not live (SSH broken E-22); live-set 2026-06-25 per runbook,homelab-setup/Network Procedures say NOT supported,Supported at physical-interface level (ELS),High,Following stale note builds a broken trunk,Land D-08 doc fix,No (docs only)
+DR-09,Homepage location,-,CT106 on pve3 (E-06),homelab-setup.md:16 + dotfiles CLAUDE.md say pve1 CT104,pve3 CT106,High,Editing wrong CT,Land D-09; fix dotfiles separately,No (docs only)
+DR-10,Randy PVE version,docs: 9.1.1 (kernel/ZFS-only),pve-manager 9.2.3 (E-04),CLAUDE.md/README/ledger 9.1.1,Live 9.2.3,High,Doc inaccuracy; confirm intended,Reconcile docs; confirm upgrade was intended,No (verify intent)
+DR-11,pve1 CT104 homepage state,docs: shut down 2026-06-24,running (E-05),CLAUDE.md implies retired,Should be stopped/disabled,Medium,Wasted resources; duplicate,Confirm retired then stop/disable (R-12),Yes (service-affecting)
+DR-12,Ansible hardening applied?,role exists,--check only; not enforced (E-24),playbooks README,Not yet applied to nodes,High,Assumed-hardened but not enforced,Decide apply plan per node (exclude pve2),Yes (config-changing)
+DR-13,DS4246 cabling connector,repo: SFF-8644->SFF-8088,not live-inspected,spec: QSFP/SFF-8436->SFF-8088,Repo (verify at hardware),Medium,Cold-rebuild wiring ambiguity,Confirm connector at shelf; correct loser,No (verify)
+DR-14,xe-0/2/3 UniFi SFP link,intended 10G,DOWN (arch digest F-6),topology,EEPROM 10G/1G speed mismatch,Medium,Lost redundant path,Replace with fiber SFP+ both ends,Yes (hardware)

@@ -1,0 +1,25 @@
+\section{Dependency Register}\label{app:dependency-register}
+
+Critical-service dependencies and the impact of losing each dependency. Derived from the
+service catalog (Appendix~\ref{app:service-catalog}) and \code{diagrams/service-dependencies.mmd}.
+
+{\footnotesize\sansfont
+\begin{longtable}{p{2.6cm}p{3.4cm}p{4cm}p{4.4cm}}
+\toprule
+\rh{Service} & \rh{Depends on} & \rh{Impact if dependency lost} & \rh{Mitigation} \\
+\midrule
+\endhead
+All LAN clients & OPNsense (VM100, pve2) & No routing, DHCP, or inter-VLAN; whole network down & Serial-console DR; nightly age config backup; CARP HA planned (QL-R04) \\
+All name resolution & Pi-hole .177/.178 to Unbound on .1 & Clients lose DNS; single Unbound is the recursion choke point & Dual Pi-hole HA (DHCP hands out both); Unbound still single (enterprise R-03) \\
+All backups, NFS, k8s PVs & Randy (storage / PBS) & Simultaneous loss of backups, research NFS, and k8s storage & ZFS raidz2; UPS; second target planned (QL-R05 / QL-REC03) \\
+Cluster control plane & corosync quorum (4/7) & Loss of quorum freezes cluster config and HA & 7 votes, healthy; corosync on stable VLAN 1 L2 (E-01) \\
+Everything & UPS-A and UPS-B & Unclean shutdown; data-at-risk on abrupt power loss & NUT monitored; verify graceful-shutdown coverage (QL-R17 / R-07) \\
+Full secret set & Vaultwarden (CT102, in-cluster) & Cluster-loss recovery cannot read the secrets it needs & Break-glass age snapshot on Ares + Randy, offline (QL-R08) \\
+Metrics, logs, alerting & Grafana stack (CT103, pve4) & Blind to all metrics/logs and no alert evaluation & Dead-man heartbeat can catch total loss; single-CT SPOF (QL-R10) \\
+Alert delivery & WAN + Discord webhook & No alerts reach the operator during a WAN/Discord outage & Dead-man alerts; add 2nd channel (QL-R09 / QL-REC14) \\
+LLM chat and RAG & Ollama on Jarvis GPUs & Chat/RAG down; local inference unavailable & llm\_router auto-fallback to Claude API; deterministic monitoring unaffected \\
+Research and student jobs & SLURM + Randy NFS + GPU & No new jobs; running jobs may fail on NFS loss & Local base.sif copy; refreservation floor; preemption (QL-R02 data single-copy) \\
+Kubernetes workloads & RKE2 etcd + Randy NFS SC & Control plane or PV loss stops workloads & 3-node etcd quorum; VM-level backups; no etcd-native backup (gap) \\
+Internal TLS (netframe.local) & step-ca (pve2) & Certs cannot renew; registry / internal TLS breaks & RegistryCertExpiringSoon alert; CA password in Vaultwarden \\
+\bottomrule
+\end{longtable}}

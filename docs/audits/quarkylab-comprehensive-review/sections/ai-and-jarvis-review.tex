@@ -1,0 +1,115 @@
+\section{AI and Jarvis Architecture Review}\label{sec:ai-jarvis}
+
+This section audits the \code{netframe-monitor} / Jarvis AI-operations system as a production
+operational system, not as a demo. The central question is whether a language model is ever
+permitted to state a conclusion as fact, take an action, or become a command without a
+deterministic gate and explicit human approval. The short answer, verified against the code
+(E-14), is no: the design is safety-first, and it is one of the signature strengths of this lab.
+
+\subsection{Architecture and data flow}
+
+The system separates a deterministic plane from a model plane, and the deterministic plane is
+load-bearing for every safety-critical function.
+
+\begin{itemize}
+\item \rh{Collection (no model).} \code{netframe\_monitor.py} runs every 15 minutes via
+\code{netframe-run.sh}, SSHing read-only probes across seven nodes with a dedicated
+\code{monitor\_key} and writing \code{last\_run.json} plus an append-only \code{history.jsonl}.
+It includes end-to-end user-impact probes (\code{LLM\_ROUTER} through NPM, and
+\code{LLM\_ROUTER\_CONFORMANCE} reporting config, runtime, and firewall as three independent
+dimensions that are never collapsed).
+\item \rh{Report paths.} \code{netframe\_interpret.py} (now), \code{netframe\_daily.py},
+\code{netframe\_predict.py} (deterministic least-squares forecast), \code{netframe\_monthly.py},
+and \code{netframe\_chief.py} (weekly synthesis). Every path imports both \code{netframe\_policy}
+and \code{netframe\_evidence} and ends with the same sequence: model prose, then a deterministic
+evidence section, then \code{netframe\_policy.enforce()}.
+\item \rh{Admission screen.} \code{netframe\_admission.py} vetoes resource-consuming probes on
+72B residency, GPU-busy, interactive user, maintenance window, or minimum interval, and fails
+closed when GPU state is unknown, so the monitor never becomes the workload it monitors.
+\item \rh{Deterministic alerter.} \code{netframe\_alert.py} fires node-down Discord messages
+straight from \code{last\_run.json} on UNREACHABLE transitions, independent of Grafana, using
+fixed templates (nothing for a model to influence).
+\item \rh{Config drift.} \code{netframe\_confdrift.py} fingerprints interfaces, ssh, sysctl, and
+env over the read-only path and diffs against a human-blessed baseline.
+\item \rh{Interfaces.} \code{netframe\_console.py} serves a read-only HTTP API with no execute
+endpoint; both the console and report pages are iptables-locked to localhost plus NPM.
+\item \rh{Model routing.} \code{llm\_router.py} defaults to local Ollama \code{qwen2.5:72b},
+serves a \code{rag} model over a numpy cosine index, and escalates to \code{claude-opus-4-8}
+on an explicit flag, a \code{claude-} model, or local failure.
+\item \rh{Audit.} \code{netframe\_audit.py} maintains a hash-chained, tamper-evident, append-only
+ledger mirrored to Loki at write time.
+\end{itemize}
+
+\subsection{AI-safety control matrix}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.30\linewidth} p{0.52\linewidth} p{0.12\linewidth}@{}}
+\toprule
+\rh{Control} & \rh{Implementation (evidence E-14)} & \rh{Verdict}\\
+\midrule
+\endhead
+Single shared evidence engine & \code{netframe\_evidence.py} is called by all six paths; the Findings contract forbids the model stating a confidence; \code{strip\_model\_confidence} removes any residual confidence text on the free-form console path & Strong\\
+Provenance and evidence age & Every factor carries provenance; \code{freshness()} with \code{FRESHNESS\_MAX\_S} = 5400s caps confidence at 40 and renders STALE; unverifiable citations contribute zero and trigger a 30 ceiling & Strong\\
+Deterministic confidence & \code{evidence\_quality} and \code{confidence} are pure-stdlib floors-plus-ceilings over telemetry; the module states "no model is consulted here"; tightest ceiling wins & Strong\\
+Human-gated remediation & \code{netframe\_remediate.py}: 3-item Tier-1 allowlist only, list-form argv (no shell), requires explicit \code{approve} plus confidence >= 95; anything else refuses and prints a manual workflow & Strong\\
+Universal policy screening & \code{netframe\_policy.enforce()} is the single gate on every model-to-operator path, including chat; the Discord alerter is deterministic templates with nothing to bypass & Strong\\
+Model output never a command & \code{\_guard\_actions} strips shell commands and code fences from chat output and honors only an allowlisted \code{[action:id]} tag; the console, not the model, renders the gated command & Strong\\
+Untrusted telemetry & Telemetry wrapped in BEGIN/END UNTRUSTED markers with a data-not-instructions prompt, plus a deterministic injection tripwire (honest caveat: a tripwire for overt imperatives, not a boundary) & Good\\
+Model-offline survivability & Collector, alerter, confdrift, admission, forecast tables, and evidence scoring are all no-model; node-down alerts fire before any LLM step & Strong\\
+Failed model calls & Every path degrades to a deterministic fallback; \code{policy.enforce} fails LOUD but not closed (emits an UNSCREENED stamp rather than suppressing) & Strong\\
+\bottomrule
+\end{longtable}}
+
+\subsection{Maturity by function}
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}p{0.24\linewidth} p{0.22\linewidth} X@{}}
+\toprule
+\rh{Function} & \rh{Rating} & \rh{Basis}\\
+\midrule
+Monitoring assistant & Strong / production & Deterministic 15-min collector, dead-man heartbeat, Grafana-independent alerter, locked read-only surfaces\\
+Incident analysis & Good & Deterministic blast-radius from a knowledge graph, two-axis evidence and confidence per finding\\
+Capacity planning & Solid (deterministic) & Least-squares slope and days-to-90\%; math never delegated to the model\\
+Documentation & Strong & Auto now/daily/weekly/monthly reports, hash-chained ledger, unified memory dashboard\\
+Change planning & Recommend-only & Chief P0-P3 ranking; \code{propose} emits a manual workflow; confdrift human-bless gate\\
+Remediation & Minimal / human-gated & 3-action allowlist, confidence gate, never autonomous (constitution \code{authority\_limits.md})\\
+\bottomrule
+\end{tabularx}}
+
+\subsection{Code versus documentation}
+
+The \code{jarvis-ai-ops} LaTeX corpus is explicitly propose-and-assess. The code is now ahead of
+those assessments on the two biggest historical gaps: the two-axis evidence scoring proposed in
+NF-AIOPS-005 is fully implemented, and the tamper-evident audit ledger flagged as open in
+JAR-12 is built. Two residual gaps remain and are reflected in the recommendations:
+
+\begin{itemize}
+\item \rh{Remediation approval gate (JAR-08, QL-REC13).} Report and chat confidence are now
+deterministic, but the Tier-1 execution gate still reads a caller-supplied \code{confidence}
+integer rather than the \code{netframe\_evidence} engine. The gate is safe by construction
+(allowlist plus explicit approval) but the number is not yet wired to computed evidence.
+\item \rh{Config conformance.} \code{confdrift} compares production to a blessed snapshot of
+production, not to Git. The specific llm\_router env-drift incident class is now covered by the
+separate conformance probe, but a general conform-to-Git target is not yet built.
+\end{itemize}
+
+\begin{callout}[title=Assessment]
+As a home-lab AI-operations platform this is unusually mature. The trust foundation - single
+deterministic evidence engine, universal policy screen, human-gated allowlist remediation,
+untrusted-input handling, and full model-offline survivability - is enterprise-grade. Critical
+alerting does not depend on any single AI model, and no model output can become an action or a
+shell command without a deterministic gate and explicit approval. The remaining lift is the
+intelligence layer (evaluation harness, retrieval calibration, Git conformance), not the safety
+layer. This directly satisfies the review requirement that deterministic monitoring remain
+available if the AI is offline and that remediation cannot occur without approval.
+\end{callout}
+
+\subsection{Credentials the AI touches}
+
+Reported by type and location only, values redacted (E-14). \code{ANTHROPIC\_API\_KEY} in
+\code{/etc/llm\_router.env} (0600, unset means local-only); \code{DISCORD\_BOT\_TOKEN} and the
+operator user id in \code{/etc/netframe-alert.env} (root 0600); the read-only \code{monitor\_key}
+used by the collector, confdrift, and the scoped wazuh-restart wrapper; and the restic backup
+passphrase file. The restic passphrase is the one single-point risk: if it lives only on Jarvis,
+loss of that host makes the encrypted backup unreadable, so it must also live in Vaultwarden.
+No hardcoded secrets were found in any source file read.

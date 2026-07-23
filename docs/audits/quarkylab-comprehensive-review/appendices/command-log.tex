@@ -1,0 +1,37 @@
+\section{Command and Activity Log}\label{app:command-log}
+
+Every action this review performed was read-only and low-risk. No command in the
+config-changing, service-affecting, destructive, or external-target categories was
+executed, and no data was modified on any system. Timestamps are 2026-07-23 (EDT/UTC
+mixed as captured). The full raw output is retained in the reviewer session, not in
+this repository, to avoid committing transient host detail.
+
+{\footnotesize\sansfont
+\begin{longtable}{p{1.9cm}p{1.8cm}p{4.3cm}p{3.6cm}p{3.4cm}}
+\toprule
+\rh{Time} & \rh{System} & \rh{Command (summarized)} & \rh{Purpose} & \rh{Result} \\
+\midrule
+\endhead
+09:22 & Ares (local) & \code{git rev-parse}, \code{git submodule status}, \code{ls} & Establish repo root, branch, submodules & master; Home-Lab on audit branch; 8 submodules \\
+09:22 & Ares (local) & \code{date}, \code{hostname}, \code{uptime}, \code{os-release} & Local host identity & ares, Debian 12, up 15h \\
+09:23 & Ares (local) & read \code{.claude} memory + \code{MEMORY.md} & Load operational memory & 11 memories read \\
+09:23 & Ares (local) & read Home-Lab \code{CLAUDE.md}, \code{audit/} & Guidance + prior audit basis & audit commit 65f3681 \\
+09:24 & 11 hosts & \code{ping -c1} sweep & Reachability & all 11 UP (incl. VLAN 30) \\
+09:27 & pve3 & \code{pvecm status}, \code{corosync-cfgtool -s} & Quorum + corosync ring & 7/7 quorate, all links connected \\
+09:27 & QuarkyLab & \code{nvidia-smi}, \code{zpool}, \code{qm list}, \code{sinfo} & GPU, ZFS, guests, SLURM & RTX 8000 46GB; workspace ONLINE; VM104; student+research partitions \\
+09:27 & Jarvis & \code{nvidia-smi}, \code{zpool}, \code{systemctl is-active} & GPU, ZFS, AI services & 2x RTX 6000; tank+scratch ONLINE; llm\_router+ollama active \\
+09:27 & Randy & \code{zpool list}, \code{zpool status -x/bulk} & ZFS health & bulk mpathv FAULTED; datastore ONLINE \\
+09:27 & pve1 (.193) & \code{pveversion}, \code{pct list}, \code{apt list} & Standalone guests + patch lag & PVE 9.1.9; CT103+CT104 running; 142 pending \\
+09:28 & pve3 & \code{pvesh /cluster/resources}, \code{storage.cfg}, \code{ha-manager}, \code{pvesr} & Cluster guests, storage, HA, replication & 14 guests; 2 PBS targets; fencing standby; no replication \\
+09:28 & Randy & \code{proxmox-backup-manager}, \code{zpool status datastore}, \code{multipath -ll} & PBS + datastore geometry + drive id & datastore 4x RAIDZ2; multipath -ll returned empty \\
+09:28 & EX3400 & \code{ssh ex3400 (show version)} & Switch state & DENIED (publickey) - confirms R-09 \\
+09:30 & pve3 & \code{upsc tripplite}, \code{upsc midatlantic} & UPS state & UPS-A 59\% / \textasciitilde{}9.5 min; UPS-B 36\% / \textasciitilde{}29 min \\
+09:30 & Randy & \code{ls -dt /datastore/...}, \code{df -h} & Backup freshness & 14 snapshots dated 2026-07-23; 97G / 23T \\
+\bottomrule
+\end{longtable}}
+
+\begin{callout}
+All approvals for change remain outstanding by design: this review proposed actions
+(Section~\ref{sec:recommendations}) but executed none of them. The environment was left
+exactly as found.
+\end{callout}

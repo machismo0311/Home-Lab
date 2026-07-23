@@ -1,0 +1,41 @@
+\section{Alert Matrix}\label{app:alert-matrix}
+
+Grafana Unified Alerting rules (no Alertmanager; all egress to Discord). Full field set
+(evidence basis, expected response, runbook, false-positive/negative risk) is in
+\code{data/alert-matrix.csv}. The \code{GAP-*} rows are alerts that should exist but do not.
+
+{\footnotesize\sansfont
+\begin{longtable}{p{3.1cm}p{2.1cm}p{1.4cm}p{3.1cm}p{1.7cm}p{2.4cm}}
+\toprule
+\rh{Alert} & \rh{Source} & \rh{Sev} & \rh{Threshold} & \rh{Channel} & \rh{Disposition} \\
+\midrule
+\endhead
+ClusterNotQuorate & corosync textfile & crit & quorate \textless 1, 2m & discord-alerts & Keep \\
+ClusterVotesBelowExpected & corosync textfile & warn & missing votes \textgreater 0, 5m & discord-alerts & Keep \\
+InstanceDown & node / blackbox & crit & up \textless 1, 2m & discord-alerts & Keep \\
+PiholePrimaryDown & blackbox DNS & crit & probe .177 \textless 1, 2m & discord-alerts & Keep \\
+PiholeSecondaryDown & blackbox DNS & warn & probe .178 \textless 1, 2m & discord-alerts & Keep \\
+ZfsPoolDegraded & zpool textfile & crit & pool\_health \textgreater 0, 5m & discord-alerts & Verify delivery (R-02) \\
+GpuTempHigh & nvidia-smi & warn & temp \textgreater 87C, 5m & discord-alerts & Keep \\
+GpuMemoryHigh & nvidia-smi & warn & VRAM \% \textgreater 90, 10m & discord-alerts & Keep \\
+DiskAlmostFull & node\_filesystem & warn & root \% \textgreater 90, 10m & discord-alerts & Extend to pools \\
+LowMemory & node\_memory & warn & MemAvail \% \textless 8, 10m & discord-alerts & Keep \\
+RegistryCertExpiringSoon & blackbox tls & warn & cert \textless 12h, 15m & discord-alerts & Broaden to all certs \\
+BackupVerifyReportStale & Randy textfile & warn & age \textgreater 26h, 15m & discord-alerts & Keep (caught mpathv) \\
+BackupVerifyFailing & Randy textfile & warn & overall\_pass \textless 1, 5m & discord-alerts & Consider critical \\
+AresBackupStale & Randy textfile & warn & age \textgreater 26h, 15m & discord-alerts & Keep \\
+NetframeMonitorStale & Jarvis heartbeat & warn & age \textgreater 1h, dead-man & discord-alerts & Keep \\
+UPS battery low & PeaNUT & crit & charge \textless 50, 2m & discord-ups & Keep \\
+UPS runtime low & PeaNUT & crit & runtime \textless 300s, 1m & discord-ups & Keep \\
+PrimaryWANDown & pve2 textfile & crit & WAN\_GW \textless 1, 1m & discord-alerts & Keep \\
+FirewallBlockRateSpike & Loki filterlog & warn & \textgreater 500 blocks/5m & discord-alerts & Keep \\
+NetworkDeviceConfigChange & Loki syslog & warn & commit \textgreater 0 & discord-alerts & Keep \\
+NetworkSyslogSilent & Loki stream & warn & \textless 50 lines/15m, dead-man & discord-alerts & Keep \\
+\midrule
+GAP-quorum-guest & (none) & - & per-guest down (needs pve-exporter) & - & Missing (REC06/07) \\
+GAP-pbs-verify-stale & (none) & - & PBS verify job failed / stale & - & Missing (REC07) \\
+GAP-host-auth-failure & (none) & - & repeated auth failures per host & - & Missing (DETECT-01c) \\
+GAP-cert-expiry-broad & (none) & - & any netframe.local / LE cert near expiry & - & Missing (only registry today) \\
+GAP-2nd-channel & (none) & - & alert egress independent of WAN/Discord & - & Missing (REC14) \\
+\bottomrule
+\end{longtable}}

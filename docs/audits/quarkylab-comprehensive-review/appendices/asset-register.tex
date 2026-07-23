@@ -1,0 +1,30 @@
+\section{Asset Register}\label{app:asset-register}
+
+Physical and virtual-host inventory, live-confirmed 2026-07-23 (evidence E-01 through
+E-06). Full field set is in \code{data/asset-register.csv}.
+
+{\footnotesize\sansfont
+\begin{longtable}{p{1cm}p{1.7cm}p{2.6cm}p{3.2cm}p{2.3cm}p{4cm}}
+\toprule
+\rh{ID} & \rh{Host} & \rh{Role} & \rh{CPU / GPU} & \rh{IP / VLAN} & \rh{Status and notes} \\
+\midrule
+\endhead
+H-01 & pve1 & Standalone Pi-hole / homepage & Intel (Mac Mini, runs PVE) / none & .10.193 / v1 & up; NOT a cluster member; PVE 9.1.9; 142 pending; CT103 primary Pi-hole + CT104; NO backup job \\
+H-02 & pve2 & OPNsense host + node & i7-8700 / none & .10.204 / v1 & up; hosts OPNsense VM100 (edge SPOF); reboot-required; excluded from hardening \\
+H-03 & pve3 & Core services + rke2-cp1 & i7-8700 / none & .10.201 / v1 & up; NPM/Vaultwarden/Homepage/OpenWebUI + VM201; only trunked EliteDesk; e1000e TSO/GSO-off mitigation \\
+H-04 & pve4 & Grafana stack + rke2-cp2 & i5-7500T / none & .10.202 / v1 & up; CT103 Grafana/Prom/Loki/InfluxDB + VM202; sustained load \textasciitilde{}5 \\
+H-05 & pve5 & Headscale, Pi-hole2, rke2-cp3, HAOS & i5-7500T / none & .10.203 / v1 & up; CT105 + CT108 + VM110 + VM203 \\
+H-06 & QuarkyLab & ML / DUNE / student GPU & 2x E5-2699 v4 / RTX 8000 48GB & .10.179 (+.30.179) / v1+30 & up; kernel+nvidia-* held (6.14.11-9-pve); workspace raidz1 10.9T; VM104 Wazuh; SLURM \\
+H-07 & Jarvis & LLM inference & 2x E5-2687W v4 / 2x RTX 6000 24GB & .10.31 (+.30.31) / v1+30 & up; kernel held (nvidia not held - narrower); tank 9.09T + scratch; llm\_router+ollama \\
+H-08 & Randy & Storage / PBS / Jellyfin / k8s worker & 2x E5-2690 v3 / RX 580 & .10.187 (+.30.187) / v1+30 & up; datastore 36.7T ONLINE; bulk 80T DEGRADED (mpathv); PBS; live PVE 9.2.3 vs docs 9.1.1 (DR-10) \\
+H-09 & DS4246 & JBOD disk shelf & NetApp 24-bay / n/a & dual SAS to Randy & degraded; 22x 4TB (2 free bays); slot 15 dead 2026-07-21; single enclosure SPOF \\
+N-01 & EX3400-48P & Core switch & JunOS 23.4R2-S7.4 & .10.50 / all & up; RSTP root; dual PSU; SSH key auth broken (R-09); xe-0/2/3 DOWN (SFP mismatch) \\
+N-02 & UniFi USW-24 & Access switch & UniFi & trunk ge-0/0/46 & up \\
+N-03 & UniFi UDR & Wireless controller / AP & UniFi & .10.2 / v1 & up; NOT the WAN edge (common misread) \\
+N-04 & EX2300-48P & Lab access switch & JunOS & trunk ge-0/0/45 & up; lab / CCNA \\
+N-05 & APC AP7901 & Managed PDU & APC & ge-0/0/38 / v1 & up \\
+P-01 & UPS-B & Middle Atlantic OL2200R & feeds R730s+Randy+DS4246 & n/a & up; OL, 100\%, load 36\%, \textasciitilde{}29 min \\
+P-02 & UPS-A & Tripp Lite SMART1500 & feeds switch+UniFi+EliteDesks & n/a & up; OL, 100\%, load 59\%, \textasciitilde{}9.5 min (imbalanced) \\
+W-01 & Ares & Admin workstation & Intel laptop / Debian 12 & .10.199 (+.20.199) / v1+20 & up; ansible/backup/dashboard control node; timers; hourly \code{.claude} backup \\
+\bottomrule
+\end{longtable}}

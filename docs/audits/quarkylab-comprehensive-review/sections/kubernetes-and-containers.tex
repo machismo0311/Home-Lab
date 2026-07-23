@@ -1,0 +1,60 @@
+\section{Kubernetes, RKE2, and Containers}\label{sec:k8s}
+
+\subsection{RKE2 Control Plane}
+
+RKE2 runs a three-node HA control plane on VMs 201/202/203 (pve3/pve4/pve5,
+\code{.51-.53}), all live-confirmed running (E-06). The API is fronted by a kube-vip VIP
+at \code{192.168.10.54:6443}; the CNI is Cilium and load balancing is MetalLB over the
+\code{.71-.75} pool. etcd runs as an embedded quorum across the three control-plane
+nodes. The cluster is intentionally CPU-only: GPU scheduling is deferred because SLURM
+and Ollama own the cards, and running RKE2 GPU scheduling on the same single card would
+contend for exclusive device access.
+
+Randy joined as a bare-metal storage worker with kubelet reservations sized to measured
+hardware and a \code{node.netframe.io/\allowbreak role=storage:\allowbreak NoSchedule} taint, so only tolerating
+infrastructure DaemonSets land there and ZFS/PBS are not cgroup-throttled. Persistent
+storage is an \code{nfs-client} StorageClass backed by Randy \code{datastore/k8s}. A
+documented operational detail worth preserving: agents register on the supervisor port
+\code{:9345}, not the apiserver \code{:6443}.
+
+\subsection{Container Gaps}
+
+\begin{itemize}
+\item \sevmed No NetworkPolicies: the pod network is flat with no default-deny
+(QL-R15 / K8S-02).
+\item \sevmed No Pod Security Admission (K8S-03), and Kubernetes secrets are likely
+unencrypted at rest (K8S-04).
+\item \sevmed The private registry is anonymous and a single replica (QL-R14 / K8S-01);
+its TLS is provided by step-ca, and a \code{RegistryCertExpiringSoon} alert exists.
+\item \sevlow Image pinning and floating \code{latest} tags were not exhaustively
+audited; pinning discipline should be confirmed as workloads grow.
+\item \sevinfo etcd is protected only at the VM-backup level; a dedicated etcd snapshot
+schedule would speed control-plane recovery.
+\end{itemize}
+
+The recommended treatment (QL-REC15) is to add default-deny NetworkPolicies, Pod
+Security Admission, secrets encryption, and registry authentication before the cluster
+carries meaningful workloads. None of this should be applied without a maintenance window
+and rollback.
+
+\subsection{LXC and Docker Estate}
+
+The operator convention is one service per LXC and "no Docker unless explicitly
+requested," which keeps blast radius small and is a genuine strength. The running guests
+were enumerated live (E-06): NPM (CT101), Vaultwarden (CT102), Grafana stack (CT103 on
+pve4), Headscale (CT105), Homepage (CT106), Open WebUI (CT107), secondary Pi-hole
+(CT108), plus VMs for OPNsense, Wazuh, Home Assistant, and the three RKE2 control-plane
+nodes. Docker appears only inside a few LXCs where it is warranted: the Grafana stack
+(Grafana, Prometheus, Loki, InfluxDB, Scrutiny) in CT103, Vaultwarden in CT102, and the
+Homepage dashboard in CT106.
+
+All guests are set \code{onboot=1}. Compose-versus-deployed drift could not be fully
+verified read-only, since that would require exec into each container; it should be
+spot-checked during normal maintenance. Consistent with the read-only mandate, this
+review did not pull images, recreate containers, or restart any workload.
+
+\begin{callout}
+The one duplicate to resolve is CT104 on pve1, an old homepage instance that
+documentation says was retired on 2026-06-24 but that is still running (DR-11 / R-12).
+Confirm it is the retired skeleton, then stop and disable it (QL-REC17).
+\end{callout}

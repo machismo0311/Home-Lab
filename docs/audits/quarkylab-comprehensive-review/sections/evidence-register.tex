@@ -1,0 +1,69 @@
+\section{Evidence Register}\label{sec:evidence}
+
+Every finding in this review traces to a numbered evidence item. The register below
+records the source, the system it came from, the exact command or path, its age, a
+reliability tier, and the limitations that bound how far it can be trusted. The
+machine-readable form is \code{data/evidence-register.csv}.
+
+\subsection{Reliability tiers and evidence types}
+
+Evidence is typed as \emph{live} (a direct read-only query executed during this
+review, 2026-07-23), \emph{live-captured} (the prior audit's node captures, one day
+old), \emph{generated} (assessment reports produced by prior tooling),
+\emph{inferred} (conclusions read out of source code or configuration), or
+\emph{manual} (operator-maintained documentation). Live evidence is weighted
+highest for current-state claims; documented evidence is weighted highest for
+intent and history. Where the two conflict, the conflict itself is recorded rather
+than silently resolved: the most consequential examples are the GPU assignment
+(live overrides the specification, DR-01), the OPNsense version (documented as
+25.1.12, not re-verified live, E-23 / DR-02), and Randy's PVE version, where the
+live reading of 9.2.3 supersedes the documented 9.1.1 (E-04 / DR-10).
+
+\subsection{Register}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.06\linewidth}p{0.20\linewidth}p{0.30\linewidth}p{0.10\linewidth}p{0.24\linewidth}@{}}
+\toprule
+\rh{ID} & \rh{Source / system} & \rh{Path or command} & \rh{Age / rel.} & \rh{Type / limitation} \\
+\midrule
+\endfirsthead
+\toprule
+\rh{ID} & \rh{Source / system} & \rh{Path or command} & \rh{Age / rel.} & \rh{Type / limitation} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+E-01 & Live SSH / pve3 & \code{pvecm status; corosync-cfgtool -s} & live / high & live; transient runtime state \\
+E-02 & Live SSH / quarkylab & \code{nvidia-smi; zpool list; qm list; sinfo} & live / high & live; confirms GPU vs stale spec \\
+E-03 & Live SSH / jarvis & \code{nvidia-smi; zpool list; systemctl is-active} & live / high & live; confirms 2x RTX 6000 \\
+E-04 & Live SSH / randy & \code{zpool status bulk/datastore; pbs datastore list} & live / high & live; \code{multipath -ll} returned empty \\
+E-05 & Live SSH / pve1 & \code{pveversion; pct list; apt list --upgradable} & live / high & live; 142 pending vs audit 133 \\
+E-06 & Live SSH / pve3 & \code{pvesh get /cluster/resources; storage.cfg; ha-manager} & live / high & live; cluster-wide snapshot \\
+E-07 & Live SSH / pve3 & \code{upsc tripplite; upsc midatlantic} & live / high & live; instantaneous load only \\
+E-08 & Live SSH / randy & \code{ls -dt /datastore/\{ct,vm,host\}/*/2026-07-23*} & live / high & live; filesystem listing \\
+E-09 & Repo audit / Home-Lab & \code{audit/findings/*.md} (commit 65f3681) & 1 day / high & generated; two spec corrections inverted \\
+E-10 & Repo audit / Home-Lab & \code{audit/live/*.txt} & 1 day / high & live-captured; superseded where re-run \\
+E-11 & Repo audit / Home-Lab & \code{audit/facts/ledger.yaml} & 1 day / high & inferred; canonical-vs-stale table \\
+E-12 & Repo / Home-Lab & \code{CLAUDE.md} & 2 days / high & manual; most-accurate doc \\
+E-13 & Repo / Home-Lab & \code{README.md; topology/; vault MOC} & 1 day / med & manual; lags CLAUDE.md \\
+E-14 & Code read / netframe-monitor & \code{*.py; constitution/; eval/} & live / high & inferred; static read not runtime trace \\
+E-15 & Code read / monitoring-stack & \code{grafana-provisioning/alerting/*.yaml} & 1 day / high & inferred; rules not eval-traced \\
+E-16 & Code read / netframe-dashboard & \code{serve.py; README.md} & 1 day / high & inferred; some sources fall back to mock \\
+E-17 & Secrets sweep / home dir & \code{grep + git ls-files across repos} & live / high & live; PAT at rest in github\_helper.py \\
+E-18 & Prior assessment / enterprise & \code{report/*.tex; risk-register.tex} & 10 days / med & generated; some items since resolved \\
+E-19 & Prior assessment / security & \code{report/*.tex; MASTER-TODO.md} & live / high & generated; reconciled 2026-07-22 \\
+E-20 & Prior assessment / reliability & \code{report/*.tex} & 9 days / med & generated; windowed items pending \\
+E-21 & Repo docs / Home-Lab & \code{vault/Runbook/*.md} (AARs, DR, CARP) & live / high & manual; operator narrative \\
+E-22 & Live SSH / ex3400 & \code{ssh ex3400} $\rightarrow$ DENIED & live / high & access-limit; confirms R-09 \\
+E-23 & Not collected / opnsense & no API creds used; VM 100 untouched & n/a & not-collected; 25.1.12 per AAR only \\
+E-24 & Repo / ansible playbooks & \code{roles/\{hardening,backup\_verify\}} & 1 day / high & manual; \code{--check} only, not applied \\
+\end{longtable}}
+
+\subsection{Notable conflicts surfaced}
+
+The register makes three conflicts explicit. First, the review specification's GPU
+"correction" is inverted versus live hardware and must not be applied (E-02 / E-03).
+Second, the OPNsense version is documented as 25.1.12 but was not re-verified live;
+roughly a dozen references still say 25.7, which is the future CARP target, not the
+running version (E-23). Third, Randy reports PVE 9.2.3 live while the documentation
+still says 9.1.1, a drift the prior audit did not catch (E-04, DR-10).

@@ -1,0 +1,22 @@
+%% Power topology (2026-07-23 live UPS readings). Single-cord risk noted.
+graph TD
+  MAINS[Utility mains]
+  MAINS --> UPSB["Middle Atlantic UPS-OL2200R (UPS-B)<br/>OL - 100% batt - load 36% - ~29 min"]
+  MAINS --> UPSA["Tripp Lite SMART1500VA (UPS-A)<br/>OL - 100% batt - load 59% - ~9.5 min"]
+
+  UPSB --> QL[QuarkyLab R730]
+  UPSB --> JV[Jarvis R730]
+  UPSB --> RANDY[Randy SuperMicro]
+  UPSB --> DS[NetApp DS4246 shelf]
+
+  UPSA --> EX[EX3400 switch]
+  UPSA --> UNIFI[UniFi USW + UDR]
+  UPSA --> PVE2[pve2] & PVE3[pve3] & PVE4[pve4] & PVE5[pve5]
+  UPSA --> PDU[APC AP7901 PDU]
+
+  UPSB -. NUT master -> upsmon .-> QL & JV & RANDY
+  UPSA -. NUT -> switch/EliteDesks .-> PVE2
+
+  note1["RISK R-17: UPS-A near 60% load with ~9.5 min runtime;<br/>network plane drops before servers in an outage"]:::warn
+  note2["Verify: dual-PSU R730s should cross-feed UPS-A/UPS-B,<br/>not both cords on UPS-B (R-07)"]:::warn
+  classDef warn fill:#fff3d6,stroke:#B7860B;

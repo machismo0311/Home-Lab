@@ -1,0 +1,145 @@
+\section{Executive Summary}\label{sec:exec}
+
+\begin{callout}[title=One-paragraph verdict]
+QuarkyLab, the NetFRAME / km-cluster home lab, is an unusually mature environment
+that runs three genuinely production workloads at once: DUNE neutrino-physics GPU
+research, a multi-tenant student AI/ML teaching cluster, and a self-hosted LLM
+inference platform. Live read-only verification on 2026-07-23 found the fabric
+healthy: a 7 of 7 quorate Proxmox cluster, GPUs correctly assigned, backups fresh
+(14 snapshots dated 2026-07-23), both UPS units online at full charge, and the
+tracked repositories secrets-clean. The environment is well ahead of typical
+home-lab practice in operational discipline. The material risks are concentrated,
+well understood, and mostly already in the operator's own backlog: a single
+faulted storage drive on a pool that has no second copy, a backup topology that is
+effectively one-copy / one-site, and two single points of failure (OPNsense and
+Randy) that the operator is already planning to address.
+\end{callout}
+
+\subsection{Overall assessment}
+
+This is a strong environment. The header-line facts were independently confirmed
+against live hardware rather than taken from documentation (E-01 through E-08).
+The cluster is quorate with all corosync links connected (E-01); QuarkyLab carries
+one RTX 8000 (48 GB) and Jarvis two RTX 6000 (24 GB each), which confirms the
+repository and \emph{contradicts} the review specification's assertion that the
+assignment was reversed (E-02, E-03, DR-01); the ZFS \code{datastore} pool is
+clean and last night's backups completed (E-06, E-08). Nothing found during this
+review indicates an imminent outage. The weaknesses are real but bounded, and the
+operator has already produced a self-audit (commit \code{65f3681}, 2026-07-22)
+that names most of them.
+
+\subsection{Major strengths}
+
+\begin{itemize}
+  \item \textbf{Deterministic AI-operations safety.} The netframe-monitor / Jarvis
+  stack is genuinely enterprise-grade in its safety design: a single deterministic
+  evidence engine that every report path uses, model self-confidence stripped and
+  forbidden, a three-action human-gated remediation allowlist with no autonomous
+  execution, universal policy screening including the chat and Discord surfaces,
+  untrusted-telemetry handling, and full survivability if the model is offline
+  (E-14).
+  \item \textbf{Disciplined runbook and disaster-recovery culture.} Formal RCAs and
+  AARs, ADRs, an offline break-glass credential path independent of the cluster,
+  a node-unreachable triage runbook, OPNsense serial-console DR with age-encrypted
+  config backups, and a laptop-recovery runbook (E-21).
+  \item \textbf{Real, applied network segmentation.} Seven VLANs, BMCs isolated to
+  VLAN 20 with an \emph{applied} egress clamp, a VLAN 30 to VLAN 1 block, and DNS
+  pinholes for isolated VLANs (E-21). This is deployed, not aspirational.
+  \item \textbf{Config-as-code monitoring.} Grafana alerting, exporters, and
+  textfile collectors are versioned; there are dead-man heartbeats for the pipeline
+  itself (E-15).
+  \item \textbf{Honest self-audit already in flight.} The operator is mid-way
+  through a reconciliation branch that catalogs the documentation drift found here.
+\end{itemize}
+
+\subsection{Highest risks}
+
+\begin{enumerate}
+  \item \sevhigh{} \textbf{Faulted \code{bulk} drive on a pool with no second copy
+  (QL-R01 + QL-R02).} \code{mpathv} is FAULTED in \code{raidz2-2}, which now holds
+  only one of two parity drives; a second failure in that vdev loses the pool, and
+  \code{bulk} (which holds research and media data) is neither a PBS source nor
+  target (E-04). Replacement is pending.
+  \item \sevhigh{} \textbf{Backups are effectively one-copy / one-site (QL-R03).}
+  Every backup lives only on Randy: one PBS, one ZFS pool, one rack, one UPS bus (E-08).
+  \item \sevhigh{} \textbf{OPNsense is a single point of failure (QL-R04).} One VM
+  on pve2 provides routing, firewall, DHCP, and inter-VLAN gateway for the whole LAN.
+  \item \sevhigh{} \textbf{Randy is a single storage node (QL-R05).} PBS, research
+  NFS, and RKE2 persistent volumes all depend on it.
+  \item \sevhigh{} \textbf{Critical-alert delivery is unverified (QL-R11).} The
+  degraded pool was surfaced by a backup-verify staleness alert, not by the direct
+  \code{ZfsPoolDegraded} rule; whether that critical rule actually reached Discord
+  could not be confirmed read-only.
+  \item \sevmed{} \textbf{A live GitHub token sits in plaintext at rest (QL-R07).}
+  \code{\textasciitilde{}/github\_helper.py} contains a classic PAT; it is
+  gitignored and never committed, but usable if the workstation is compromised
+  (E-17). Two other plaintext secret files sit alongside it.
+  \item \sevmed{} \textbf{Documentation drift (QL-R19).} Recent changes landed in
+  CLAUDE.md but not in README, topology, or the docs mirror; two review-spec
+  "corrections" are inverted versus live reality and must not be applied.
+\end{enumerate}
+
+\subsection{Dimension assessments}
+
+\begin{itemize}
+  \item \textbf{Reliability:} Strong at the compute/cluster layer (7/7 quorum,
+  pinned GPU stacks intact); weakened by concentrated SPOFs (OPNsense, Randy) and
+  HA fencing left in standby.
+  \item \textbf{Security:} Well above home-lab norm - applied segmentation, least-
+  privilege API tokens, working SIEM. Residual: at-rest workstation secrets,
+  unauthenticated LAN AI/registry endpoints, guest SIEM blind spot.
+  \item \textbf{Recoverability:} Good documentation and an offline break-glass path;
+  limited by the single backup site and one unverified restore-readiness gap
+  (pve1 unbacked).
+  \item \textbf{Power resilience:} Both UPS online and healthy, but UPS-A is loaded
+  to 59 percent with roughly 9.5 minutes of runtime (E-07), an imbalance worth
+  rebalancing.
+  \item \textbf{AI-system reliability:} Excellent safety posture; the remaining lift
+  is calibration/eval, not trustworthiness.
+  \item \textbf{Scientific and student workloads:} Genuinely well engineered - SLURM
+  shard plus per-job MPS VRAM caps plus apptainer isolation, research preemption,
+  and reproducible container images.
+  \item \textbf{Enterprise alignment:} Comparable-to-mature in monitoring, docs,
+  IaC, and secrets discipline; material gaps in HA/redundancy and offsite DR.
+\end{itemize}
+
+\subsection{Top 10 prioritized recommendations}
+
+\begin{enumerate}
+  \item Replace the faulted \code{bulk} drive and scrub (QL-REC01, urgent).
+  \item Verify the \code{ZfsPoolDegraded} alert actually reached Discord (QL-REC02, read-only).
+  \item Add a second backup copy / restore the 3-2-1 principle (QL-REC03).
+  \item Back up the standalone pve1 guests (QL-REC04).
+  \item Rotate the at-rest GitHub PAT and the two plaintext secret files (QL-REC05).
+  \item Deploy prometheus-pve-exporter for cluster/quorum/guest metrics (QL-REC06).
+  \item Add the missing alert rules: PBS-stale, verify-failed, broad cert-expiry (QL-REC07).
+  \item Rebalance UPS loads and confirm NUT graceful-shutdown sequencing (QL-REC08).
+  \item Reconcile EX3400 SSH access and capture switch config to git via Oxidized (QL-REC09).
+  \item Land the documentation reconciliation PR (D-01 through D-10) (QL-REC11).
+\end{enumerate}
+
+Building the OPNsense CARP HA pair (QL-REC10) is the highest-value medium-term
+structural improvement and removes the top availability SPOF.
+
+\subsection{Explicitly accepted risks and where no change is recommended}
+
+The following are sound decisions that should stand: the pinned
+\code{6.14.11-9-pve} kernels on the GPU nodes must not be upgraded (QL-REC20);
+the raidz1 vdevs on QuarkyLab and Jarvis are an accepted single-parity tradeoff
+given hot spares, clean scrubs, and low utilization (QL-R21); single-node
+observability is a reasonable posture at this scale given the dead-man heartbeats
+(QL-R10); and the VLAN 1 egress lockdown remains deliberately unenforced pending
+its prerequisites. Stable systems should not be changed without a compelling
+reason, and most of this environment is stable.
+
+\subsection{Confidence and limitations}
+
+Confidence in the live-verified conclusions (cluster health, GPU assignment,
+storage state, backup freshness, power state) is \textbf{high}: each was confirmed
+by direct read-only query and cross-checked against the prior audit. Confidence in
+the network-control-plane conclusions is \textbf{medium}: OPNsense was not queried
+(no credentials used, by design, E-23) and the EX3400 could not be inspected over
+SSH (key authentication is broken, E-22 / R-09), so switch and firewall specifics
+rest on repository documentation rather than live output. This was a strictly
+read-only review; nothing was restarted, reconfigured, or modified, and no
+credential was used. See Section~\ref{sec:limits} for the full limitations register.

@@ -1,0 +1,106 @@
+\section{Monitoring, Logging, and Alerting}\label{sec:monitoring}
+
+\subsection{Stack and topology}
+
+Observability is a Grafana, Prometheus, Loki, InfluxDB, and Scrutiny stack running together in
+CT103 on pve4 (\code{192.168.10.183}), live-confirmed (E-06). Alerting uses Grafana Unified
+Alerting straight to Discord with no Alertmanager. Two contact points exist: an infrastructure
+channel (\code{discord-alerts}) and a UPS channel (\code{discord-ups}). Prometheus was reported
+at 15 of 15 targets up (E-15), which means the silent not-scraping failure mode is clean.
+Config lives as code in a private repository, which is a genuine operational-maturity strength.
+
+\subsection{Alert inventory}
+
+The following rules were extracted from the provisioning repository (E-15). \code{GAP-} rows are
+missing alerts, not deployed ones.
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.24\linewidth} p{0.16\linewidth} p{0.08\linewidth} p{0.24\linewidth} p{0.18\linewidth}@{}}
+\toprule
+\rh{Alert} & \rh{Source} & \rh{Sev} & \rh{Threshold} & \rh{Disposition}\\
+\midrule
+\endhead
+ClusterNotQuorate & corosync textfile & crit & quorate < 1, 2m & Keep\\
+ClusterVotesBelowExpected & corosync textfile & warn & votes deficit > 0, 5m & Keep\\
+InstanceDown & node/blackbox & crit & up < 1, 2m & Keep\\
+PiholePrimaryDown & blackbox DNS & crit & probe .177 < 1, 2m & Keep\\
+PiholeSecondaryDown & blackbox DNS & warn & probe .178 < 1, 2m & Keep\\
+ZfsPoolDegraded & zpool textfile & crit & health > 0, 5m & Verify delivery (R-02)\\
+GpuTempHigh & nvidia-smi textfile & warn & temp > 87C, 5m & Keep\\
+GpuMemoryHigh & nvidia-smi textfile & warn & VRAM used > 90\%, 10m & Keep\\
+DiskAlmostFull & node\_filesystem & warn & root > 90\%, 10m & Extend to pools\\
+LowMemory & node\_memory & warn & avail < 8\%, 10m & Keep\\
+RegistryCertExpiringSoon & blackbox tls & warn & cert < 12h, 15m & Broaden to all certs\\
+BackupVerifyReportStale & Randy textfile & warn & age > 26h, 15m & Keep (caught mpathv)\\
+BackupVerifyFailing & Randy textfile & warn & pass < 1, 5m & Consider critical\\
+AresBackupStale & Randy textfile & warn & age > 26h, 15m & Keep\\
+NetframeMonitorStale & Jarvis heartbeat & warn & age > 1h, noData alerting & Keep (dead-man)\\
+UPS battery low & PeaNUT & crit & charge < 50, 2m & Keep\\
+UPS runtime low & PeaNUT & crit & runtime < 300s, 1m & Keep\\
+PrimaryWANDown & pve2 textfile & crit & gateway < 1, 1m & Keep\\
+FirewallBlockRateSpike & Loki filterlog & warn & > 500 / 5m & Keep\\
+NetworkDeviceConfigChange & Loki syslog & warn & commit > 0 & Keep\\
+NetworkSyslogSilent & Loki stream & warn & < 50 / 15m, noData alerting & Keep (dead-man)\\
+\midrule
+GAP-quorum-guest & (needs pve-exporter) & - & per-guest down & Missing (QL-REC06/07)\\
+GAP-pbs-verify-stale & - & - & PBS verify failed/stale & Missing (QL-REC07)\\
+GAP-host-auth-failure & - & - & repeated auth failures & Missing (DETECT-01c)\\
+GAP-cert-expiry-broad & - & - & any internal/LE cert near expiry & Missing (only registry today)\\
+GAP-2nd-channel & - & - & alert egress independent of WAN/Discord & Missing (QL-REC14)\\
+\bottomrule
+\end{longtable}}
+
+\subsection{Coverage}
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}p{0.20\linewidth} p{0.10\linewidth} X@{}}
+\toprule
+\rh{Signal} & \rh{Status} & \rh{Notes}\\
+\midrule
+Availability & Covered & InstanceDown, Pi-hole probes, PrimaryWANDown, quorum\\
+Latency & Partial & OPNsense per-WAN latency on dashboard only; DNS probe is up/down\\
+Errors & Partial & Journal errors as a dashboard chip; FirewallBlockRateSpike; no app error-rate rule\\
+Saturation & Covered & LowMemory, GpuMemoryHigh; no CPU-saturation rule\\
+Capacity & Partial & DiskAlmostFull on root only; pool/non-root capacity not alerted\\
+Temperature & Covered & GpuTempHigh; no CPU or ambient temp alert\\
+Power & Covered & UPS battery and runtime via PeaNUT\\
+Storage health & Covered & ZfsPoolDegraded plus Scrutiny SMART; delivery of the critical rule unverified\\
+Cert expiry & Narrow & Registry TLS only; other certs not monitored\\
+Backup success & Covered & BackupVerify stale/failing, AresBackupStale\\
+Auth failures & Gap & No host auth-failure alert rule (dashboard chip only)\\
+Config drift & Partial & Hardening-drift chip and NetworkDeviceConfigChange; no host config-drift alert\\
+\bottomrule
+\end{tabularx}}
+
+\subsection{Blind spots and self-dependency}
+
+\begin{itemize}
+\item \rh{Single alert egress (QL-R09, DETECT-01d).} All alerts leave over one Discord webhook
+across the WAN. A WAN or Discord outage blinds alerting, and the deterministic node-down message
+shares that path. A second out-of-band channel is recommended (QL-REC14).
+\item \rh{Co-located stack (QL-R10).} Metrics, logs, and alert evaluation all run in one CT on
+one node. Losing that node loses monitoring and stops alert evaluation.
+\item \rh{Loki unauthenticated.} \code{auth\_enabled: false} on VLAN 1 makes logs readable and
+poisonable by any VLAN 1 host.
+\item \rh{SIEM scope (QL-R22).} Wazuh agents run only on the eight hypervisors; guests, OPNsense,
+the switch, and endpoints are blind to the SIEM.
+\end{itemize}
+
+\begin{callout}[title=The silent-alert lesson]
+The degraded \code{bulk} pool was masked for roughly 71 hours. The \code{backup-verify} job ran
+as an Ares user cron; the laptop suspends overnight with no catch-up, so three nightly runs were
+silently dropped and \code{backup\_verify\_*} froze. The condition was ultimately surfaced by
+\code{BackupVerifyReportStale}, not by \code{ZfsPoolDegraded}. Whether \code{ZfsPoolDegraded}
+actually fired to Discord is unverified read-only (QL-R11, R-02) \sevhigh. A silent critical is
+worse than no monitoring; verifying that delivery path is the single highest-value monitoring
+action. The scheduler itself has since been moved to a persistent systemd user timer.
+\end{callout}
+
+\subsection{What is done well}
+
+Dead-man heartbeats already exist (\code{NetframeMonitorStale}, \code{NetworkSyslogSilent}, both
+alerting on noData), a corosync quorum textfile alert has been added, WAN-down detection is wired
+from OPNsense dpinger, and the entire configuration is version-controlled. The recommended next
+steps are a read-only \code{prometheus-pve-exporter} for guest and quorum metrics (QL-REC06), the
+backup-stale, verify-failed, and broad cert-expiry rules (QL-REC07), and the second alert channel
+(QL-REC14).

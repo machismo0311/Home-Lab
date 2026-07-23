@@ -1,0 +1,37 @@
+\section{Backup Matrix}\label{app:backup-matrix}
+
+Per-asset backup posture. Last-success dates are live-confirmed for 2026-07-23 (14
+snapshots present, evidence E-08). Full field set (encryption, RTO/RPO, failure domain)
+is in \code{data/backup-matrix.csv}. The two rows flagged \sevhigh{} are the material gaps.
+
+{\footnotesize\sansfont
+\begin{longtable}{p{2.6cm}p{2.5cm}p{1.9cm}p{1.6cm}p{1.4cm}p{3.6cm}}
+\toprule
+\rh{Asset} & \rh{Target} & \rh{Schedule} & \rh{Retention} & \rh{Last ok} & \rh{Gap} \\
+\midrule
+\endhead
+OPNsense VM100 & randy-pbs + config repo & 03:00 + 03:17 & 7d/4w & 07-23 & VM image only on Randy; config also age-encrypted to GitHub \\
+CT101 NPM & randy-pbs & 02:00 & 7d/4w & 07-23 & single copy \\
+CT102 Vaultwarden & randy-pbs & 02:00 & 7d/4w & 07-23 & secrets single-copy; break-glass offline mitigates \\
+CT103 Grafana & randy-pbs & 02:00 & 7d/4w & 07-23 & single copy \\
+CT105 Headscale & randy-pbs & 02:00 & 7d/4w & 07-23 & single copy \\
+CT106 Homepage & randy-pbs & 02:00 & 7d/4w & 07-23 & single copy \\
+CT107 OpenWebUI & randy-pbs & 02:00 & 7d/4w & 07-23 & single copy \\
+CT108 pihole2 & randy-pbs & 02:00 & 7d/4w & 07-23 & mirrors CT103 config \\
+VM104 Wazuh & randy-pbs-10g & 03:00 & 7d/4w & 07-23 & single copy \\
+VM110 HomeAssistant & randy-pbs & 03:30 & 7d/4w & 07-23 & single copy \\
+VM201/202/203 RKE2 & randy-pbs & 04:00 & 7d/4w & 07-23 & etcd not separately backed up \\
+QuarkyLab workspace & PBS host backup & 05:30 & per-job & 07-23 & fernanda refreservation floor \\
+CT103/CT104 pve1 & NONE & none & none & NEVER & \sevhigh{} NO BACKUP; config rebuildable from CT108 (R-03) \\
+bulk pool & NONE & n/a & n/a & NEVER & \sevhigh{} NO SECOND COPY of media + fernanda research (R-04) \\
+Ares \code{.claude} & randy:/datastore & hourly & accumulate & 07-23 & secrets excluded \\
+Ares /home & restic to randy & 04:03 & restic & 07-23 & lands ON the degraded bulk pool \\
+\bottomrule
+\end{longtable}}
+
+\begin{callout}
+All production backups currently reside only on Randy (one PBS node, one rack, one UPS
+bus): effectively 1-1-1, not 3-2-1 (QL-R03). The Ares workstation restic target sits on
+the degraded \code{bulk} pool, compounding QL-R01. A second, independent copy is the
+single highest-value recoverability improvement (QL-REC03).
+\end{callout}

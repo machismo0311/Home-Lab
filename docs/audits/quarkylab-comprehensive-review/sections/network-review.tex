@@ -1,0 +1,146 @@
+\section{Network Architecture and Correctness}\label{sec:network}
+
+This section reconstructs the network from repository evidence and live cross-checks
+rather than trusting any single diagram. Two constraints bound its confidence: the
+EX3400 core switch could not be inspected live because key-based SSH is broken
+(E-22, tracked as R-09 and QL-R16), and OPNsense was deliberately not touched because
+no read-only API credential was used for this review (E-23). Items that rest only on
+repository documentation, not on a live reading, are marked \emph{inferred}. See
+\code{diagrams/logical-topology.mmd} and \code{diagrams/physical-topology.mmd}.
+
+\subsection{VLAN and Addressing Design}
+
+The estate runs seven VLANs on the EX3400 (ELS), gatewayed by OPNsense. The design is
+a clean default-deny segmentation model with a dedicated out-of-band plane.
+
+\begin{tabularx}{\linewidth}{@{}c p{2.3cm} p{3.4cm} X@{}}
+\toprule
+\rh{ID} & \rh{Name} & \rh{Subnet} & \rh{Purpose / population} \\
+\midrule
+\endhead
+1  & mgmt/default & 192.168.10.0/24 & Proxmox hosts, corosync, services, switch mgmt (dense) \\
+20 & trusted/OOB  & 192.168.20.0/24 & iDRAC x2 + IPMI (BMCs) + Ares jump leg \\
+30 & servers      & 192.168.30.0/24 & NFS/PBS/GPU egress; dual-homed GPU and storage nodes \\
+40 & IoT          & 192.168.40.0/24 & smart-home, sensors (sparse) \\
+50 & VoIP         & 192.168.50.0/24 & CP-8841 phones, FreePBX (deferred) \\
+60 & guest        & 192.168.60.0/24 & isolated guest WiFi \\
+70 & lab          & 192.168.70.0/24 & CCNA/experimental; standalone \code{sandbox} node \\
+\bottomrule
+\end{tabularx}
+
+The GPU and storage nodes (QuarkyLab, Jarvis, Randy) are dual-homed: management and
+corosync stay on VLAN 1 while NFS, PBS, and internet egress ride VLAN 30. Corosync was
+deliberately kept off VLAN 30 to hold the cluster ring on stable L2, which is sound
+practice.
+
+\subsection{EX3400 Port Map (documented; not live-verified, E-22)}
+
+\begin{tabularx}{\linewidth}{@{}p{2.4cm} p{4.2cm} p{2.2cm} X@{}}
+\toprule
+\rh{Port} & \rh{Attachment} & \rh{Mode} & \rh{VLANs} \\
+\midrule
+\endhead
+ge-0/0/22 & Jarvis nic2 (onboard 1G) & Trunk & native 1 (+ tagged 30, now vestigial) \\
+ge-0/0/24 & QuarkyLab nic2 & Trunk & native 1 + tagged 30 \\
+ge-0/0/30, /32, /44 & iDRAC/IPMI OOB & Access & 20 only \\
+ge-0/0/38 & APC AP7901 PDU & Access & 1 \\
+ge-0/0/41 & Ares mgmt/jump & Dual & native 1 + tagged 20 \\
+ge-0/0/45 & EX2300 uplink & Trunk & all \\
+ge-0/0/46 & UniFi USW-24 Port 24 & Trunk & native 1 + tagged 20/30/40/50/60/70 \\
+xe-0/2/0 & Randy nic3 (10G ConnectX-3) & Trunk & 1 + 30 (storage/NFS) \\
+xe-0/2/2 & Jarvis enp132s0 (10G ConnectX) & Access & 30 (dedicated storage/egress) \\
+xe-0/2/3 & UniFi SFP2 DAC & \sevmed DOWN & EEPROM 10G/1G speed mismatch (DR-14) \\
+\bottomrule
+\end{tabularx}
+
+The switch is RSTP root (bridge-priority 4096) with dual PSUs. One residual hardware
+fault: \code{xe-0/2/3} is down due to a DAC EEPROM speed mismatch, costing a redundant
+UniFi path; the documented fix is a fiber SFP+ at both ends (DR-14). A load-bearing ELS
+gotcha is recorded repeatedly: \code{native-vlan-id} must be set at the physical-interface
+level, not under \code{unit 0 family ethernet-switching}. A stale note in two documents
+still claims the EX3400 does not support it at all; that is false and would cause an
+operator to build a broken trunk (drift DR-08, doc fix D-08).
+
+\subsection{Gateway, DHCP, and DNS}
+
+OPNsense (VM 100 on pve2) is the single LAN router, firewall, DHCP server, and
+inter-VLAN gateway, live-confirmed running with high egress counters (E-06). DHCP moved
+to the Kea backend after an empty-Kea outage on 2026-07-20; Kea holds 12 reservations
+and serves all seven VLAN scopes. WAN is dual-path with single NAT: WAN1 is a Spectrum
+public block terminated directly on \code{vtnet0} (avoiding double-NAT), WAN2 is a
+FirstNet 5G hotspot on \code{vtnet2} as an automatic failover gateway group.
+
+DNS is genuinely highly available: primary Pi-hole \code{.177} (pve1 CT103) and
+secondary \code{.178} (pve5 CT108, a nebula-sync full mirror on a 15-minute timer).
+OPNsense DHCP hands out both resolvers on every scope, so clients fail over
+automatically. The resolver chain is client to Pi-hole to Unbound on \code{.1} to
+internet. A residual concern is that both Pi-holes forward to a single Unbound instance
+(enterprise finding R-03), which has historically been the root of intermittent DNS
+behavior. Critical containers (\code{.177} Pi-hole, \code{.181} NPM, \code{.183}
+Grafana, \code{.148} Homepage) were made static-in-container so a DHCP-server outage
+cannot drop routing, a good hardening move.
+
+\subsection{Firewall Policy}
+
+The inter-VLAN posture is default-deny with explicit allows, and several clamps have
+been applied and verified:
+
+\begin{itemize}
+\item \textbf{BMC isolation and egress clamp (verified 2026-07-17):} all three BMCs sit
+on VLAN 20; only Ares reaches them; a floating quick-block prevents VLAN 20 to internet,
+so compromised BMC firmware cannot reach VLAN 1, VLAN 30, or the internet.
+\item \textbf{VLAN 30 to VLAN 1 block:} one surgical rule blocks servers to
+192.168.10.0/24, with a narrow allow for Prometheus scrape on \code{:9100}.
+\item \textbf{DNS pinholes:} isolated VLANs (IoT/VoIP/Guest/Lab) keep \code{:53} to the
+Pi-hole alias while remaining isolated.
+\item \textbf{Deny logging:} all eight VLAN deny rules log to Wazuh/Loki for
+lateral-movement visibility.
+\end{itemize}
+
+\begin{callout}
+\textbf{Standing decision respected - VLAN 1 egress lockdown is NOT enforced.} The
+management-plane to internet limit is documented as deliberately deferred, and this
+review does not recommend enforcing it without first satisfying every prerequisite:
+UniFi discovery and required multicast/broadcast behavior, legitimate network-device
+outbound connectivity, RKE2 and container-registry/CDN dependencies, Mist or other
+vendor callbacks, administrative access paths, DHCP reservations, an emergency access
+path, current firewall API permissions, and a tested rollback. Enforcing it prematurely
+is a credible way to cause a self-inflicted outage.
+\end{callout}
+
+\subsection{Remote Access and Reverse Proxy}
+
+Headscale (self-hosted, LXC 105 on pve5, v0.29.1) is the internal admin mesh only, with
+nine nodes; students and researchers do not use it. Student and researcher ingress is a
+Cloudflare Tunnel (\code{quarkylab.kylemason.org}) with no inbound ports and the server
+IP hidden. Public web services are fronted by Nginx Proxy Manager (LXC 101, admin
+\code{:81} firewalled to Ares only, F-05):
+
+\begin{tabularx}{\linewidth}{@{}p{4.3cm} p{4.2cm} X@{}}
+\toprule
+\rh{Hostname} & \rh{Backend} & \rh{TLS / auth} \\
+\midrule
+\endhead
+vault.kylemason.org & Vaultwarden \code{.30.182} & CF DNS-01 / login \\
+grafana.kylemason.org & Grafana \code{.183} (pve4) & CF DNS-01 / Grafana \\
+homepage.kylemason.org & Homepage \code{.148} & CF DNS-01 / basic auth \\
+wazuh.kylemason.org & Wazuh \code{.184} & CF DNS-01 / Wazuh \\
+chat.netframe.local & Open WebUI \code{.30.185} & internal / admin acct \\
+llm.netframe.local & Jarvis llm\_router \code{.31:8000} & HTTP, Pi-hole-scoped DNS \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Findings}
+
+\begin{itemize}
+\item \sevhigh OPNsense is a single point of failure for all routing, DHCP, and
+inter-VLAN traffic (QL-R04). A CARP HA plan exists (QL-REC10).
+\item \sevmed No automated network-configuration capture, and EX3400 SSH is broken
+(F-N1, R-08/R-09, QL-R16). Reconcile SSH and deploy Oxidized to snapshot switch and
+firewall config to Git nightly (QL-REC09).
+\item \sevmed Single Unbound recursion point on \code{.1} (enterprise R-03).
+\item \sevlow \code{xe-0/2/3} down from an SFP EEPROM mismatch (DR-14); a residual
+Amazon Echo/Fire tablet remains on flat VLAN 1 pending IoT cutover.
+\item \sevinfo IPv6 is not configured on the VLANs and is default-denied; no explicit
+jumbo/MTU tuning is documented on the 10G fabric.
+\end{itemize}
