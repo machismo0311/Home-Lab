@@ -5,7 +5,6 @@ flowchart TB
     udr["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]
     ex3400["Juniper EX3400-48P<br/>192.168.10.50 · JunOS 23.4R2 · core"]
     usw["UniFi USW-24-250W<br/>trunk on Port 24"]
-    ex2300["Juniper EX2300-48P"]
     pve2["pve2<br/>.204 · OPNsense host"]
     pve3["pve3<br/>.201 · NPM/Vault/Grafana/Homepage/Headscale"]
     pve4["pve4<br/>.202"]
@@ -20,7 +19,6 @@ flowchart TB
     opnsense -->|trunk| ex3400
     ex3400 -->|VLAN 1 wifi| udr
     ex3400 -->|ge-0/0/46| usw
-    ex3400 -->|1G trunk| ex2300
     ex3400 --> pve2
     ex3400 --> pve3
     ex3400 --> pve4
@@ -38,5 +36,5 @@ flowchart TB
     class wan1,wan2 edge
     class opnsense firewall
     class udr,pve2,pve3,pve4,pve5,quarkylab,jarvis,randy node
-    class ex3400,usw,ex2300 switch
+    class ex3400,usw switch
     class pve1 standalone

@@ -27,7 +27,6 @@ flowchart TB
         UPSB[Tripp Lite SMART1500VA\n1500VA / ~900W\nU4–U5]
         UPSB --> EX3400[Juniper EX3400-48P]
         UPSB --> USW[UniFi USW-24-250W]
-        UPSB --> EX2300[Juniper EX2300-48P]
         UPSB --> PATCH[Patch Panels]
         UPSB --> G4A[EliteDesk G4 SFF A]
         UPSB --> G4B[EliteDesk G4 SFF B]
@@ -79,11 +78,10 @@ flowchart TB
 |---|---|---|
 | Juniper EX3400-48P | ~150W | B |
 | UniFi USW-24-250W | ~60W | B |
-| Juniper EX2300-48P | ~80W | B |
 | HP EliteDesk G4 SFF ×2 | ~130W | B |
 | HP EliteDesk G3 Mini ×2 | ~80W | B |
 | Mac mini + RPi 4 | ~30W | B |
-| **UPS B Total Est.** | **~530W** | - |
+| **UPS B Total Est.** | **~450W** | - |
 | Dell R730 ML Node (idle) | ~200W | A |
 | Dell R730 ML Node (CUDA load) | ~500W+ | A |
 | Dell R730 General (idle) | ~150W | A |

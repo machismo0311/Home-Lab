@@ -38,7 +38,6 @@
 | Device | Model | Management IP | Notes |
 |--------|-------|--------------|-------|
 | Core switch | Juniper EX3400-48P | 192.168.10.50 | JunOS 23.4R2-S7.4; ge-0/0/32 is copper uplink to UniFi (access port, not trunk) |
-| Secondary switch | Juniper EX2300-48P | — | — |
 | Access switch | UniFi USW-24-250W | — | — |
 
 > **⚠️ WiFi → EX3400 path is broken.** Ares on WiFi cannot reach EX3400-connected devices. Must use wired `enp0s31f6` with a static IP to access the switch and cluster nodes:

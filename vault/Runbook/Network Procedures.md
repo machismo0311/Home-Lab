@@ -16,9 +16,6 @@ sudo ip link set enp0s31f6 up
 # SSH to EX3400
 ssh mason@192.168.10.50
 
-# SSH to EX2300 (IP TBD - not yet on network)
-# ssh mason@<ex2300-ip>
-
 # Access cluster nodes
 ssh root@192.168.10.193   # pve1
 ssh root@192.168.10.204   # pve2
