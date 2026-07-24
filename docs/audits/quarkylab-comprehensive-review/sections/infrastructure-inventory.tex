@@ -56,16 +56,17 @@ report reboot-required (QL-R13).
 \toprule
 \rh{Device} & \rh{Model} & \rh{Mgmt IP} & \rh{Role / status} \\
 \midrule
-EX3400-48P & Juniper EX3400 & 192.168.10.50 & Core switch, JunOS 23.4R2-S7.4, RSTP root (priority 4096), dual PSU. SSH key auth broken (QL-R16). \code{xe-0/2/3} DOWN - SFP EEPROM speed mismatch (DR-14). \\
+EX3400-48P & Juniper EX3400 & 192.168.10.50 & Core switch \code{KM-EX3400}, JunOS 23.4R2-S7.4, dual PSU both OK, CPU 37C, no alarms, VC-mode enabled (1 member). RSTP root \emph{as of 2026-07-23} after \code{bridge-priority 4096} was applied (QL-R23). \code{xe-0/2/3} UP at 10G. \\
 USW-24-250W & UniFi & via UDR & Access switch, trunk to \code{ge-0/0/46}. \\
 UDR & UniFi Dream Router & 192.168.10.2 & VLAN 1 wireless controller / AP - NOT the WAN edge. \\
-EX2300-48P & Juniper EX2300 & - & Lab / CCNA access switch. \\
 AP7901 & APC & - & Managed PDU on \code{ge-0/0/38}. \\
 \end{tabularx}}
 
-The EX3400 could not be inspected live: SSH refused the offered key (E-22), confirming the
-open reconciliation item R-09. Switch state is therefore taken from repository runbooks and
-the SNMP feed the dashboard already scrapes, not from a live console pull.
+The EX3400 \emph{was} inspected live later in the review, once the operator supplied password
+credentials (E-22, E-25). Key-based SSH is still not configured, so the automation gap (QL-R16)
+stands, but switch state above is live-verified rather than inferred. Note also that the
+previously listed EX2300 lab switch \textbf{does not exist and never has} (operator confirmed);
+it has been removed from the inventory and \code{ge-0/0/45} is simply an unused down port (DR-15).
 
 \subsection{Power devices}
 

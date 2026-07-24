@@ -24,26 +24,36 @@ The \code{bulk} geometry confirms D-05: three vdevs totalling 80\,T, superseding
 
 \subsection{The faulted bulk drive}\label{sub:mpathv}
 
-\sevcrit\; \textbf{QL-R01 - top operational priority.}
+\sevmed\; \textbf{QL-R01 - reduced parity, corrected impact.}
 \code{zpool status bulk} (E-04) shows device \code{mpathv} in vdev \code{raidz2-2} as
 \code{FAULTED} with \code{3} read / \code{14} write errors and "too many errors". The device
 is a SEAGATE ST4000NM0023 (4\,TB SAS), WWN \code{5000c500631a54fb}; both SAS paths are dead,
 so this is a failed physical drive, not a multipath flap. It corresponds to the DS4246 slot-15
-drive that failed 2026-07-21 (incident NF-INC-2026-07-22).
+drive that failed 2026-07-21 (incident NF-INC-2026-07-22). Follow-up inspection confirmed the
+drive is now fully offline: it has no \code{/dev/mapper} entry at all, and ZFS is holding it
+only by cached label.
 
 Key mitigating facts, all live-verified: the pool reports \code{errors: No known data errors};
 RAIDZ2 tolerates one drive loss per vdev, so \code{raidz2-2} still has one parity drive of
 protection remaining; the last scrub (Sun Jul 19) completed with zero errors; and two DS4246
-bays are free for an immediate \code{zpool replace}. The exposure is the window until
-replacement: a second failure in \code{raidz2-2} before the resilver completes would lose the
-\code{bulk} pool.
+bays are free for an immediate \code{zpool replace}.
 
-\begin{callout}[title=Why this is severe despite being tolerated]
-The \code{bulk} pool holds media, archive, and - critically - researcher \code{fernanda}'s
-DUNE data, and \code{bulk} is neither a PBS source nor a PBS target (QL-R02). It has no
-second copy anywhere. A degraded single-parity vdev protecting data that has no backup is the
-pairing that elevates this from routine to urgent. Recommended action QL-REC01: replace
-\code{mpathv}, scrub, and confirm Scrutiny actually flagged the failing drive.
+\begin{callout}[title={Correction: this is loss of redundancy, not imminent data loss}]
+An earlier draft of this review rated the drive urgent on the basis that \code{bulk} held
+researcher \code{fernanda}'s DUNE data with no second copy. \textbf{Live inspection (E-29)
+contradicts that}, and the original framing came from stale documentation. \code{zfs list -r
+bulk} shows \code{bulk/fernanda}, \code{bulk/media}, \code{bulk/misc} and \code{bulk/archive}
+are all 205 to 222\,KB placeholders. The only real data is \code{bulk/backups} at 57.3\,GB,
+which holds the Ares restic repository and a \code{jarvis-netframe} backup - both themselves
+secondary copies whose sources still exist. The DUNE research data has \textbf{not} been
+migrated onto \code{bulk}.
+
+Replacing \code{mpathv} is therefore prudent maintenance to restore full double parity, not a
+race against data loss. Two conditions keep it on the list rather than closing it: the
+exposure becomes real the moment research data migrates onto \code{bulk}, so the second copy
+(QL-R02) must exist \emph{before} that migration; and the Ares restic backup currently targets
+this degraded pool. Recommended action QL-REC01, reclassified to next maintenance window and
+pending operator hardware.
 \end{callout}
 
 \subsection{Controllers and multipath topology}
@@ -67,9 +77,9 @@ keep spares on hand.
 \subsection{Data integrity and capacity}
 
 Scrubs are scheduled and recent (datastore and bulk both scrubbed Jul 19, zero repaired).
-Scrutiny monitors roughly 79 drives across Randy, QuarkyLab, and Jarvis; the one open
-verification item is confirming it surfaced \code{mpathv} rather than staying silent
-(paired with QL-R11 on alert delivery). Utilisation is low across the board -
+Scrutiny monitors roughly 79 drives across Randy, QuarkyLab, and Jarvis. The alerting
+question paired with this pool is now settled: the gap was not Scrutiny or delivery but the
+absence of any device-level ZFS metric, since closed (QL-R11, Section~\ref{sec:monitoring}). Utilisation is low across the board -
 \code{datastore} 176\,G of 36.7\,T, \code{bulk} 80.7\,G of 80\,T, \code{workspace} 144\,G of
 10.9\,T - so there is no near-term capacity pressure; the risk is redundancy and backup, not
 space.
@@ -77,8 +87,8 @@ space.
 \subsection{Recoverability by dataset}
 
 Guest images and configs are recoverable from PBS within roughly 24\,h RPO (Section~\ref{sec:backup}).
-The exceptions are the two datasets with no independent copy: \code{bulk} (including research
-data) and pve1's CT103/CT104. Ares' own \code{restic} backup, notably, targets
+The exceptions are the two datasets with no independent copy: \code{bulk} (which today holds
+only \code{bulk/backups}, research data having not yet migrated) and pve1's CT103/CT104. Ares' own \code{restic} backup, notably, targets
 \code{sftp:randy:/mnt/bulk/backups/ares} - it lands on the degraded \code{bulk} pool, so the
 workstation backup shares the same at-risk failure domain and should be repointed once a
 second target exists.

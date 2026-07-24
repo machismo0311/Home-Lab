@@ -54,7 +54,12 @@ E-18 & Prior assessment / enterprise & \code{report/*.tex; risk-register.tex} & 
 E-19 & Prior assessment / security & \code{report/*.tex; MASTER-TODO.md} & live / high & generated; reconciled 2026-07-22 \\
 E-20 & Prior assessment / reliability & \code{report/*.tex} & 9 days / med & generated; windowed items pending \\
 E-21 & Repo docs / Home-Lab & \code{vault/Runbook/*.md} (AARs, DR, CARP) & live / high & manual; operator narrative \\
-E-22 & Live SSH / ex3400 & \code{ssh ex3400} $\rightarrow$ DENIED & live / high & access-limit; confirms R-09 \\
+E-22 & Live SSH / ex3400 & \code{show version/chassis/spanning-tree/vlans/lldp} & live / high & live; key auth denied, password supplied by operator \\
+E-25 & Live SSH / ex3400 & \code{show configuration | display set} (241 lines) & live / high & live; no bridge-priority; confirms D-08 \\
+E-26 & Live SSH / 3 ZFS nodes & \code{zpool status} parsing validation & live / high & live; bulk=1, datastore=0 \\
+E-27 & Live query / Prometheus & \code{node\_zfs\_pool\_nonhealthy\_devices}; 7d \code{max\_over\_time} & live / high & live; proves rule could never fire \\
+E-28 & Live SSH / ex3400 & post-change \code{show spanning-tree bridge} & live / high & live; Root ID == Bridge ID == 4096 \\
+E-29 & Live read / randy & \code{zfs list -r bulk} & live / high & live; bulk near-empty, corrects QL-R01/R02 \\
 E-23 & Not collected / opnsense & no API creds used; VM 100 untouched & n/a & not-collected; 25.1.12 per AAR only \\
 E-24 & Repo / ansible playbooks & \code{roles/\{hardening,backup\_verify\}} & 1 day / high & manual; \code{--check} only, not applied \\
 \end{longtable}}

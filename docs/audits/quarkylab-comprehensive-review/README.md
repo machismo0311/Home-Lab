@@ -62,9 +62,28 @@ Output: `main.pdf`.
 
 An unusually mature home lab running real research (DUNE), teaching (SLURM GPU
 multi-tenancy), and self-hosted LLM workloads, with defense-in-depth actually applied
-and a safety-first AI-ops design. The highest-priority items are storage and backup
-resilience (a faulted drive in a pool with no second copy; an effective 1-1-1 backup
-posture) and a small number of single points of failure (OPNsense, the single storage
+and a safety-first AI-ops design. The highest-priority remaining item is backup
+resilience: an effective 1-1-1 posture with every copy on a single node, rack, and UPS
+bus, alongside a small number of single points of failure (OPNsense, the single storage
 node). Full detail in `sections/executive-summary.tex`.
 
-*This review made no changes. It is a read-only assessment.*
+## Revision 2 (2026-07-23, late)
+
+The report was revised after additional live evidence:
+
+- **EX3400 inspected live** (the original switch limitation is lifted). This surfaced
+  that the core switch was **not** the spanning-tree root: no `bridge-priority` was set,
+  so a UniFi access switch had won the election by MAC. **Now remediated** (priority 4096).
+- **`ZfsPoolDegraded` root-caused.** It was never a delivery failure. The collector only
+  emitted a pool-level health metric, which reads ONLINE while raidz2 retains redundancy,
+  so a faulted disk was invisible. **A device-level metric and `ZfsDeviceFaulted` rule are
+  now deployed and verified live.**
+- **Storage urgency corrected.** `bulk` is essentially empty; the DUNE research data has
+  not migrated onto it, so the faulted drive is loss of redundancy rather than imminent
+  data loss. The drive replacement remains pending operator hardware.
+- **Corrections:** `xe-0/2/3` is up at 10G (the recorded fault was stale), and the EX2300
+  lab switch **never existed** and has been removed from the inventory.
+
+*Discovery and verification were read-only. Two corrective changes (the ZFS alerting fix
+and the switch STP root) were applied by the operator after explicit approval and verified
+afterwards; see `appendices/command-log.tex`.*

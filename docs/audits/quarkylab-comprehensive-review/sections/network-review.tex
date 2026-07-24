@@ -1,12 +1,22 @@
 \section{Network Architecture and Correctness}\label{sec:network}
 
 This section reconstructs the network from repository evidence and live cross-checks
-rather than trusting any single diagram. Two constraints bound its confidence: the
-EX3400 core switch could not be inspected live because key-based SSH is broken
-(E-22, tracked as R-09 and QL-R16), and OPNsense was deliberately not touched because
-no read-only API credential was used for this review (E-23). Items that rest only on
-repository documentation, not on a live reading, are marked \emph{inferred}. See
+rather than trusting any single diagram. The EX3400 core switch \emph{was} inspected
+live during this review after the operator supplied password credentials (E-22, E-25);
+that inspection produced one significant new finding and corrected two documented
+facts. One constraint remains: OPNsense was deliberately not touched because no
+read-only API credential was used (E-23). Items that rest only on repository
+documentation, not on a live reading, are marked \emph{inferred}. See
 \code{diagrams/logical-topology.mmd} and \code{diagrams/physical-topology.mmd}.
+
+\begin{callout}
+\textbf{Live switch inspection, 2026-07-23.} Hostname \code{KM-EX3400}, model
+\code{ex3400-48p}, Junos 23.4R2-S7.4. Virtual-Chassis mode enabled with a single member
+(FPC0 master). Both power supplies OK, CPU sensor 37 C, no active alarms. SNMP is
+read-only and client-locked to \code{192.168.10.183/32} with \code{0.0.0.0/0 restrict}.
+\code{bpdu-block-on-edge} is set, with edge on \code{ge-0/0/22}, \code{ge-0/0/36} and
+\code{ge-0/0/41}.
+\end{callout}
 
 \subsection{VLAN and Addressing Design}
 
@@ -33,7 +43,7 @@ corosync stay on VLAN 1 while NFS, PBS, and internet egress ride VLAN 30. Corosy
 deliberately kept off VLAN 30 to hold the cluster ring on stable L2, which is sound
 practice.
 
-\subsection{EX3400 Port Map (documented; not live-verified, E-22)}
+\subsection{EX3400 Port Map (live-verified, E-22 / E-25)}
 
 \begin{tabularx}{\linewidth}{@{}p{2.4cm} p{4.2cm} p{2.2cm} X@{}}
 \toprule
@@ -45,18 +55,26 @@ ge-0/0/24 & QuarkyLab nic2 & Trunk & native 1 + tagged 30 \\
 ge-0/0/30, /32, /44 & iDRAC/IPMI OOB & Access & 20 only \\
 ge-0/0/38 & APC AP7901 PDU & Access & 1 \\
 ge-0/0/41 & Ares mgmt/jump & Dual & native 1 + tagged 20 \\
-ge-0/0/45 & EX2300 uplink & Trunk & all \\
+ge-0/0/45 & unused (no neighbor) & Down & none \\
 ge-0/0/46 & UniFi USW-24 Port 24 & Trunk & native 1 + tagged 20/30/40/50/60/70 \\
 xe-0/2/0 & Randy nic3 (10G ConnectX-3) & Trunk & 1 + 30 (storage/NFS) \\
 xe-0/2/2 & Jarvis enp132s0 (10G ConnectX) & Access & 30 (dedicated storage/egress) \\
-xe-0/2/3 & UniFi SFP2 DAC & \sevmed DOWN & EEPROM 10G/1G speed mismatch (DR-14) \\
+xe-0/2/3 & UniFi SFP2 & Up 10G (DESG) & native 1; link confirmed live (DR-14 resolved) \\
 \bottomrule
 \end{tabularx}
 
-The switch is RSTP root (bridge-priority 4096) with dual PSUs. One residual hardware
-fault: \code{xe-0/2/3} is down due to a DAC EEPROM speed mismatch, costing a redundant
-UniFi path; the documented fix is a fiber SFP+ at both ends (DR-14). A load-bearing ELS
-gotcha is recorded repeatedly: \code{native-vlan-id} must be set at the physical-interface
+Two documented facts were corrected by the live inspection. First, \code{ge-0/0/45} does
+not connect to an EX2300: the operator confirms \textbf{no such switch exists or ever
+has}, and the port is simply down with no LLDP neighbor. The EX2300 was a documentation
+phantom and has been removed from the inventory (DR-15). Second, \code{xe-0/2/3} is
+\textbf{up at 10 Gbps} (media type copper, LLDP neighbor a Ubiquiti device) and forwards
+as a designated port, so the previously recorded EEPROM speed-mismatch fault is stale and
+the redundant UniFi path does exist (DR-14 resolved).
+
+The ELS \code{native-vlan-id} question is now settled by live configuration rather than
+by narrative: the switch carries \code{set interfaces ge-0/0/22 native-vlan-id 1} and the
+same on \code{ge-0/0/24}, \code{ge-0/0/41}, \code{ge-0/0/46}, \code{xe-0/2/0} and
+\code{xe-0/2/3}. It is set at the physical-interface
 level, not under \code{unit 0 family ethernet-switching}. A stale note in two documents
 still claims the EX3400 does not support it at all; that is false and would cause an
 operator to build a broken trunk (drift DR-08, doc fix D-08).
@@ -130,17 +148,44 @@ llm.netframe.local & Jarvis llm\_router \code{.31:8000} & HTTP, Pi-hole-scoped D
 \bottomrule
 \end{tabularx}
 
+\subsection{Spanning Tree: Root Was Elected by Accident (Now Remediated)}
+
+The most substantive finding from the live inspection concerns spanning tree. The
+documentation asserted that the EX3400 was the RSTP root at bridge-priority 4096. That
+was \textbf{false}. The committed configuration contained \textbf{no
+\code{bridge-priority} statement at all}, leaving the core switch at the default 32768.
+The UniFi USW-24-250W (\code{b4:fb:e4:1b:ca:3c}) had therefore won the root election on
+the lower MAC address, and the core reached it through \code{ge-0/0/46} at a root cost
+of 20000 over a 1 Gb link.
+
+This was not an outage, but it is a genuine L2 hardening gap: root placement was decided
+by MAC accident rather than by design, so a reboot or topology change could relocate the
+root unpredictably, and traffic paths were computed toward an access switch rather than
+the central, dual-PSU core.
+
+\begin{callout}
+\textbf{Remediated during this review} (operator applied, reviewer verified, E-28).
+\code{set protocols rstp bridge-priority 4096} was committed. The switch is now genuinely
+root: Root ID and Bridge ID are both \code{4096.c0:42:d0:f9:ec:71}, and \code{ge-0/0/46}
+changed role from ROOT to DESG. Worth recording: the first attempt auto-reverted because
+a \code{commit confirmed} was never confirmed. The safety net behaved exactly as intended
+and the change only persisted once deliberately committed. Tracked as QL-R23 / QL-REC21.
+\end{callout}
+
 \subsection{Findings}
 
 \begin{itemize}
 \item \sevhigh OPNsense is a single point of failure for all routing, DHCP, and
 inter-VLAN traffic (QL-R04). A CARP HA plan exists (QL-REC10).
-\item \sevmed No automated network-configuration capture, and EX3400 SSH is broken
-(F-N1, R-08/R-09, QL-R16). Reconcile SSH and deploy Oxidized to snapshot switch and
-firewall config to Git nightly (QL-REC09).
+\item \sevmed No automated network-configuration capture (F-N1, R-08, QL-R16). The
+switch config was captured once by hand during this review; key-based SSH is still not
+configured and nightly capture is still absent. Deploy Oxidized (QL-REC09).
 \item \sevmed Single Unbound recursion point on \code{.1} (enterprise R-03).
-\item \sevlow \code{xe-0/2/3} down from an SFP EEPROM mismatch (DR-14); a residual
-Amazon Echo/Fire tablet remains on flat VLAN 1 pending IoT cutover.
+\item \sevlow A residual Amazon Echo/Fire tablet remains on flat VLAN 1 pending the IoT
+cutover.
 \item \sevinfo IPv6 is not configured on the VLANs and is default-denied; no explicit
 jumbo/MTU tuning is documented on the 10G fabric.
+\item \sevinfo \textbf{Resolved this review:} STP root pinned to the core (QL-R23);
+\code{xe-0/2/3} confirmed up at 10G (DR-14); EX2300 removed as a phantom asset (DR-15);
+\code{native-vlan-id} placement verified in live config (D-08).
 \end{itemize}

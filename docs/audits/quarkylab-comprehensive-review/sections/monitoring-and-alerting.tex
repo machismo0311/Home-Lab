@@ -25,7 +25,8 @@ ClusterVotesBelowExpected & corosync textfile & warn & votes deficit > 0, 5m & K
 InstanceDown & node/blackbox & crit & up < 1, 2m & Keep\\
 PiholePrimaryDown & blackbox DNS & crit & probe .177 < 1, 2m & Keep\\
 PiholeSecondaryDown & blackbox DNS & warn & probe .178 < 1, 2m & Keep\\
-ZfsPoolDegraded & zpool textfile & crit & health > 0, 5m & Verify delivery (R-02)\\
+ZfsPoolDegraded & zpool textfile & crit & health > 0, 5m & Keep; blind to device faults\\
+ZfsDeviceFaulted & zpool textfile & crit & non-ONLINE devices > 0, 5m & \textbf{Added 2026-07-23}\\
 GpuTempHigh & nvidia-smi textfile & warn & temp > 87C, 5m & Keep\\
 GpuMemoryHigh & nvidia-smi textfile & warn & VRAM used > 90\%, 10m & Keep\\
 DiskAlmostFull & node\_filesystem & warn & root > 90\%, 10m & Extend to pools\\
@@ -64,7 +65,7 @@ Saturation & Covered & LowMemory, GpuMemoryHigh; no CPU-saturation rule\\
 Capacity & Partial & DiskAlmostFull on root only; pool/non-root capacity not alerted\\
 Temperature & Covered & GpuTempHigh; no CPU or ambient temp alert\\
 Power & Covered & UPS battery and runtime via PeaNUT\\
-Storage health & Covered & ZfsPoolDegraded plus Scrutiny SMART; delivery of the critical rule unverified\\
+Storage health & Covered & ZfsPoolDegraded plus new ZfsDeviceFaulted (device-level, added this review) plus Scrutiny SMART\\
 Cert expiry & Narrow & Registry TLS only; other certs not monitored\\
 Backup success & Covered & BackupVerify stale/failing, AresBackupStale\\
 Auth failures & Gap & No host auth-failure alert rule (dashboard chip only)\\
@@ -86,14 +87,31 @@ poisonable by any VLAN 1 host.
 the switch, and endpoints are blind to the SIEM.
 \end{itemize}
 
-\begin{callout}[title=The silent-alert lesson]
-The degraded \code{bulk} pool was masked for roughly 71 hours. The \code{backup-verify} job ran
-as an Ares user cron; the laptop suspends overnight with no catch-up, so three nightly runs were
-silently dropped and \code{backup\_verify\_*} froze. The condition was ultimately surfaced by
-\code{BackupVerifyReportStale}, not by \code{ZfsPoolDegraded}. Whether \code{ZfsPoolDegraded}
-actually fired to Discord is unverified read-only (QL-R11, R-02) \sevhigh. A silent critical is
-worse than no monitoring; verifying that delivery path is the single highest-value monitoring
-action. The scheduler itself has since been moved to a persistent systemd user timer.
+\begin{callout}[title={The silent-alert lesson, root-caused and closed}]
+The degraded \code{bulk} pool was masked for roughly 71 hours, and the condition was ultimately
+surfaced by \code{BackupVerifyReportStale} rather than by \code{ZfsPoolDegraded}. This review
+determined the cause, and it was \textbf{not} an alert-delivery failure.
+
+The collector \code{zfs-pool-textfile.sh} emitted only \code{node\_zfs\_pool\_health}, derived
+from \code{zpool list -o health}. That property returns ONLINE for \code{bulk} because the
+raidz2 vdev still holds redundancy, so the metric read 0 (healthy) the entire time. The proof is
+unambiguous: \code{max\_over\_time(node\_zfs\_pool\_health\{pool="bulk"\}[7d])} evaluated to
+\textbf{0}, so the rule, which fires on \code{> 0}, could never have triggered. No per-device
+metric existed anywhere in the stack. A faulted disk inside a still-redundant pool was simply
+invisible to alerting (QL-R11).
+
+\textbf{Remediated 2026-07-23.} The collector now also emits
+\code{node\_zfs\_pool\_nonhealthy\_devices\{pool\}}, a count of vdev devices not ONLINE, and a
+new critical rule \code{ZfsDeviceFaulted} fires on \code{> 0} for 5m to the infra channel. It is
+deployed to Randy, QuarkyLab and Jarvis and verified live in Prometheus: \code{bulk} = 1, every
+other pool = 0. This rule would have paged on day one. Config-as-code lives in
+\code{netframe-monitoring-stack} branch \code{fix/zfs-device-level-alert}.
+
+A second problem surfaced while deploying it: the collector running on all three nodes had
+drifted ahead of the repository, carrying an uncommitted \code{node\_zfs\_pool\_capacity\_percent}
+metric. Deploying the repository copy unchanged would have silently deleted a live metric. It was
+reconciled into the repository first (DR-17). The backup-verify scheduler itself has separately
+been moved to a persistent systemd user timer.
 \end{callout}
 
 \subsection{What is done well}

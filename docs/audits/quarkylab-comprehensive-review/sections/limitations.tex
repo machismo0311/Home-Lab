@@ -18,16 +18,19 @@ each conclusion.
   version, DHCP reservations, and gateway status therefore rest on the repository
   and the operator's AARs. The version 25.1.12 is documented but not re-verified
   live; confidence in firewall specifics is \textbf{medium}.
-  \item \textbf{EX3400 not live-inspected (E-22 / R-09).} SSH key authentication to
-  the switch is broken (it fell through to password authentication and was denied),
-  so switch config, VLAN membership, spanning-tree state, optics status, and error
-  counters could not be pulled. Switch facts are \textbf{medium} confidence and rest
-  on documentation; the one live-adjacent signal is the SNMP data the dashboard
-  already collects.
-  \item \textbf{Alert delivery not verifiable (QL-R11).} Whether the critical
-  \code{ZfsPoolDegraded} rule actually reached Discord could not be confirmed, as
-  the Grafana alert history requires authentication. This is called out as an open
-  item (QL-REC02) rather than assumed either way.
+  \item \textbf{EX3400 now live-inspected (E-22 / E-25) - limitation lifted.} SSH key
+  authentication to the switch is still not configured, but the operator supplied
+  password credentials during the review, so config, VLAN membership, spanning-tree
+  state, optics, and neighbors were all pulled read-only. Switch facts are now
+  \textbf{high} confidence. The residual gap is automation, not visibility: there is
+  still no nightly config capture (QL-R16, QL-REC09).
+  \item \textbf{Grafana rule load not independently confirmed.} The device-level
+  \code{ZfsDeviceFaulted} rule was authored and the new metric was verified live in
+  Prometheus, but the reviewer could not independently confirm that Grafana loaded the
+  rule: the CT103 exec path repeatedly timed out and the alert API requires
+  authentication. The end-to-end proof is operator confirmation that the alert reached
+  Discord. The underlying metric is verified; only the rule-load step rests on the
+  operator's report.
   \item \textbf{Faulted-drive identity.} Live \code{multipath -ll mpathv} returned
   empty during this session (E-04); the drive's WWN (\code{5000c500631a54fb}) and
   model (Seagate ST4000NM0023) are taken from the prior audit, which is corroborated

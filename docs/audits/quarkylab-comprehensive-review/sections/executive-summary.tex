@@ -54,30 +54,57 @@ that names most of them.
 
 \subsection{Highest risks}
 
+Ordering below reflects the corrections established late in the review. The
+storage items were downgraded on live evidence, and the alerting item was
+root-caused and closed.
+
 \begin{enumerate}
-  \item \sevhigh{} \textbf{Faulted \code{bulk} drive on a pool with no second copy
-  (QL-R01 + QL-R02).} \code{mpathv} is FAULTED in \code{raidz2-2}, which now holds
-  only one of two parity drives; a second failure in that vdev loses the pool, and
-  \code{bulk} (which holds research and media data) is neither a PBS source nor
-  target (E-04). Replacement is pending.
   \item \sevhigh{} \textbf{Backups are effectively one-copy / one-site (QL-R03).}
   Every backup lives only on Randy: one PBS, one ZFS pool, one rack, one UPS bus (E-08).
+  This is now the single largest unmitigated exposure.
   \item \sevhigh{} \textbf{OPNsense is a single point of failure (QL-R04).} One VM
   on pve2 provides routing, firewall, DHCP, and inter-VLAN gateway for the whole LAN.
   \item \sevhigh{} \textbf{Randy is a single storage node (QL-R05).} PBS, research
   NFS, and RKE2 persistent volumes all depend on it.
-  \item \sevhigh{} \textbf{Critical-alert delivery is unverified (QL-R11).} The
-  degraded pool was surfaced by a backup-verify staleness alert, not by the direct
-  \code{ZfsPoolDegraded} rule; whether that critical rule actually reached Discord
-  could not be confirmed read-only.
   \item \sevmed{} \textbf{A live GitHub token sits in plaintext at rest (QL-R07).}
   \code{\textasciitilde{}/github\_helper.py} contains a classic PAT; it is
   gitignored and never committed, but usable if the workstation is compromised
   (E-17). Two other plaintext secret files sit alongside it.
+  \item \sevmed{} \textbf{Reduced parity on \code{bulk} (QL-R01), impact corrected.}
+  \code{mpathv} is FAULTED in \code{raidz2-2}, leaving one parity drive. Originally
+  rated urgent on the assumption that \code{bulk} held DUNE research data; live
+  inspection (E-29) shows the pool is essentially empty, so this is loss of redundancy
+  rather than imminent data loss. Replacement is pending operator hardware.
+  \item \sevmed{} \textbf{\code{bulk} still has no second copy (QL-R02).} Low impact
+  today because the pool is near-empty, but the exposure becomes real the moment
+  research data migrates onto it, so the second copy must exist first. The Ares restic
+  backup also currently targets this degraded pool.
   \item \sevmed{} \textbf{Documentation drift (QL-R19).} Recent changes landed in
   CLAUDE.md but not in README, topology, or the docs mirror; two review-spec
-  "corrections" are inverted versus live reality and must not be applied.
+  "corrections" are inverted versus live reality and must not be applied. This review
+  added a third: a phantom EX2300 switch that has never existed (DR-15).
 \end{enumerate}
+
+\subsection{Changes applied during this review}
+
+The review was read-only by default. Two corrective changes were made after explicit
+operator approval, and both were verified afterwards by the reviewer.
+
+\begin{itemize}
+  \item \textbf{ZFS device-level alerting deployed (QL-R11, closed).} The
+  \code{ZfsPoolDegraded} rule could never have fired for \code{bulk}: it watches a
+  pool-level health metric that reads ONLINE while raidz2 retains redundancy
+  (\code{max\_over\_time} over 7 days = 0). No per-device metric existed. A new
+  \code{node\_zfs\_pool\_nonhealthy\_devices} metric and a critical
+  \code{ZfsDeviceFaulted} rule were added and deployed to Randy, QuarkyLab and Jarvis;
+  verified live in Prometheus with \code{bulk} = 1 and all other pools 0.
+  \item \textbf{EX3400 pinned as spanning-tree root (QL-R23, closed).} No
+  \code{bridge-priority} was configured, so a UniFi access switch had won the root
+  election by MAC address while documentation claimed the core was root.
+  \code{bridge-priority 4096} was committed; the core is now genuinely root.
+  \item \textbf{Not done: the drive replacement (QL-REC01)} remains pending operator
+  hardware.
+\end{itemize}
 
 \subsection{Dimension assessments}
 
@@ -135,11 +162,13 @@ reason, and most of this environment is stable.
 \subsection{Confidence and limitations}
 
 Confidence in the live-verified conclusions (cluster health, GPU assignment,
-storage state, backup freshness, power state) is \textbf{high}: each was confirmed
-by direct read-only query and cross-checked against the prior audit. Confidence in
-the network-control-plane conclusions is \textbf{medium}: OPNsense was not queried
-(no credentials used, by design, E-23) and the EX3400 could not be inspected over
-SSH (key authentication is broken, E-22 / R-09), so switch and firewall specifics
-rest on repository documentation rather than live output. This was a strictly
-read-only review; nothing was restarted, reconfigured, or modified, and no
-credential was used. See Section~\ref{sec:limits} for the full limitations register.
+storage state, backup freshness, power state, and now the switch) is \textbf{high}:
+each was confirmed by direct read-only query and cross-checked against the prior
+audit. The EX3400 was inspected live later in the review once the operator supplied
+credentials (E-22, E-25), which lifted the original switch limitation and produced
+the spanning-tree finding below. Confidence in the firewall control plane remains
+\textbf{medium}: OPNsense was not queried (no credentials used, by design, E-23), so
+firewall specifics still rest on repository documentation. The review was read-only
+by default; the two changes listed below were made only after explicit operator
+approval, and were verified afterwards. See Section~\ref{sec:limits} for the full
+limitations register.

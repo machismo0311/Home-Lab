@@ -1,10 +1,13 @@
 \section{Command and Activity Log}\label{app:command-log}
 
-Every action this review performed was read-only and low-risk. No command in the
-config-changing, service-affecting, destructive, or external-target categories was
-executed, and no data was modified on any system. Timestamps are 2026-07-23 (EDT/UTC
-mixed as captured). The full raw output is retained in the reviewer session, not in
-this repository, to avoid committing transient host detail.
+The discovery and verification phases of this review were entirely read-only and
+low-risk. Later in the engagement the operator explicitly approved two corrective
+changes; those are the only entries below marked \textbf{Modified: Yes}, and each was
+verified afterwards by the reviewer. No destructive or external-target command was
+executed at any point. Timestamps are 2026-07-23 (EDT/UTC mixed as captured). The full
+raw output is retained in the reviewer session, not in this repository, to avoid
+committing transient host detail. The captured switch configuration is deliberately
+\emph{not} committed because it contains the SNMP community string.
 
 {\footnotesize\sansfont
 \begin{longtable}{p{1.9cm}p{1.8cm}p{4.3cm}p{3.6cm}p{3.4cm}}
@@ -27,11 +30,27 @@ this repository, to avoid committing transient host detail.
 09:28 & EX3400 & \code{ssh ex3400 (show version)} & Switch state & DENIED (publickey) - confirms R-09 \\
 09:30 & pve3 & \code{upsc tripplite}, \code{upsc midatlantic} & UPS state & UPS-A 59\% / \textasciitilde{}9.5 min; UPS-B 36\% / \textasciitilde{}29 min \\
 09:30 & Randy & \code{ls -dt /datastore/...}, \code{df -h} & Backup freshness & 14 snapshots dated 2026-07-23; 97G / 23T \\
+\midrule
+18:40 & EX3400 & \code{show version}, \code{chassis environment}, \code{virtual-chassis}, \code{chassis alarms} & Switch identity, power, thermal & KM-EX3400; dual PSU OK; 37C; no alarms; VC 1 member \\
+18:42 & EX3400 & \code{show spanning-tree bridge/interface}, \code{show lldp neighbors} & STP root + neighbors & \textbf{UniFi was root}; EX3400 at default 32768; cost 20000 \\
+18:44 & EX3400 & \code{show interfaces terse}, \code{show interfaces xe-0/2/3} & Link states & xe-0/2/3 \textbf{UP 10G}; ge-0/0/45 down, no neighbor \\
+18:45 & EX3400 & \code{show configuration | display set} & Config capture (241 lines) & no bridge-priority; native-vlan-id at interface level \\
+19:05 & Randy & \code{zfs list -r bulk} & Actual data on bulk & \textbf{near-empty}; only bulk/backups 57.3G \\
+19:10 & 3 ZFS nodes & \code{zpool status} + awk parse validation & Validate new metric logic & bulk=1, datastore=0 \\
+21:30 & pve4 CT103 & Prometheus \code{query} + \code{max\_over\_time} 7d & Prove alert could not fire & pool health max = 0 over 7 days \\
+\midrule
+20:15 & 3 ZFS nodes & deploy collector + \code{systemctl start}; add Grafana rule & \textbf{Modified: Yes} - close device-level blind spot & Applied by operator; metric live, bulk=1 \\
+22:00 & EX3400 & \code{set protocols rstp bridge-priority 4096}; \code{commit confirmed} then \code{commit} & \textbf{Modified: Yes} - pin core as STP root & Applied by operator; first attempt auto-reverted \\
+22:05 & EX3400 & \code{show spanning-tree bridge} (post-change) & Verify remediation & Root ID == Bridge ID == 4096; ge-0/0/46 ROOT to DESG \\
 \bottomrule
 \end{longtable}}
 
 \begin{callout}
-All approvals for change remain outstanding by design: this review proposed actions
-(Section~\ref{sec:recommendations}) but executed none of them. The environment was left
-exactly as found.
+Two changes were applied during this engagement, both only after explicit operator
+approval and both verified afterwards: the ZFS device-level metric and alert rule, and
+the EX3400 spanning-tree \code{bridge-priority}. Every other proposed action
+(Section~\ref{sec:recommendations}) remains outstanding, including the \code{bulk} drive
+replacement, which is pending operator hardware. Note that the reviewer's own attempts to
+push these changes directly were blocked by a safety classifier; the operator applied them,
+which preserved the human-in-the-loop boundary this review recommends.
 \end{callout}

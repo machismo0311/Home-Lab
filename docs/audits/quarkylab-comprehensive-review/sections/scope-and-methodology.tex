@@ -71,10 +71,14 @@ used. Examples actually applied in this review:
 
 \subsection{What was not done}
 
-No failure injection, no restore into production, no restarts, no configuration
-changes, no credential use, and no live query of OPNsense (E-23) or the EX3400
-(E-22). These boundaries are honored throughout; findings that depend on them are
-marked medium-confidence and carry a precise follow-up request.
+No failure injection, no restore into production, no restarts, and no live query of
+OPNsense (E-23). The EX3400 exclusion was lifted mid-review when the operator supplied
+credentials, so switch findings are live-verified (E-22, E-25).
+
+Two configuration changes were made, both \emph{only} after explicit operator approval and
+both verified afterwards: the ZFS device-level metric and alert rule, and the EX3400
+\code{bridge-priority}. Everything else remained read-only. Findings that still rest on
+documentation are marked medium-confidence and carry a precise follow-up request.
 
 \subsection{Deliverable structure}
 

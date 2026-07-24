@@ -19,13 +19,16 @@ DR-04 & Headscale node & CT105 on pve5 (E-06) & README/ADR say pve3 & pve5 & No 
 DR-05 & Randy CPU & E5-2690 v3 24c/48t & docs say v4 28c/56t & v3 & No \\
 DR-06 & Randy Seagate drives & 4 in raidz2-3 (E-06) & docs say 2 spare & 4 in-pool & No \\
 DR-07 & bulk geometry & 3x RAIDZ2 80\,T (E-04) & 2x8-wide 58.2\,T & 3-vdev 80\,T & No \\
-DR-08 & EX3400 native-vlan-id & Not live (SSH broken E-22) & docs say unsupported & Supported (ELS) & No \\
+DR-08 & EX3400 native-vlan-id & \textbf{Verified live} in config (E-25) & docs say unsupported & Supported (ELS) & No \\
 DR-09 & Homepage location & CT106 on pve3 (E-06) & pve1 CT104 & pve3 CT106 & No \\
 DR-10 & Randy PVE version & \textbf{9.2.3} live (E-04) & docs say 9.1.1 & 9.2.3 & No \\
 DR-11 & pve1 CT104 homepage & \textbf{running} (E-05) & docs say retired 06-24 & stop/disable & Yes \\
 DR-12 & Ansible hardening & \code{--check} only (E-24) & role exists & not enforced & Yes \\
 DR-13 & DS4246 cabling & Not live-inspected & repo vs spec differ & verify at HW & No \\
-DR-14 & xe-0/2/3 SFP link & \textbf{DOWN} (arch digest) & intended 10G & fiber SFP+ fix & Yes \\
+DR-14 & xe-0/2/3 SFP link & \textbf{UP at 10G} (E-22) & recorded DOWN (EEPROM) & recorded fault is stale & No \\
+DR-15 & EX2300 lab switch & \textbf{Does not exist} (E-22) & listed in docs/inventory & phantom asset & No \\
+DR-16 & EX3400 STP root & UniFi was root; now EX3400 (E-28) & docs claimed 4096 root & remediated & Applied \\
+DR-17 & ZFS collector version & live had capacity metric & repo lacked it & reconciled (d2858df) & Resolved \\
 \bottomrule
 \end{longtable}}
 

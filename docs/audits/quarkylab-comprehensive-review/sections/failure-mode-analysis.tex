@@ -22,7 +22,7 @@ Loss of OPNsense (QL-R04) & InstanceDown, WAN alerts, user reports & whole LAN: 
 Loss of DNS & Pihole probes & name resolution fails for single-resolver clients & Dual Pi-hole HA + both handed out; single Unbound is the residual risk (R-03) & Yes (fail one Pi-hole) \\
 Loss of DHCP & user reports, Kea health & new leases fail; static-in-container svcs unaffected & Kea on OPNsense; critical hosts static; restore OPNsense & Partial \\
 Loss of EX3400 & everything dark, no alert egress & full L2 outage & No switch redundancy; config not captured (QL-R16); manual rebuild & No \\
-Loss of a trunk & link/port down (if monitored) & VLAN reachability degraded & Redundant UniFi path partly lost (xe-0/2/3 down, DR-14) & Yes (in window) \\
+Loss of a trunk & link/port down (if monitored) & VLAN reachability degraded & Redundant UniFi path intact (xe-0/2/3 confirmed up 10G, DR-14 resolved) & Yes (in window) \\
 Loss of a corosync link & corosync ring status & ring degraded, quorum may wobble & knet single-link per node; ring on stable VLAN 1 & No \\
 Loss of Randy / storage (QL-R05) & InstanceDown, NFS/PBS errors & backups, NFS /data, k8s PVs all gone at once & Second target planned (R730xd); no live failover today & No \\
 Loss of DS4246 & zpool import fail, bulk offline & bulk data (research+media) unavailable & Single enclosure SPOF; bulk has no second copy (QL-R02) & No \\

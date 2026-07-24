@@ -20,6 +20,11 @@ E-18,Prior assessment,netframe-enterprise-assessment,report/*.tex + risk-registe
 E-19,Prior assessment,netframe-security-assessment,report/*.tex + remediation/MASTER-TODO.md,2026-07-13..22,live,high,generated,remediation status reconciled 07-22,some items open/blocked
 E-20,Prior assessment,netframe-reliability-assessment,report/*.tex,2026-07-14,9 days,medium,generated,CP-001/002 power items done,windowed items pending
 E-21,Repo docs,Home-Lab,"vault/Runbook/*.md (AARs, DR, CARP plan)",2026-07-01..22,live,high,manual,none,operator narrative
-E-22,Live SSH,ex3400,"ssh ex3400 (show version) -> DENIED",2026-07-23T09:28Z,live,high,access-limit,confirms R-09 SSH broken,switch not live-inspectable via SSH
+E-22,Live SSH,ex3400,"show version/chassis environment/spanning-tree/vlans/lldp/interfaces (key auth denied; password auth supplied by operator)",2026-07-23T18:40Z,live,high,live,STP root was UniFi not EX3400; xe-0/2/3 UP contradicts DR-14,read-only show commands only
 E-23,Not collected,opnsense,"no API creds used; VM 100 untouched by design",n/a,n/a,n/a,not-collected,25.1.12 per AAR-2026-07-20,version documented not re-verified live
 E-24,Repo,ansible playbooks,playbooks/roles/{hardening,backup_verify},2026-07-22,1 day,high,manual,hardening --check only not applied,not runtime-applied to nodes
+E-25,Live SSH,ex3400,"show configuration | display set (241 lines captured to scratchpad, not committed)",2026-07-23T18:45Z,live,high,live,no bridge-priority present; native-vlan-id at interface level confirms D-08,config holds SNMP community so not committed as evidence
+E-26,Live SSH,randy/quarkylab/jarvis,"zpool status parsing validated for node_zfs_pool_nonhealthy_devices",2026-07-23T19:10Z,live,high,live,bulk=1 datastore=0 confirms device-level gap,logic validated before deploy
+E-27,Live query,pve4 CT103 Prometheus,"query node_zfs_pool_nonhealthy_devices; max_over_time(node_zfs_pool_health{pool=bulk}[7d])",2026-07-23T21:30Z,live,high,live,proves ZfsPoolDegraded condition never true (max=0),post-fix verification
+E-28,Live SSH,ex3400,"show spanning-tree bridge + show configuration protocols rstp (post-change)",2026-07-23T22:05Z,live,high,live,Root ID==Bridge ID==4096 confirms STP remediation,first attempt auto-reverted via commit confirmed
+E-29,Live read,randy,"zfs list -r bulk (dataset sizes)",2026-07-23T19:05Z,live,high,live,bulk near-empty contradicts research-data-loss framing,corrects QL-R01/R02 impact

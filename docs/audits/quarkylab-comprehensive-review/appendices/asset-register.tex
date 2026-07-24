@@ -18,10 +18,9 @@ H-06 & QuarkyLab & ML / DUNE / student GPU & 2x E5-2699 v4 / RTX 8000 48GB & .10
 H-07 & Jarvis & LLM inference & 2x E5-2687W v4 / 2x RTX 6000 24GB & .10.31 (+.30.31) / v1+30 & up; kernel held (nvidia not held - narrower); tank 9.09T + scratch; llm\_router+ollama \\
 H-08 & Randy & Storage / PBS / Jellyfin / k8s worker & 2x E5-2690 v3 / RX 580 & .10.187 (+.30.187) / v1+30 & up; datastore 36.7T ONLINE; bulk 80T DEGRADED (mpathv); PBS; live PVE 9.2.3 vs docs 9.1.1 (DR-10) \\
 H-09 & DS4246 & JBOD disk shelf & NetApp 24-bay / n/a & dual SAS to Randy & degraded; 22x 4TB (2 free bays); slot 15 dead 2026-07-21; single enclosure SPOF \\
-N-01 & EX3400-48P & Core switch & JunOS 23.4R2-S7.4 & .10.50 / all & up; RSTP root; dual PSU; SSH key auth broken (R-09); xe-0/2/3 DOWN (SFP mismatch) \\
+N-01 & EX3400-48P & Core switch & JunOS 23.4R2-S7.4 & .10.50 / all & up; \code{KM-EX3400}; RSTP root confirmed after \code{bridge-priority 4096} applied 2026-07-23 (QL-R23); dual PSU OK; no alarms; SNMP RO locked to .183/32; xe-0/2/3 UP 10G \\
 N-02 & UniFi USW-24 & Access switch & UniFi & trunk ge-0/0/46 & up \\
 N-03 & UniFi UDR & Wireless controller / AP & UniFi & .10.2 / v1 & up; NOT the WAN edge (common misread) \\
-N-04 & EX2300-48P & Lab access switch & JunOS & trunk ge-0/0/45 & up; lab / CCNA \\
 N-05 & APC AP7901 & Managed PDU & APC & ge-0/0/38 / v1 & up \\
 P-01 & UPS-B & Middle Atlantic OL2200R & feeds R730s+Randy+DS4246 & n/a & up; OL, 100\%, load 36\%, \textasciitilde{}29 min \\
 P-02 & UPS-A & Tripp Lite SMART1500 & feeds switch+UniFi+EliteDesks & n/a & up; OL, 100\%, load 59\%, \textasciitilde{}9.5 min (imbalanced) \\

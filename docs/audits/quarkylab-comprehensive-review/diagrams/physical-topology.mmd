@@ -5,9 +5,8 @@ graph TD
     WAN2[FirstNet 5G hotspot 192.168.1.0/24]
   end
   subgraph CORE[Core switching]
-    EX3400["Juniper EX3400-48P<br/>192.168.10.50 - RSTP root - dual PSU"]
+    EX3400["Juniper EX3400-48P KM-EX3400<br/>192.168.10.50 - RSTP root (priority 4096, set 2026-07-23) - dual PSU"]
     UNIFI["UniFi USW-24-250W<br/>+ UDR controller .2"]
-    EX2300["Juniper EX2300-48P (lab)"]
   end
   subgraph CLUSTER[km-cluster - 7 nodes]
     PVE2["pve2 EliteDesk .204<br/>OPNsense host"]
@@ -24,14 +23,13 @@ graph TD
   WAN1 --> EX3400
   WAN2 -. failover .-> EX3400
   EX3400 ---|ge-0/0/46 trunk| UNIFI
-  EX3400 ---|ge-0/0/45 trunk| EX2300
   EX3400 ---|ge-0/0/24 trunk 1+30| QL
   EX3400 ---|ge-0/0/22 + xe-0/2/2 10G| JV
   EX3400 ---|xe-0/2/0 10G trunk 1+30| RANDY
   EX3400 --- PVE2 & PVE3 & PVE4 & PVE5
   EX3400 -. mgmt VLAN1 .- PVE1
   RANDY ===|dual SAS + multipath| DS4246
-  EX3400 -.->|xe-0/2/3 DOWN - SFP EEPROM mismatch| UNIFI
+  EX3400 ===|xe-0/2/3 10G UP - redundant path| UNIFI
 
   subgraph POWER[Power]
     UPSB["Middle Atlantic UPS-OL2200R (UPS-B)<br/>load 36% ~29min"]
