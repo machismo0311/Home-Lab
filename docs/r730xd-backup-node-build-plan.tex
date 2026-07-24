@@ -1,0 +1,205 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{codebg}{gray}{0.96}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  breaklines=true,
+  frame=single,
+  framesep=4pt,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\setlist{nosep,leftmargin=1.4em}
+
+\title{\textbf{R730xd Backup Node: Build Plan}}
+\author{NetFRAME Home Lab}
+\date{Drafted 2026-07-22. READ AND FILL THE TBD FIELDS before executing.}
+
+\begin{document}
+\maketitle
+
+\section{Purpose and role}
+A Dell PowerEdge R730xd added as a second, independent storage node whose job is twofold:
+\begin{enumerate}
+  \item \textbf{Backup target.} It runs its own Proxmox Backup Server (PBS) and \emph{pulls}
+  a copy of Randy's PBS datastore over a scheduled sync job. This gives a real backup of the
+  backups and closes the audit finding that all backups currently sit only on Randy (one node,
+  one rack, one UPS bus). See \texttt{audit/findings/30-gap-analysis.md} item R-04.
+  \item \textbf{Transcode node.} It holds the Jellyfin video-transcode GPU, taking that role
+  off Randy.
+\end{enumerate}
+The sync direction is pull: the backup node holds credentials to read Randy, and Randy stays
+passive. That is the safer posture (a compromise of the backup node cannot write to Randy).
+
+\section{Fields to confirm before you start (TBD)}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Field & Value \\
+\midrule
+Node hostname & \textbf{TBD} (pick a name in your scheme) \\
+GPU card & \textbf{TBD}: RX 580 moved from Randy (VAAPI), or a new NVIDIA card (NVENC) \\
+Mgmt IP (VLAN 1) & \texttt{192.168.10.188} (confirm free in Kea + Pi-hole) \\
+Service IP (VLAN 30, 10G) & \texttt{192.168.30.188} (confirm free) \\
+iDRAC IP (VLAN 20) & \texttt{192.168.20.23} (next after Randy .22; confirm free) \\
+Rack location & \textbf{TBD}: a different rack buys real fault isolation for the backup \\
+Sync scope & Randy datastore \texttt{datastore} only (skip the degraded \texttt{bulk} media) \\
+\bottomrule
+\end{tabular}
+
+\section{Hardware}
+\begin{itemize}
+  \item Chassis: R730xd, 24x 2.5" front bays (plus rear flexbay).
+  \item Drives: 7x 1.8\,TB SAS, 15x 1.2\,TB SAS, 2x 250\,GB SSD (boot).
+  \item Storage controller: \textbf{HBA330 Mini in IT mode} (or a PERC H730 flashed to IT mode),
+  so ZFS owns redundancy. Do not use hardware RAID. This matches Randy's IT-mode approach.
+  \item NIC: a 10\,GbE port for the VLAN 30 service path (ConnectX or X520 class), plus the
+  onboard 1\,G for VLAN 1 management, mirroring Randy's dual-homed layout.
+  \item GPU: single-slot or dual-slot card in a PCIe riser; confirm the R730xd riser and power
+  support the chosen card (the RX 580 needs a 6-pin/8-pin PCIe power lead).
+\end{itemize}
+
+\section{Network (dual-homed, like Randy)}
+\begin{itemize}
+  \item Management, corosync (if clustered), and the web UIs ride VLAN 1 on the onboard 1\,G.
+  \item PBS sync traffic and any NFS ride VLAN 30 on the 10\,G NIC, reaching Randy directly at
+  \texttt{192.168.30.187} at 10\,G. Keep the PBS sync on the \texttt{.30} path so it never
+  touches the management VLAN.
+  \item iDRAC on VLAN 20 (tagged), reachable from Ares \texttt{enp0s31f6.20}, factory creds
+  rotated into Vaultwarden (same policy as the other BMCs).
+\end{itemize}
+
+\section{OS and boot}
+Install Proxmox VE onto the two 250\,GB SSDs as a \textbf{ZFS mirror} (\texttt{rpool}) using the
+PVE installer (select the two SSDs, RAID1). PBS installs on top as a service package, the same
+pattern Randy already runs.
+\begin{lstlisting}[language=bash]
+# after PVE is installed and updated, add the PBS server package:
+apt update && apt install proxmox-backup-server
+\end{lstlisting}
+
+\section{ZFS data pool (Option B: 14 active + 1 hot spare)}
+One pool with three RAIDZ2 vdevs plus a hot spare. Always use \texttt{/dev/disk/by-id} names,
+never \texttt{sdX} (which reorder across reboots).
+\begin{lstlisting}[language=bash]
+# Replace the by-id placeholders with the real device ids (ls -l /dev/disk/by-id | grep -i sas)
+zpool create -o ashift=12 \
+  -O compression=zstd -O atime=off -O xattr=sa -O relatime=on \
+  vault \
+  raidz2 <7x 1.8TB by-id>            `# vdev A: ~8.2 TiB usable` \
+  raidz2 <7x 1.2TB by-id>            `# vdev B1: ~5.4 TiB usable` \
+  raidz2 <7x 1.2TB by-id>            `# vdev B2: ~5.4 TiB usable` \
+  spare  <1x 1.2TB by-id>           `# hot spare for the 1.2TB vdevs`
+
+# PBS datastore dataset, larger recordsize suits PBS chunk files:
+zfs create -o recordsize=1M vault/pbs
+zpool status vault
+\end{lstlisting}
+Usable capacity is about 19\,TiB, enough to hold Randy's \texttt{datastore} PBS data with room
+to grow. Rename the pool \texttt{vault} to your preference if you like.
+
+\subsection*{Spare coverage caveat (important)}
+The single 1.2\,TB hot spare can auto-replace any of the fourteen 1.2\,TB drives, but it
+\textbf{cannot} replace a 1.8\,TB drive (a spare must be at least as large as the disk it
+replaces). Vdev A (the 1.8\,TB drives) therefore has no automatic spare. Keep a cold 1.8\,TB
+drive on the shelf and replace vdev-A failures by hand.
+
+\section{PBS datastore}
+\begin{lstlisting}[language=bash]
+proxmox-backup-manager datastore create backup /vault/pbs
+# local retention (independent of Randy) + verify + gc:
+proxmox-backup-manager prune-job create backup-prune \
+  --store backup --schedule 'daily' \
+  --keep-daily 14 --keep-weekly 8 --keep-monthly 6
+proxmox-backup-manager verify-job create backup-verify \
+  --store backup --schedule 'sun 07:00'
+proxmox-backup-manager garbage-collection ... # schedule daily GC in the UI or datastore config
+\end{lstlisting}
+
+\section{PBS remote sync (pull from Randy)}
+\subsection*{On Randy (source): a read-only sync identity}
+\begin{lstlisting}[language=bash]
+proxmox-backup-manager user create sync@pbs
+proxmox-backup-manager user generate-token sync@pbs backup-node
+#   -> copy the returned token secret into Vaultwarden
+proxmox-backup-manager acl update /datastore/datastore DatastoreReader \
+  --auth-id 'sync@pbs!backup-node'
+# note Randy's fingerprint for the remote definition:
+proxmox-backup-manager cert info | grep -i fingerprint
+\end{lstlisting}
+
+\subsection*{On the R730xd (target): the remote and the sync job}
+\begin{lstlisting}[language=bash]
+proxmox-backup-manager remote create randy \
+  --host 192.168.30.187 \
+  --auth-id 'sync@pbs!backup-node' \
+  --password '<token-secret-from-vaultwarden>' \
+  --fingerprint '<randy-fingerprint>'
+
+# pull Randy's datastore into the local 'backup' datastore, nightly AFTER Randy's jobs finish.
+# remove-vanished false: the backup keeps snapshots even after Randy prunes them.
+proxmox-backup-manager sync-job create randy-pull \
+  --remote randy --remote-store datastore \
+  --store backup \
+  --schedule '06:00' \
+  --remove-vanished false
+proxmox-backup-manager sync-job run randy-pull   # first run, verify it pulls
+\end{lstlisting}
+Randy's nightly guest backups run roughly 02:00 to 08:00 UTC; set the sync schedule to land
+after they finish (adjust the \texttt{06:00} above to your local time as needed).
+
+\section{GPU passthrough for Jellyfin}
+Run Jellyfin in an unprivileged LXC with the GPU passed through. The exact steps depend on the
+card, which is still TBD.
+\begin{itemize}
+  \item \textbf{RX 580 (AMD, VAAPI):} bind \texttt{/dev/dri} into the container. Jellyfin uses
+  VAAPI for AMD transcode (this is simpler than ROCm, which is not needed for transcode). Ensure
+  the amdgpu kernel module loads on the host.
+  \item \textbf{New NVIDIA (NVENC):} install the pinned NVIDIA driver on the host plus the
+  container toolkit, then expose the nvidia devices to the LXC. This mirrors the QuarkyLab and
+  Jarvis GPU stack pattern (kernel pin plus held driver packages).
+\end{itemize}
+Jellyfin media can mount from Randy or from a dataset on this node; decide during setup.
+
+\section{Verification checklist}
+\begin{itemize}
+  \item \texttt{zpool status vault} shows all vdevs ONLINE, the spare AVAIL, no errors.
+  \item Reboot once, confirm the pool auto-imports and PVE boots from the SSD mirror.
+  \item \texttt{ip -br a} shows the VLAN 30 10\,G leg at \texttt{.30.188}, and \texttt{ping
+  192.168.30.187} reaches Randy at 10\,G.
+  \item \texttt{proxmox-backup-manager sync-job run randy-pull} completes and snapshots appear in
+  the local \texttt{backup} datastore.
+  \item A manual \texttt{verify-job} on the local datastore passes.
+  \item Jellyfin transcodes a file using the GPU (check \texttt{nvidia-smi} or \texttt{radeontop}
+  during a transcode).
+  \item Add the node's node-exporter to Prometheus and confirm the target is UP.
+\end{itemize}
+
+\section{Rollback and safety}
+\begin{itemize}
+  \item This node is purely additive. Nothing on Randy changes except the creation of a
+  read-only \texttt{sync@pbs} token, which is revocable: \texttt{proxmox-backup-manager user
+  delete 'sync@pbs'}.
+  \item If the sync misbehaves, disable the job (\texttt{sync-job update randy-pull --schedule
+  ''}) with no effect on Randy.
+  \item The pool and datastore live only on this node; destroying and rebuilding them touches
+  nothing else.
+\end{itemize}
+
+\section{Open follow-ons}
+\begin{itemize}
+  \item True offsite copy (Backblaze B2 or a remote PBS) as a third layer, later.
+  \item Add this node to the monitoring coverage matrix and alert rules.
+  \item Fill the TBD fields at the top before executing.
+\end{itemize}
+
+\end{document}
