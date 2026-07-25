@@ -28,7 +28,7 @@ power-cut of 512 GB R730s and Randy's ZFS pools. Listed as a planned HA item in
 | UPS | Driver | Feeds | Runtime |
 |---|---|---|---|
 | **A — Middle Atlantic** (~1320 W) | `midatlantic` | **QuarkyLab, Jarvis, Randy, DS4246** | ~10–15 min half-load; **collapses to ~2 min under ML/GPU load >1000 W** |
-| **B — Tripp Lite** (~900 W) | `tripplite` | **EX3400, UniFi, EX2300, pve2–pve5, pve1 (Mac Mini), RPi** | ~15–20 min |
+| **B — Tripp Lite** (~900 W) | `tripplite` | **EX3400, UniFi, pve2–pve5, pve1 (Mac Mini), RPi** | ~15–20 min |
 
 > **Key fact:** the NUT server (**pve3**) is itself on **UPS B**. So a UPS-A event
 > leaves pve3 alive to coordinate; a UPS-B event takes pve3 **and the switch** down.

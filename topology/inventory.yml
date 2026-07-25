@@ -30,9 +30,6 @@ nodes:
     label: "UniFi USW-24-250W"
     role: switch
     note: "trunk on Port 24"
-  - id: ex2300
-    label: "Juniper EX2300-48P"
-    role: switch
   - id: pve2
     label: "pve2"
     role: node
@@ -73,7 +70,6 @@ links:
   - [opnsense, ex3400, "trunk"]
   - [ex3400, udr, "VLAN 1 wifi"]
   - [ex3400, usw, "ge-0/0/46"]
-  - [ex3400, ex2300, "1G trunk"]
   - [ex3400, pve2]
   - [ex3400, pve3]
   - [ex3400, pve4]

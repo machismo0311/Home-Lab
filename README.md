@@ -58,6 +58,8 @@ NETFRAME is treated as a system to be *assessed and operated*, not just stood up
 
 Every change to the estate is recorded in an **append-only change log with a stated rollback**, and incidents are written up as formal **RCAs and after-action reports**. Full unredacted editions, a Fortune-100 operational benchmark, and a 30+ document operations library are kept private.
 
+**Publishing discipline (OPSEC).** What is *not* published is treated as a control in its own right. Internal addressing and topology are published deliberately (see [SECURITY.md](SECURITY.md)); live credentials, keys, MAC addresses, and hardware serials are not. The public editions linked above are generated from private masters through a scripted sanitization pass that generalizes hosts to roles (`NODE-N`, `STORAGE`, `GPU-A`) and strips identifiers, and the public security report is built behind a compile-time gate so a value left in the source cannot reach the published PDF. This repository runs a **pre-commit secret and recon scanner** over staged changes (see [`.githooks/`](.githooks/)), and published documents are checked for leaked identifiers before release. Deciding what to withhold is part of the engineering, not an afterthought.
+
 ---
 
 ## Cluster Nodes
@@ -97,9 +99,7 @@ flowchart TB
     subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
         EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4 · STP root"]
         USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
-        EX2300["Juniper EX2300-48P<br/>U38"]
         EX3400 <-->|ge-0/0/46 trunk| USW
-        EX3400 <-->|1G trunk| EX2300
     end
 
     UDR["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]

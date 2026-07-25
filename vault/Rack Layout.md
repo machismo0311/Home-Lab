@@ -28,7 +28,7 @@
 ├───────┼─────────────────────────────────┤
 │  U40  │ Juniper EX3400-48P (PoE+)       │ ◄ Core switch, dual PSU, 10G uplinks
 │  U39  │ UniFi USW-24-250W (PoE+)        │ ◄ Access/AP switch
-│  U38  │ Juniper EX2300-48P              │ ◄ Secondary / lab switch
+│  U38  │ (empty)                         │
 ├───────┼─────────────────────────────────┤
 │  U37  │ ─── Cable Management ───        │
 │ U36–  │ HP EliteDesk G4 SFF ×2          │ ◄ i7-8700 │ 48GB / 32GB
@@ -76,7 +76,6 @@ flowchart TB
     subgraph TOP["🔵 Zone 1 - Networking (U38–U42)"]
         P1[Patch Panels] --> EX3400[Juniper EX3400]
         EX3400 --> USW[UniFi USW-24]
-        USW --> EX2300[Juniper EX2300]
     end
 
     subgraph MID_HIGH["🟡 Zone 2 - Small Compute (U30–U37)"]
@@ -133,7 +132,6 @@ flowchart TB
 | Raspberry Pi 4 | 1 | Co-mounted w/ Mac mini |
 | Juniper EX3400-48P | 1 | 1U, dual PSU |
 | UniFi USW-24-250W | 1 | 1U |
-| Juniper EX2300-48P | 1 | 1U |
 | Leviton Patch Panel | 2 | 1U each |
 | Middle Atlantic UPS-2200R | 1 | 2U, bottom anchor |
 | Tripp Lite SMART1500VA | 1 | 2U |

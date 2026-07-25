@@ -50,7 +50,7 @@ mindmap
 | U42–U41 | Leviton Patch Panels (×2) | Cable management / patch |
 | U40 | Juniper EX3400-48P | Core PoE+ switch |
 | U39 | UniFi USW-24-250W | Access / PoE switch |
-| U38 | Juniper EX2300-48P | Secondary switch |
+| U38 | (empty) | - |
 | U36–U34 | HP EliteDesk G4 SFF ×2 (3U shelf) | pve2 (32GB) + pve3 (48GB) |
 | U33–U31 | HP EliteDesk G3 Mini ×2 (3U shelf) | pve4 + pve5 (32GB each) |
 | U30 | Mac mini (pve1) + RPi 4 (1U shelf) | Pi-hole / cluster mgmt |
@@ -130,7 +130,6 @@ mindmap
 ### Switching
 - [[Networking/Juniper EX3400-48P]] - Core switch config & Junos notes
 - [[Networking/UniFi USW-24-250W]] - UniFi switch config
-- [[Networking/Juniper EX2300-48P]] - Secondary switch
 
 ### Projects
 - [[Projects/VoIP - FreePBX]] - CP-8841 phones + VoIP.ms
