@@ -1,6 +1,6 @@
 # 🌐 Network Overview
 **Tags:** #networking #topology #vlans
-**Related:** [[Networking/Juniper EX3400-48P]] · [[Networking/UniFi USW-24-250W]] · [[Networking/Juniper EX2300-48P]] · [[Rack Layout]] · [[00 - Homelab MOC]]
+**Related:** [[Networking/Juniper EX3400-48P]] · [[Networking/UniFi USW-24-250W]] · [[Rack Layout]] · [[00 - Homelab MOC]]
 
 ---
 
@@ -20,9 +20,7 @@ flowchart TB
     subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
         EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4"]
         USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
-        EX2300["Juniper EX2300-48P<br/>U38"]
         EX3400 <-->|ge-0/0/46 trunk| USW
-        EX3400 <-->|1G trunk| EX2300
     end
 
     subgraph PVE["km-cluster - Proxmox nodes"]
@@ -110,6 +108,5 @@ flowchart TB
 |--------|-----|------|
 | Juniper EX3400-48P | 192.168.10.50 | Core, PoE+, dual PSU, 10G, VLAN trunk |
 | UniFi USW-24-250W | - | Access, PoE+; Port 24 trunk to EX3400 ge-0/0/46 |
-| Juniper EX2300-48P | - | Secondary / lab isolation |
 
 > Randy 10G: Mellanox ConnectX-3 nic3 → EX3400 xe-0/2/0.

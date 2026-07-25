@@ -139,7 +139,6 @@ WAN uplinks & 2 (ISP + 5G) & UPS (split-bus) & 2 / \textasciitilde2220\,W \\
   \node[net,below=of opn] (ex34) {\textbf{EX3400-48P} core\\\ip{192.168.10.50}\\JunOS 23.4R2 \textperiodcentered\ STP root};
 
   \node[net,left=22mm of ex34] (usw) {UniFi USW-24\\Port24 trunk};
-  \node[net,left=8mm of usw] (ex23) {EX2300-48P\\lab};
 
   % compute row
   \node[small,below left=16mm and 26mm of ex34] (pve2) {pve2 \textperiodcentered\ .204\\OPNsense host};
@@ -155,7 +154,7 @@ WAN uplinks & 2 (ISP + 5G) & UPS (split-bus) & 2 / \textasciitilde2220\,W \\
   \draw[lnk] (wan)--(opn);
   \draw[lnkbak] (fn)|-(opn.west);
   \draw[lnk] (opn)--(ex34);
-  \draw[lnk] (ex34)--(usw); \draw[lnk] (usw)--(ex23);
+  \draw[lnk] (ex34)--(usw);
   \draw[lnk] (ex34)-- (pve2.north); \draw[lnk] (ex34)--(pve3.north);
   \draw[lnk] (ex34)--(pve4.north); \draw[lnk] (ex34)--(pve5.north);
   \draw[lnk] (ex34)--(quark.north); \draw[lnk] (ex34)--(jarvis.north);
@@ -175,7 +174,6 @@ WAN uplinks & 2 (ISP + 5G) & UPS (split-bus) & 2 / \textasciitilde2220\,W \\
     20/nfgrey2/{Patch Panels (U41--42)},
     18.5/nfblue!35/{EX3400-48P core \textperiodcentered\ U40},
     17.4/nfslate!25/{UniFi USW-24 \textperiodcentered\ U39},
-    16.3/nfslate!25/{EX2300-48P \textperiodcentered\ U38},
     14.7/nfblue!25/{EliteDesk G4 SFF x2 (pve2, pve3) \textperiodcentered\ U34--36},
     13.2/nfblue!25/{EliteDesk G3 Mini x2 (pve4, pve5) \textperiodcentered\ U31--33},
     12/nfblue!15/{Mac mini + RPi4 (pve1) \textperiodcentered\ U30},
@@ -197,7 +195,7 @@ WAN uplinks & 2 (ISP + 5G) & UPS (split-bus) & 2 / \textasciitilde2220\,W \\
 \toprule
 From & Port & To & Speed & Notes \\ \midrule
 EX3400 & \texttt{ge-0/0/46} & UniFi USW-24 P24 & 1G & 802.1Q trunk, native 1 + tagged 20/30/40/50/60/70 \\
-EX3400 & \texttt{ge-0/0/45} & EX2300 & 1G & Trunk, all VLANs \\
+EX3400 & \texttt{ge-0/0/45} & (unused, down) & - & - \\
 EX3400 & \texttt{xe-0/2/0} & Randy nic3 (Mellanox) & \textbf{10G} & Storage / NFS / PBS data path \\
 EX3400 & \texttt{xe-0/2/2} & Jarvis ConnectX & \textbf{10G} & Access VLAN 30 \\
 EX3400 & \texttt{ge-0/0/24} & QuarkyLab nic2 & 1G & Trunk native 1 + tagged 30 \\
@@ -236,7 +234,6 @@ UPS A carries both GPU R730s. The RTX 8000 alone can draw roughly 260\,W under C
 Device & Mgmt IP & OS & Role \\ \midrule
 EX3400-48P & \ip{192.168.10.50} & JunOS 23.4R2-S7.4 & \textbf{Core}: 48\texttimes1G PoE+, 4\texttimes10G SFP+, 2\texttimes40G QSFP+, dual PSU, STP root (prio 4096) \\
 UniFi USW-24-250W & UniFi-managed & UniFi & Access / AP aggregation; Port 24 trunk \\
-EX2300-48P & via trunk & JunOS & Secondary / lab isolation \\
 \bottomrule
 \end{tabularx}
 \end{center}

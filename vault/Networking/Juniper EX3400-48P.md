@@ -115,7 +115,7 @@ set protocols rstp bridge-priority 4096
 |---|---|---|---|
 | ge-0/0/32 | Copper uplink → UniFi USW-24 | Access | `default` (VLAN 1) only - legacy uplink |
 | ge-0/0/38 | APC AP7901 managed PDU | Access | `default` (VLAN 1) |
-| ge-0/0/45 | Uplink to EX2300 | Trunk | all VLANs (1G) |
+| ge-0/0/45 | (unused, down) | - | - |
 | ge-0/0/46 | **Trunk uplink → UniFi Port 24** | Trunk | ✅ **LIVE 2026-06-25** - members `default trusted servers iot voip guest lab`; `native-vlan-id 1` |
 | xe-0/2/0 | Randy nic3 (10G data) | - | 10GbE link |
 | xe-0/2/3 | DAC → UniFi SFP 2 | Trunk | ⚠️ **DOWN** - 10G/1G EEPROM speed mismatch |

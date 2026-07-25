@@ -47,7 +47,7 @@ At a glance:
 | Proxmox nodes (cluster) | 7 (voting, quorate 7/7) |
 | Standalone hypervisor | 1 (pve1, Mac Mini — Pi-hole host) |
 | VMs / LXC containers | 2 VMs + 6 LXCs |
-| Managed switches | 3 (EX3400 core, USW-24 access, EX2300 lab) |
+| Managed switches | 2 (EX3400 core, USW-24 access) |
 | VLANs defined | 7 (IDs 1/20/30/40/50/60/70) |
 | Physical GPUs | 3 (1× RTX 8000 48 GB, 2× RTX 6000 24 GB) |
 | Aggregate VRAM | ~96 GB |
@@ -104,7 +104,7 @@ U42  Leviton Patch Panel #1 ─────────────── CAT6 f
 U41  Leviton Patch Panel #2
 U40  Juniper EX3400-48P (PoE+)  ─────────── CORE switch · dual PSU · 4×10G SFP+ · 2×40G QSFP+
 U39  UniFi USW-24-250W (PoE+)   ─────────── ACCESS switch / AP aggregation
-U38  Juniper EX2300-48P         ─────────── Secondary / lab switch
+U38  (empty)
 U37  ── horizontal cable manager ──
 U36–34  HP EliteDesk G4 SFF ×2 (3U shelf)   pve2 (i7-8700/32G) · pve3 (i7-8700/48G)
 U33–31  HP EliteDesk G3 Mini ×2 (3U shelf)  pve4 · pve5 (i5-7500T/32G)
@@ -127,7 +127,7 @@ U2–1  Middle Atlantic UPS-2200R (UPS A)      bottom / ML bus · rack anchor
 | From | Port | To | Port | Media | Speed | Notes |
 |---|---|---|---|---|---|---|
 | EX3400 | `ge-0/0/46` | UniFi USW-24 | Port 24 | Copper | 1 G | **802.1Q trunk** (native 1 + tagged 20/30/40/50/60/70) |
-| EX3400 | `ge-0/0/45` | EX2300-48P | uplink | Copper | 1 G | Trunk, all VLANs |
+| EX3400 | `ge-0/0/45` | (unused) | - | - | - | Down |
 | EX3400 | `ge-0/0/32` | UniFi USW-24 | — | Copper | 1 G | Legacy access uplink, VLAN 1 only |
 | EX3400 | `ge-0/0/38` | APC AP7901 PDU | — | Copper | 1 G | Managed PDU, VLAN 1 |
 | EX3400 | `xe-0/2/0` | Randy `nic3` (Mellanox ConnectX-3) | — | **10 G SFP+** | 10 G | Storage/NFS data path |
@@ -146,7 +146,7 @@ Wall → **Furman RP-8** conditioner (U6) → two independent UPS buses:
 | Bus | UPS | Capacity | Load zone | Monitoring |
 |---|---|---|---|---|
 | **A** (bottom / ML) | Middle Atlantic **UPS-OL2200R** | 2200 VA / ~1320 W | Both R730s, Randy, DS4246 | NUT `snmp-ups` via SNMP card `192.168.10.180` (CyberPower OL rebrand, enterprise OID 3808) |
-| **B** (top) | Tripp Lite **SMART1500VA** | 1500 VA / ~900 W | EX3400, USW-24, EX2300, EliteDesks, Mac mini | NUT `usbhid-ups` via USB → pve3 (`09ae:2012`) |
+| **B** (top) | Tripp Lite **SMART1500VA** | 1500 VA / ~900 W | EX3400, USW-24, EliteDesks, Mac mini | NUT `usbhid-ups` via USB → pve3 (`09ae:2012`) |
 
 Both are exposed by **NUT 2.8.1** on `pve3` (`MODE=netserver`, TCP `3493`) and surfaced as live widgets on Homepage via a PeaNUT bridge.
 
@@ -166,7 +166,6 @@ Both are exposed by **NUT 2.8.1** on `pve3` (`MODE=netserver`, TCP `3493`) and s
 |---|---|---|---|---|---|
 | **EX3400-48P** | `192.168.10.50` | Juniper EX3400 | JunOS **23.4R2-S7.4** | U40 | **Core** — 48× 1G PoE+, 4× 10G SFP+, 2× 40G QSFP+, dual PSU, STP root |
 | UniFi USW-24-250W | (UniFi-managed) | Ubiquiti | UniFi | U39 | Access / AP aggregation; Port 24 trunk |
-| EX2300-48P | (via trunk) | Juniper EX2300 | JunOS | U38 | Secondary / lab isolation |
 | UniFi Dream Router | `192.168.10.2` | Ubiquiti UDR | UniFi | — | **Wireless controller / AP** on VLAN 1 (not the WAN edge) |
 
 **Core switch details (EX3400):**
@@ -196,7 +195,7 @@ Both are exposed by **NUT 2.8.1** on `pve3` (`MODE=netserver`, TCP `3493`) and s
 | `ge-0/0/24` | QuarkyLab `nic2` | Trunk | native 1 + tagged 30 |
 | `ge-0/0/30, /32, /44` | iDRAC / IPMI OOB | Access (tagged) | **20 only** |
 | `ge-0/0/38` | APC AP7901 PDU | Access | 1 |
-| `ge-0/0/45` | EX2300 uplink | Trunk | all |
+| `ge-0/0/45` | (unused, down) | - | - |
 | `ge-0/0/46` | UniFi USW-24 Port 24 | Trunk | native 1 + tagged 20/30/40/50/60/70 |
 | `xe-0/2/0` | Randy `nic3` (10G) | (trunk/data) | 1 + 30 |
 | `xe-0/2/2` | Jarvis `enp132s0` (10G) | Access | **30** |
@@ -611,7 +610,7 @@ Findings F-03 (Prometheus/Loki localhost-only), F-05 (NPM `:81` Ares-only), OOB 
 | pve2 | OPNsense down → **no LAN routing/DHCP/inter-VLAN** | Whole LAN loses gateway & internet | `onboot=1`; serial-console runbook; keep Ares wired leg |
 | pve3 | 6 LXCs down → NPM/Vault/Grafana/Homepage/Headscale/OpenWebUI | All web ingress, secrets UI, dashboards, VPN control | PBS backups; onboot; migratable CTs |
 | Randy | ZFS/PBS/NFS down | Backups + GPU-node NFS + Jellyfin | ZFS RAIDZ2 (2-disk fault/vdev); split HBAs |
-| EX3400 | Core switch down | Entire wired fabric | Dual PSU; UPS B; EX2300/USW survive locally |
+| EX3400 | Core switch down | Entire wired fabric | Dual PSU; UPS B; USW survives locally |
 | UPS A | Power loss on ML bus | Both R730s + Randy + DS4246 | 2200 VA headroom; graceful shutdown target |
 | pve1 (Mac Mini) | Pi-hole down | LAN DNS/ad-block; `*.netframe.local` | Secondary resolver `1.1.1.1` in resolv.conf |
 | Corosync ring | Partition | Cluster loses quorum | 7 votes on stable VLAN-1 L2; ring not moved to VLAN 30 |

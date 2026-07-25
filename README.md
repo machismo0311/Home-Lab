@@ -99,9 +99,7 @@ flowchart TB
     subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
         EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4 · STP root"]
         USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
-        EX2300["Juniper EX2300-48P<br/>U38"]
         EX3400 <-->|ge-0/0/46 trunk| USW
-        EX3400 <-->|1G trunk| EX2300
     end
 
     UDR["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]
