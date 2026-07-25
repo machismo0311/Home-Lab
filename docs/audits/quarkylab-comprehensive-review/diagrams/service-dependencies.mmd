@@ -1,0 +1,36 @@
+%% Service dependency graph. A --> B means "A depends on B".
+graph TD
+  CLIENTS[LAN clients / students / researchers]
+  CLIENTS --> DNS[Pi-hole DNS .177/.178]
+  CLIENTS --> OPN[OPNsense routing/DHCP]
+  DNS --> UNBOUND[Unbound .1] --> OPN
+  OPN --> PVE2[pve2 host]
+
+  NPM[Nginx Proxy Manager CT101] --> DNS
+  NPM --> PVE3[pve3 host]
+  VAULT[Vaultwarden CT102] --> PVE3
+  HOMEPAGE[Homepage CT106] --> PVE3
+  OPENWEBUI[Open WebUI CT107] --> LLM[llm_router @ Jarvis]
+  LLM --> OLLAMA[Ollama 2x RTX6000] --> JARVIS[Jarvis host]
+  LLM -.fallback.-> CLAUDE[Claude API]
+
+  GRAFANA[Grafana/Prom/Loki CT103] --> PVE4[pve4 host]
+  ALERTS[Discord alerts] --> GRAFANA
+  ALERTS --> WANDEP[WAN + Discord reachable]
+  MONITOR[netframe-monitor] --> JARVIS
+  DASH[NetFRAME dashboard] --> GRAFANA & MONITOR & SLURM & RKE2
+
+  WAZUH[Wazuh SIEM VM104] --> QUARKY[QuarkyLab host]
+  SLURM[SLURM + apptainer] --> QUARKY
+  SLURM --> NFS[Randy NFS /data]
+  RKE2[RKE2 control plane] --> PVE3 & PVE4 & PVE5
+  RKE2 --> NFSSC[Randy NFS StorageClass]
+  REGISTRY[private registry] --> STEPCA[step-ca @ pve2]
+
+  PBS[PBS backups] --> RANDY[Randy host]
+  NFS --> RANDY
+  NFSSC --> RANDY
+  ALLGUESTS[All guest backups] --> PBS
+
+  PVE3 & PVE4 & PVE5 & PVE2 & QUARKY & JARVIS & RANDY --> QUORUM[corosync quorum 7/7]
+  ALL[Everything] --> POWER[UPS-A / UPS-B]

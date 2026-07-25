@@ -1,0 +1,50 @@
+\section{Enterprise and Fortune 100 Alignment}\label{sec:enterprise}
+
+This comparison is deliberately about capability and operational discipline, not budget. The lab is not penalized for lacking commercial products where an open-source practice delivers the same control. Each dimension is classified as \textbf{Comparable} to mature enterprise practice, \textbf{Partially aligned}, \textbf{Developing}, \textbf{Material gap}, or \textbf{N/A at this scale}.
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.20\linewidth} p{0.17\linewidth} p{0.55\linewidth}@{}}
+\toprule
+\rh{Dimension} & \rh{Classification} & \rh{Evidence and realistic improvement} \\
+\midrule
+\endhead
+Asset management & Partially aligned & CLAUDE.md tables + this review's register; no live CMDB. Improve: keep the asset register generated. \\
+Configuration management & Partially aligned & Ansible \code{hardening} + \code{backup\_verify} roles, lint-clean; but hardening is \code{--check} only, not enforced (DR-12). Improve: apply and gate drift. \\
+Network segmentation & Comparable & Seven VLANs, default-deny inter-VLAN, applied BMC egress clamp, VLAN30 to VLAN1 clamp, deny-logging. A genuine strength. \\
+Identity management & Developing & Shared root SSH, no MFA, single operator. Improve: per-admin accounts, MFA on Vaultwarden/Grafana. \\
+Secrets management & Partially aligned & Vaultwarden + offline break-glass age snapshot. Gap: plaintext creds at rest on Ares (QL-R07), no rotation procedure. \\
+Monitoring & Partially aligned & Prometheus/Grafana/Loki, 15/15 targets, dead-man heartbeats. Gaps: single-node stack (QL-R10), missing PVE/cert rules (QL-REC06/07). \\
+Logging & Partially aligned & Loki + OPNsense/EX3400 syslog + Wazuh on hosts. Gaps: Loki unauthenticated, guests not in SIEM (QL-R22). \\
+Incident management & Comparable & Formal RCAs and AARs with rollbacks; better than many small enterprises. \\
+Change management & Partially aligned & Manual-deploy-only policy, CI lint/branch-protection, pre-push hooks. Gap: no formal change calendar/approvals beyond self. \\
+Backup & Partially aligned & PBS nightly, verified, fresh (E-08). Gap: 3-2-1 not met (QL-R03), pve1 and \code{bulk} uncovered (QL-R06/R02). \\
+Disaster recovery & Partially aligned & DR runbooks, break-glass, restic restore drill done. Gap: no full cluster-loss rehearsal; single site. \\
+Capacity planning & Partially aligned & Deterministic forecast in \code{netframe\_predict.py}; GPU/quota dashboards. Gap: no formal capacity model. \\
+Security review & Comparable & Multiple prior assessments (enterprise, reliability, security, red-team) with tracked remediation. Unusually mature. \\
+Vulnerability management & Developing & Patch lag 63-142/node (QL-R13); no formal CVE tracking cadence. Improve: staged patch windows (QL-REC19). \\
+Documentation & Partially aligned & Rich but drifting (Section~\ref{sec:documentation}). \\
+Automation & Partially aligned & Ansible, systemd timers, CI, AI-ops. Gap: infra deploy stays manual by policy (defensible). \\
+Testing & Partially aligned & \code{netlab} containerlab CI boots real routers and runs reachability/failover tests. Rare and impressive. \\
+Release management & Developing & Config-as-code repos, but no versioned release process for infra. \\
+Infrastructure as code & Partially aligned & Ansible + config-as-code monitoring; not fully declarative (no Terraform for PVE). \\
+Service ownership & Developing & Single operator owns everything; clear but bus-factor 1. \\
+SLIs / SLOs / error budgets & Material gap & Not defined. Improve: define a few SLOs (DNS availability, backup freshness) - high portfolio value. \\
+Dependency mapping & Comparable & This review plus the dependency and recovery diagrams; \code{netframe\_monitor} computes blast radius. \\
+Business continuity & Developing & Break-glass + DR docs; single-site, single-operator constrain true BC. \\
+Vendor lifecycle & Developing & EOL R730/EX3400/Mac-Mini tracked informally; no formal lifecycle register. \\
+Auditability & Comparable & Hash-chained tamper-evident AI ledger, full git history, this audit trail. \\
+Risk acceptance & Comparable & Risks explicitly accepted and documented (pinned kernels, raidz1, single-node monitoring). \\
+\bottomrule
+\end{longtable}}
+
+\subsection{What Makes This Unusually Strong for a Home Lab}
+
+NetFRAME runs three real, non-trivial production workloads (DUNE neutrino-physics research, a multi-tenant student GPU teaching cluster, and a self-hosted LLM inference platform) on properly segmented infrastructure. Defense-in-depth is not theoretical here: BMC isolation with an applied egress clamp, default-deny inter-VLAN policy, and least-privilege monitoring credentials are all live. The AI-operations system is safety-first by design (Section~\ref{sec:ai-jarvis}), with a deterministic evidence engine and human-gated remediation that would pass a serious enterprise review. Above all, the lab audits itself honestly (this review sits alongside four prior assessments and an in-flight reconciliation branch), which is the single strongest signal of operational maturity.
+
+\subsection{What Would Concern an Enterprise Hiring Manager}
+
+Bus factor of one: every design, credential, and recovery path depends on a single operator. There are no defined SLOs or error budgets, so reliability is asserted rather than measured. The environment is single-site with backups still short of 3-2-1 (QL-R03), and a meaningful set of security remediations remain open or blocked (registry auth, NetworkPolicies, guest SIEM coverage). Documentation drift means the public-facing docs would mislead a new hire until the reconciliation lands.
+
+\subsection{Portfolio Framing}
+
+For a candidate transitioning into network and infrastructure engineering, this environment demonstrates enterprise judgment far beyond the typical home lab: real segmentation, real DR rehearsal, real capacity and security review, and honest risk acceptance. The highest-leverage additions for recruiter and hiring-manager impact are defining two or three SLOs, closing the 3-2-1 gap, and landing the documentation reconciliation so the public repo reads as cleanly as the operator knows the estate to be.

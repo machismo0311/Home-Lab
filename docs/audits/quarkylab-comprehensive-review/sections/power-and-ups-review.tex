@@ -1,0 +1,81 @@
+\section{Power and UPS Resilience}\label{sec:power}
+
+\subsection{Live UPS state}
+
+Both UPS units were read live via NUT (\code{upsc}, E-07):
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}p{3.4cm}p{1.4cm}p{1.2cm}p{1.6cm}X@{}}
+\toprule
+\rh{UPS} & \rh{Status} & \rh{Battery} & \rh{Load} & \rh{Runtime / feeds} \\
+\midrule
+Middle Atlantic UPS-OL2200R (UPS-B) & OL & 100\% & 36\% & $\sim$29\,min; R730s, Randy, DS4246 \\
+Tripp Lite SMART1500VA (UPS-A) & OL & 100\% & 59\% & $\sim$9.5\,min; EX3400, UniFi, EliteDesk nodes \\
+\end{tabularx}}
+
+Both are online at full charge with clean input voltage (113-114\,V). The concern is the
+imbalance: UPS-A (the network and core-services plane) sits near 60\% load with under ten
+minutes of runtime, while UPS-B (the heavy servers) sits at 36\% with nearly half an hour.
+This confirms the prior reliability finding (P-03 / R-18) and is logged as QL-R17.
+
+\subsection{Power budget}
+
+Estimated from live GPU draw (E-02/E-03) plus platform baselines. GPUs were near-idle at
+capture: QuarkyLab RTX 8000 at 3.7\,W, Jarvis RTX 6000 pair at $\sim$62\,W and $\sim$43\,W.
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}Xp{2.4cm}p{2.4cm}p{2.0cm}@{}}
+\toprule
+\rh{Load group} & \rh{Idle (est.)} & \rh{Peak (est.)} & \rh{UPS} \\
+\midrule
+QuarkyLab R730 (idle GPU) & $\sim$220\,W & $\sim$650\,W (GPU + CPU) & B \\
+Jarvis R730 (2$\times$ RTX 6000) & $\sim$300\,W & $\sim$700\,W (72B inference) & B \\
+Randy + DS4246 shelf & $\sim$300\,W & $\sim$450\,W & B \\
+4$\times$ EliteDesk nodes & $\sim$120\,W & $\sim$260\,W & A \\
+EX3400 + UniFi + PDU & $\sim$120\,W & $\sim$180\,W & A \\
+\midrule
+\textbf{Estimated total} & $\sim$1060\,W & $\sim$2240\,W & A+B \\
+\end{tabularx}}
+
+These are engineering estimates, not metered values; only the GPU draw and UPS load
+percentages are measured. Adding the planned R730xd backup node would add roughly
+150-350\,W depending on transcode activity, and should land on UPS-B (or better, cross-fed)
+- but UPS-B has the headroom for it whereas UPS-A does not.
+
+\subsection{Scenarios}
+
+\textbf{Normal load:} both UPS comfortably within capacity. \textbf{Peak (GPU + inference):}
+UPS-B rises toward 55-60\% and its runtime falls proportionally, still adequate for a graceful
+shutdown. \textbf{Extended outage:} UPS-A is the binding constraint - at $\sim$9.5\,min it must
+trigger a graceful shutdown of the network and core-services plane quickly, and DNS/routing
+will drop before the servers do. Rebalancing load onto UPS-B (QL-REC08) is the single highest-
+value power action.
+
+\subsection{NUT graceful shutdown and dual-PSU cross-feed}
+
+NUT monitors both UPS units (confirmed live via \code{upsc -l} on pve3). The open audit item
+R-07 remains: confirm \code{upsmon} runs on every node with a correct \code{SHUTDOWNCMD} and
+that staged \code{HOSTSYNC}/timers sequence a clean shutdown (storage last, edge first in the
+reverse of the recovery order). Equally important and not yet evidenced: the dual-PSU R730s
+should have one cord on each UPS. If both cords are on UPS-B, the redundant PSU buys nothing
+against a UPS-B fault. This should be physically verified.
+
+\subsection{Shutdown and startup sequencing}
+
+The safe shutdown order is the inverse of the recovery dependency graph
+(Section~\ref{sec:fma}, diagram \code{recovery-dependencies.mmd}): shed non-critical
+guests, then app tier, then AI/research, then RKE2, then core services, then OPNsense, then
+storage (Randy last so backups and NFS stay available longest), then hypervisors. Startup
+reverses this: power and network, hypervisors, quorum, Randy storage, OPNsense, DNS, then up
+the stack. This sequencing should be captured as a one-page runbook; today it is implicit.
+
+\subsection{Efficiency}
+
+Two efficiency wins are already banked from the prior reliability work: CP-001 (GPU
+persistence / P0 idle fix on Jarvis, roughly -72\,W) and CP-002 (CPU governors on
+pve3/4/5/Randy, roughly -90\,W total). Remaining low-risk candidates: spinning down or
+powering off the DS4246 while \code{bulk} is near-empty (P-04, roughly -100\,W - but weigh
+against the faulted-drive replacement work), and correcting the UPS-A/UPS-B imbalance to keep
+both units in their efficient load band. Consistent with the review's intent, none of these
+should be pursued at the expense of reliability; the drive replacement and load rebalance come
+first.

@@ -1,0 +1,61 @@
+\section{Recommendations}\label{sec:recommendations}
+
+Every recommendation below is tied to specific evidence from this environment. A finding is not automatically a recommendation, and stable systems are not changed without a compelling reason. This review executed \textbf{none} of these actions; all await explicit operator approval. The full machine-readable set with rollback, validation, effort, and impact fields is in \code{data/recommendation-register.csv}.
+
+\subsection{By Class}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.09\linewidth} p{0.20\linewidth} p{0.42\linewidth} p{0.16\linewidth}@{}}
+\toprule
+\rh{ID} & \rh{Class} & \rh{Action} & \rh{Approval} \\
+\midrule
+\endhead
+QL-REC02 & Immediate follow-up & Verify ZfsPoolDegraded reached Discord & No (read) \\
+QL-REC11 & Immediate follow-up & Land the D-01..D-10 documentation PR & No (docs) \\
+QL-REC01 & Urgent corrective & Replace faulted bulk drive + scrub & Yes \\
+QL-REC05 & Urgent corrective & Rotate at-rest creds on Ares & Yes \\
+QL-REC04 & Next window & Back up pve1 guests to Randy & Yes \\
+QL-REC08 & Next window & Rebalance UPS loads + verify NUT shutdown & Yes \\
+QL-REC12 & Next window & Mirror Jarvis GPU package holds & Yes \\
+QL-REC19 & Next window & Staged fleet patch + reboots & Yes \\
+QL-REC03 & Near-term & Second backup copy (R730xd or B2) & Yes \\
+QL-REC06 & Near-term & Deploy prometheus-pve-exporter & Yes \\
+QL-REC07 & Near-term & Add quorum/backup-stale/verify/cert rules & Yes \\
+QL-REC09 & Near-term & Reconcile EX3400 SSH + deploy Oxidized & Yes \\
+QL-REC14 & Near-term & Second out-of-band alert channel & No \\
+QL-REC18 & Near-term & .gitignore in 6 repos + OPSEC review & No \\
+QL-REC10 & Medium-term & Build OPNsense CARP HA pair & Yes \\
+QL-REC13 & Medium-term & Wire remediation gate to evidence engine & No \\
+QL-REC15 & Medium-term & Registry auth + RKE2 NetworkPolicies & No \\
+QL-REC16 & Optional & Mask failed openipmi.service on pve1 & Yes \\
+QL-REC17 & Optional & Confirm + retire duplicate homepage CT104 & Yes \\
+QL-REC20 & No action & Keep pinned GPU kernels (do not upgrade) & No \\
+- & No action & Do not enforce VLAN-1 egress lockdown yet & No \\
+\bottomrule
+\end{longtable}}
+
+\subsection{Detailed Treatment of the Top Items}
+
+\begin{callout}[title=QL-REC01 - Replace the faulted bulk drive (Urgent)]
+\textbf{Problem:} \code{mpathv} is FAULTED in \code{raidz2-2}; that vdev now has one of two parity drives (QL-R01, E-04). \textbf{Action:} insert a $\geq$4\,TB SAS drive into one of the two free DS4246 bays, then \code{zpool replace bulk mpathv <new-by-id>}, watch the resilver, and scrub after. \textbf{Prerequisite:} a spare drive; identify the bay for WWN \code{5000c500631a54fb}. \textbf{Validation:} \code{zpool status} returns ONLINE and a clean scrub. \textbf{Rollback:} pull the new drive; the pool returns to its current degraded state, not worse. \textbf{Window:} none needed. \textbf{Confidence:} High.
+\end{callout}
+
+\begin{callout}[title=QL-REC03 - Add a second backup copy (Near-term)]
+\textbf{Problem:} every backup lives only on Randy; \code{bulk} research data has no copy at all (QL-R02/R03). \textbf{Action:} PBS remote-sync to the planned R730xd second PBS, or \code{rclone}/PBS to Backblaze B2 for \code{datastore} plus \code{bulk/fernanda}. \textbf{Prerequisite:} the R730xd build or a B2 account. \textbf{Validation:} a test restore from the second copy. \textbf{Rollback:} remove the sync job. \textbf{Approval:} required. \textbf{Confidence:} High.
+\end{callout}
+
+\begin{callout}[title=QL-REC05 - Rotate at-rest credentials on Ares (Urgent)]
+\textbf{Problem:} a live GitHub PAT sits in plaintext in \code{~/github\_helper.py}, plus \code{~/apikey.txt} and \code{~/.wazuh-api-newpw.txt} (QL-R07, E-17). None are committed, but all are usable if the workstation is compromised. \textbf{Action:} rotate the PAT, move it and the other secrets to an environment file or credential store. \textbf{Validation:} the old token is revoked and scripts read from the environment. \textbf{Rollback:} retain the old file until the new path is confirmed. \textbf{Approval:} required (touches GitHub/Wazuh). \textbf{Confidence:} High.
+\end{callout}
+
+\begin{callout}[title=QL-REC10 - OPNsense CARP HA pair (Medium-term)]
+\textbf{Problem:} a single OPNsense VM on pve2 is a whole-network single point of failure (QL-R04). \textbf{Action:} follow the existing 2026-07-22 CARP plan: a second node, both on 25.7, a dedicated pfsync link, Kea DHCP HA, and a standalone backup host outside the cluster; the WAN-side CARP behavior is the hard open item to solve first. \textbf{Validation:} a failover test in a maintenance window. \textbf{Rollback:} documented in the plan. \textbf{Window:} required. \textbf{Confidence:} Medium.
+\end{callout}
+
+\subsection{Explicitly No Action}
+
+Keep the GPU-node kernels pinned at \code{6.14.11-9-pve}; upgrading breaks the NVIDIA 550 stack (QL-REC20). Do not enforce the VLAN-1 egress lockdown yet: its prerequisites (UniFi discovery and multicast, RKE2 and container-registry outbound, CDN dependencies, administrative access paths, DHCP reservations, emergency access, current firewall API permissions, and a tested rollback) are not all satisfied, and this is a standing operator decision that this review respects.
+
+\subsection{Approval-Driven Next Steps}
+
+The recommended sequence, each pending operator sign-off, is: (1) the two immediate read-only follow-ups (QL-REC02 verify alert delivery, QL-REC11 land the docs PR); (2) the urgent corrective pair (QL-REC01 drive replacement, QL-REC05 credential rotation); (3) the next-window batch (QL-REC04 pve1 backup, QL-REC08 UPS rebalance, QL-REC12 Jarvis holds, QL-REC19 staged patching); then (4) the near- and medium-term engineering items led by QL-REC03 (second backup copy) and QL-REC10 (OPNsense HA). Approval for any one action does not authorize the others.

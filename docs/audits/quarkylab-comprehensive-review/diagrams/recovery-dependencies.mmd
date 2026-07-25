@@ -1,0 +1,20 @@
+%% Recovery order after a full cold start / disaster. Top must come up first.
+graph TD
+  P[1. Power - UPS-A + UPS-B online, mains restored]
+  P --> N[2. Core network - EX3400 + UniFi up]
+  N --> H[3. Hypervisors - pve2..pve5 + R730s + Randy boot]
+  H --> Q[4. Corosync quorum reached 4/7+]
+  Q --> R[5. Randy storage - ZFS datastore/bulk import, NFS/PBS up]
+  Q --> O[6. OPNsense VM100 - routing/DHCP/inter-VLAN]
+  O --> D[7. DNS - Pi-hole .177/.178 + Unbound]
+  D --> BG{{Break-glass creds: age snapshot on Ares+Randy - NO cluster dependency}}
+  D --> V[8. Vaultwarden - unlock full secret set]
+  V --> S[9. Reverse proxy NPM + step-ca certs]
+  R --> K[10. RKE2 - etcd quorum, PVs from Randy NFS]
+  S --> APP[11. App tier - Grafana, Homepage, Open WebUI, Wazuh]
+  R --> AI[12. AI - Ollama/llm_router @ Jarvis, netframe-monitor]
+  R --> SCI[13. Research/student - SLURM, Cloudflare Tunnel, fernanda data]
+
+  classDef crit fill:#ffe0e0,stroke:#B00020;
+  class P,N,Q,R,O,D crit
+  BG -.->|breaks the Vaultwarden-in-cluster circular dependency| V

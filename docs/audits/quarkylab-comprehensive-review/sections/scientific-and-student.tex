@@ -1,0 +1,72 @@
+\section{Scientific Research and Student Support}\label{sec:scientific-student}
+
+QuarkyLab is a genuinely multi-tenant platform: it carries a production neutrino-physics ML
+workload, a shared teaching environment for computer-science students, and supporting AI tooling,
+all on one RTX 8000. This section separates what works as a home-lab convenience from what would
+be required for a formally governed student and research service.
+
+\subsection{Research workloads}
+
+The physicist \code{fernanda} runs a production DUNE reconstruction ML workload on the RTX 8000
+(live-confirmed present and idle at review time, E-02). A DUNE Agent RAG pipeline over the
+\code{dunereco} codebase assists onboarding, and a second researcher builds a separate RAG
+pipeline (ARID) under a scoped exemption. Research data is protected from student starvation by a
+\code{refreservation=2T} floor on the researcher dataset.
+
+\subsection{Multi-tenant GPU sharing (live-validated 2026-07-02)}
+
+One physical Turing card (no MIG) is shared safely between research and roughly 15 to 20 students
+per semester:
+
+\begin{itemize}
+\item \rh{Scheduling.} SLURM \code{gres/shard} with 8 shards allows up to 8 concurrent GPU jobs
+while leaving the card in Default compute mode so the researcher runs native.
+\item \rh{Hard VRAM cap.} A per-job NVIDIA MPS instance inside each student container enforces a
+per-job VRAM limit (about 6 GB per shard), chosen over SLURM \code{gres/mps} to avoid forcing
+exclusive-process mode on the researcher.
+\item \rh{Isolation.} \code{job\_submit.lua} wraps every student job in \code{apptainer exec --nv
+--network=none} with a private home, read-only shared data, and a RAM bound; \code{cgroup.conf
+ConstrainDevices=yes} denies \code{/dev/nvidia*} to any job without a GPU GRES.
+\item \rh{Priority.} The research partition (\code{PriorityTier=100}) preempts student jobs
+(\code{PreemptMode=REQUEUE}, not suspend, so freed VRAM is actually released), and a
+requeued job auto-restarts.
+\item \rh{Fairness.} Multifactor fairshare with a 3-day decay favors students who have used the
+GPU least; \code{studentqos} caps one running job per student; students are batch-only.
+\end{itemize}
+
+The Phase 04 validation table shows every case passing: no-GRES jobs denied the device, a student
+request for the whole card rejected, VRAM out-of-memory at the expected cap, 3 then 8 concurrent
+students, the researcher native at 47.8 GB, and preemption reclaiming the card.
+
+\subsection{Reproducibility and access lifecycle}
+
+Reproducibility rests on a curated Apptainer image (\code{base.sif}, pinned torch and TensorFlow)
+run from a local copy and refreshed daily so a storage hiccup cannot block a launch. Access is
+key-only SSH over a Cloudflare Tunnel with no inbound ports; onboarding is a scripted
+\code{add-cluster-key.sh} that validates the key and creates a locked-down account, and a group
+sshd policy denies password auth, all forwarding, and sudo. Offboarding removes the tailnet node
+and the user account.
+
+\subsection{Readiness assessment}
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}p{0.30\linewidth} X@{}}
+\toprule
+\rh{Strength (production-grade)} & \rh{Gap for a governed service}\\
+\midrule
+Real device isolation via cgroups + apptainer + MPS cap & No per-student network isolation within the node\\
+Research preemption and fairshare & Research and student data both single-copy (QL-R02)\\
+Per-user ZFS quotas and read-only shared data & No formal data-retention or privacy policy\\
+Reproducible pinned container images & Offboarding not yet automated (planned)\\
+Batch-only, no interactive un-capped access & Student containers not covered by Wazuh (QL-R22)\\
+\bottomrule
+\end{tabularx}}
+
+\begin{callout}[title=Verdict]
+For a home lab this is exceptional: the GPU multi-tenancy is designed and validated to a standard
+most small HPC groups would accept, and the research floor plus preemption model is a real
+answer to the hardest problem in shared GPU teaching. The gaps are governance rather than
+mechanism: a second copy of research data (QL-R02, QL-REC03), a written retention and privacy
+posture, automated account lifecycle, and extending SIEM coverage to student workloads would move
+this from a well-run lab to a defensible institutional service.
+\end{callout}

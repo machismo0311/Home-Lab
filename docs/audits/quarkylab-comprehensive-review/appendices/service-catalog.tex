@@ -1,0 +1,39 @@
+\section{Service Catalog}\label{app:service-catalog}
+
+Service inventory with placement, exposure, and backup posture. Full field set (auth,
+TLS, monitoring source, recovery doc) is in \code{data/service-catalog.csv}.
+
+{\footnotesize\sansfont
+\begin{longtable}{p{0.9cm}p{2.5cm}p{2.1cm}p{2.7cm}p{2.6cm}p{3.4cm}}
+\toprule
+\rh{ID} & \rh{Service} & \rh{Host / guest} & \rh{IP : port} & \rh{External} & \rh{Backup / state} \\
+\midrule
+\endhead
+S-01 & OPNsense & pve2 / VM100 & .10.1 : 443/53 & LAN edge (dual-WAN) & randy-pbs 03:00 / running \\
+S-02 & Pi-hole primary & pve1 / CT103 & .10.177 : 53/80 & no & NONE (pve1 unbacked) / running \\
+S-03 & Pi-hole secondary & pve5 / CT108 & .10.178 : 53/80 & no & randy-pbs / running \\
+S-04 & Unbound & pve2 / VM100 & .10.1 : 53 & no & with OPNsense / running \\
+S-05 & Headscale & pve5 / CT105 & .10.186 : 8080 & internal & randy-pbs / running \\
+S-06 & Nginx Proxy Manager & pve3 / CT101 & .10.181 : 80/443/81 & yes (proxy front) & randy-pbs / running \\
+S-07 & Vaultwarden & pve3 / CT102 & .30.182 : 80 & yes (vault.kylemason.org) & randy-pbs / running \\
+S-08 & Homepage & pve3 / CT106 & .10.148 : 3000 & yes (homepage.kylemason.org) & randy-pbs / running \\
+S-09 & Homepage (dead) & pve1 / CT104 & - & no & NONE / running (should be off, R-12) \\
+S-10 & Open WebUI & pve3 / CT107 & .30.185 : 8080 & yes (chat.netframe.local) & randy-pbs / running \\
+S-11 & Grafana stack & pve4 / CT103 & .10.183 : 3000 & yes (grafana.kylemason.org) & randy-pbs / running \\
+S-12 & Prometheus & pve4 / CT103 & .10.183 : 9090 & no & with Grafana / running \\
+S-13 & Loki & pve4 / CT103 & .10.183 : 3100 & no & with Grafana / running (auth\_enabled=false) \\
+S-14 & Scrutiny & pve4 / CT103 & .10.183 : 8080 & no & with Grafana / running \\
+S-15 & Wazuh & QuarkyLab / VM104 & .10.184 : 443/9200/55000 & yes (wazuh.kylemason.org) & randy-pbs-10g / running \\
+S-16 & step-ca & pve2 & .10.204 : 443 & no & with pve2 / active \\
+S-17 & PBS & Randy & .10.187 : 8007 & no & GC+verify weekly / active (single target) \\
+S-18 & Jellyfin & Randy & .10.187 : 8096 & no & - / active \\
+S-19 & Ollama & Jarvis & .10.31 : 11434 & LAN (unauth, AI-01) & GPU exporter / active \\
+S-20 & llm\_router & Jarvis & .10.31 : 8000 & yes (llm.netframe.local) & scripts in git / active (iptables-locked) \\
+S-21 & netframe-monitor & Jarvis & .10.31 : 8808/8809 & internal & scripts in git / active (15 min) \\
+S-22 & Home Assistant & pve5 / VM110 & .10.60 : 8123 & internal & randy-pbs 03:30 / running \\
+S-23 & RKE2 & pve3/4/5 / VM201-203 & .10.51-53 (VIP .54) : 6443/9345 & no & randy-pbs 04:00 / running \\
+S-24 & Private registry & RKE2 & registry.netframe.local : 443 & no & in-cluster / running (anon, K8S-01) \\
+S-25 & Cloudflare Tunnel & QuarkyLab & quarkylab.kylemason.org & yes (no inbound ports) & - / active \\
+S-26 & SLURM & QuarkyLab & .10.179 & no & - / active (shard+MPS+apptainer) \\
+\bottomrule
+\end{longtable}}

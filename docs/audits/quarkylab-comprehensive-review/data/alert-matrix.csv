@@ -1,0 +1,27 @@
+alert,source,severity,condition,threshold,channel,evidence_basis,expected_response,runbook,owner,false_positive_risk,false_negative_risk,disposition
+ClusterNotQuorate,corosync textfile,critical,min(node_pve_cluster_quorate)<1,2m,discord-alerts,quorum collector,Restore quorum; check corosync links,Triage-Node-Unreachable,Kyle,Low,Low,Keep
+ClusterVotesBelowExpected,corosync textfile,warning,expected-total votes>0,5m,discord-alerts,quorum collector,Investigate missing node,Triage-Node-Unreachable,Kyle,Low,Low,Keep
+InstanceDown,node/blackbox,critical,up<1,2m,discord-alerts,scrape,Check host/service,Triage-Node-Unreachable,Kyle,Low,Low,Keep
+PiholePrimaryDown,blackbox DNS,critical,probe_success(.177)<1,2m,discord-alerts,DNS probe,pct start 103 / restartdns,pve1-pihole,Kyle,Low,Low,Keep
+PiholeSecondaryDown,blackbox DNS,warning,probe_success(.178)<1,2m,discord-alerts,DNS probe,check CT108,DNS-HA,Kyle,Low,Low,Keep
+ZfsPoolDegraded,zpool textfile,critical,node_zfs_pool_health>0,5m,discord-alerts,zpool health,Replace/clear device,storage runbook,Kyle,Low,Medium(delivery unverified R-02),Verify delivery
+GpuTempHigh,nvidia-smi textfile,warning,temp>87C,5m,discord-alerts,nvidia-smi,Check fan-control daemon,R730 fan note,Kyle,Low,Low,Keep
+GpuMemoryHigh,nvidia-smi textfile,warning,VRAM used%>90,10m,discord-alerts,nvidia-smi,Check jobs,SLURM,Kyle,Medium(large models),Low,Keep
+DiskAlmostFull,node_filesystem,warning,root used%>90,10m,discord-alerts,node-exporter,Free space,-,Kyle,Low,Medium(root FS only),Extend to pools
+LowMemory,node_memory,warning,MemAvail%<8,10m,discord-alerts,node-exporter,Investigate,-,Kyle,Low,Low,Keep
+RegistryCertExpiringSoon,blackbox tls,warning,cert<12h,15m,discord-alerts,step-ca cert,Renew,step-ca,Kyle,Low,High(only registry cert),Broaden to all certs
+BackupVerifyReportStale,Randy textfile,warning,age>26h,15m,discord-alerts,backup-verify,Check scheduler,AAR-2026-07-22,Kyle,Medium(scheduler),Low,Keep (caught mpathv)
+BackupVerifyFailing,Randy textfile,warning,overall_pass<1,5m,discord-alerts,backup-verify,Investigate failing check,-,Kyle,Low,Low,Consider critical
+AresBackupStale,Randy textfile,warning,age>26h,15m,discord-alerts,restic textfile,Check Ares timer,laptop-recovery,Kyle,Medium(laptop sleep),Low,Keep
+NetframeMonitorStale,Jarvis heartbeat,warning,age>1h; noData->Alerting,15m,discord-alerts,dead-man,Check netframe-run timer,-,Kyle,Low,Low,Keep (dead-man)
+UPS battery low,PeaNUT,critical,battery_charge<50,2m,discord-ups,UPS exporter,Prepare shutdown,NUT plan,Kyle,Low,Low,Keep
+UPS runtime low,PeaNUT,critical,runtime<300s,1m,discord-ups,UPS exporter,Shed load/shutdown,NUT plan,Kyle,Low,Low,Keep
+PrimaryWANDown,pve2 textfile,critical,wan_gateway_up(WAN_GW)<1,1m,discord-alerts,OPNsense dpinger,Check WAN1/failover,WAN-failover,Kyle,Low,Low,Keep
+FirewallBlockRateSpike,Loki filterlog,warning,>500 blocks/5m,5m,discord-alerts,OPNsense syslog,Investigate source,DETECT-01c,Kyle,Medium(scan noise),Medium,Keep
+NetworkDeviceConfigChange,Loki syslog,warning,commit/reconfigure>0,0s,discord-alerts,OPNsense/EX3400 syslog,Confirm change was intended,DETECT-01c,Kyle,Medium,Low,Keep
+NetworkSyslogSilent,Loki stream,warning,<50 lines/15m; noData->Alerting,5m,discord-alerts,network-syslog,Check syslog pipeline,DETECT-01c,Kyle,Low,Low,Keep (dead-man)
+GAP-quorum-guest,-,-,per-guest down (needs pve-exporter),-,-,-,Deploy R-06,-,Kyle,-,-,Missing (REC06/07)
+GAP-pbs-verify-stale,-,-,PBS verify job failed/stale,-,-,-,Add rule,-,Kyle,-,-,Missing (REC07)
+GAP-host-auth-failure,-,-,repeated auth failures per host,-,-,-,Add security detections,-,Kyle,-,-,Missing (DETECT-01c)
+GAP-cert-expiry-broad,-,-,any *.netframe.local / LE cert near expiry,-,-,-,Broaden cert monitoring,-,Kyle,-,-,Missing (only registry today)
+GAP-2nd-channel,-,-,alerting egress independent of WAN/Discord,-,-,-,Add OOB channel,-,Kyle,-,-,Missing (REC14/DETECT-01d)

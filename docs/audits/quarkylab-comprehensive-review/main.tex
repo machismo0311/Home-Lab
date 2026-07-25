@@ -1,0 +1,72 @@
+\documentclass[10pt]{article}
+\input{preamble}
+
+\begin{document}
+
+% ============================ COVER ============================
+\begin{titlepage}
+\thispagestyle{empty}
+\raggedright
+\vspace*{1.5cm}
+{\sansfont\fontsize{46}{50}\selectfont\bfseries\color{nfdark}Quarky\textcolor{nfaccent}{Lab}}\\[2mm]
+{\color{nfrule}\rule{\linewidth}{2pt}}\\[4mm]
+{\sansfont\huge\bfseries\color{nfdark}Comprehensive Infrastructure\\[1mm] Assurance Review}\\[6mm]
+{\sansfont\large\color{nfgray}Evidence-based reliability, security, recoverability, and\\ enterprise-alignment assessment of the NetFRAME / km-cluster home lab}\\[10mm]
+
+{\sansfont\normalsize\color{nfdark}
+\begin{tabular}{@{}ll@{}}
+\textbf{Environment} & NetFRAME / km-cluster (7-node Proxmox VE 9.2.3)\\[1mm]
+\textbf{Operator} & Kyle Mason \textnormal{(machismo0311)}, Greater Cleveland OH\\[1mm]
+\textbf{Review date} & 2026-07-23\\[1mm]
+\textbf{Mode} & Read-only. No configuration changes made.\\[1mm]
+\textbf{Basis} & Live SSH evidence (2026-07-23) + repo audit commit \code{65f3681}\\[1mm]
+\textbf{Classification} & Internal - contains topology; no secrets reproduced\\
+\end{tabular}}
+
+\vfill
+{\sansfont\footnotesize\color{nfgray}Prepared as a read-only assurance review. Every finding is tied to environment
+evidence. No system was restarted, reconfigured, or modified. All change proposals are held for explicit operator approval.}\\[2mm]
+{\sansfont\footnotesize\color{nfaccent}\texttt{Home-Lab/docs/audits/quarkylab-comprehensive-review/}}
+\end{titlepage}
+
+% ============================ TOC ============================
+\clearpage
+{\sansfont\color{nfdark}\tableofcontents}
+\clearpage
+
+% ============================ SECTIONS ============================
+\input{sections/executive-summary}
+\input{sections/scope-and-methodology}
+\input{sections/evidence-register}
+\input{sections/infrastructure-inventory}
+\input{sections/network-review}
+\input{sections/virtualization-review}
+\input{sections/storage-review}
+\input{sections/backup-and-recovery}
+\input{sections/kubernetes-and-containers}
+\input{sections/ai-and-jarvis-review}
+\input{sections/monitoring-and-alerting}
+\input{sections/security-review}
+\input{sections/power-and-ups-review}
+\input{sections/documentation-review}
+\input{sections/scientific-and-student}
+\input{sections/enterprise-alignment}
+\input{sections/failure-mode-analysis}
+\input{sections/drift-register}
+\input{sections/risk-register}
+\input{sections/recommendations}
+\input{sections/limitations}
+
+% ============================ APPENDICES ============================
+\clearpage
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+\input{appendices/command-log}
+\input{appendices/asset-register}
+\input{appendices/service-catalog}
+\input{appendices/port-and-vlan-register}
+\input{appendices/backup-matrix}
+\input{appendices/alert-matrix}
+\input{appendices/dependency-register}
+
+\end{document}

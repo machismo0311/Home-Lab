@@ -1,0 +1,88 @@
+\section{Security Architecture Review}\label{sec:security}
+
+This is a defensive review only. No credential was used, no exploit was attempted, and all
+secret values are redacted to type, path, and a redacted indicator.
+
+\subsection{Network segmentation (strong)}
+
+Segmentation is the standout security control. Seven VLANs are defined and live on the EX3400
+(E-21, architecture digest). Both server-grade BMCs and the Randy IPMI were moved off flat
+VLAN 1 to VLAN 20 with factory credentials rotated, and an egress clamp (applied and verified
+2026-07-17) prevents a compromised BMC from reaching VLAN 1, VLAN 30, or the internet. A single
+surgical rule blocks VLAN 30 to VLAN 1 except a narrow Prometheus scrape. IoT, VoIP, Guest, and
+Lab are isolated with a DNS pinhole so they keep ad-blocking without lateral reach. All eight
+deny rules log to Loki and Wazuh. There is no inbound port exposure; external reach is via NPM
+with TLS and via a Cloudflare Tunnel with no open ports. The VLAN 1 egress lockdown is
+deliberately deferred as disproportionate gold-plating, which this review respects and does not
+recommend enforcing without the documented prerequisites.
+
+\subsection{Identity and access}
+
+Administration uses shared root over key-only SSH. The Ansible hardening role installs a strong
+sshd policy (key-only, \code{PermitRootLogin prohibit-password}, no password or keyboard-interactive)
+but has been run in check mode only and is not yet enforced on the nodes (DR-12), so the fleet is
+not yet hardened in production. There is no MFA on administrative interfaces, and the prior
+assessment flagged weak Ares admin credentials (enterprise R-23). These are reasonable for a
+single-operator lab but are the items an enterprise reviewer would raise first.
+
+\subsection{Secrets}
+
+The committed-secret posture is clean: the Home-Lab full-history gitleaks scan is clean across
+300-plus commits, and every tracked hit is a placeholder or shell-variable reference (E-17).
+This review adds three findings the committed-secret audit could not see, all at rest on the
+Ares workstation and none ever committed to git:
+
+{\footnotesize\sansfont
+\begin{tabularx}{\linewidth}{@{}p{0.22\linewidth} p{0.30\linewidth} p{0.14\linewidth} X@{}}
+\toprule
+\rh{Type} & \rh{Path} & \rh{Redacted} & \rh{Status}\\
+\midrule
+GitHub PAT (classic) & \code{\textasciitilde/github\_helper.py:4} & \code{ghp\_...} & Untracked, gitignored, never in history; live token at rest\\
+Generic API key & \code{\textasciitilde/apikey.txt} & \code{key=...} & Untracked; real value on disk\\
+Wazuh API password & \code{\textasciitilde/.wazuh-api-newpw.txt} & (0600) & Untracked; plaintext at rest\\
+\bottomrule
+\end{tabularx}}
+
+The GitHub PAT (QL-R07) should be rotated and moved to an environment or credential store, and
+the two files removed once their values are relocated (QL-REC05). Separately, six repositories
+lack a \code{.gitignore} and the tracked \code{.bash\_aliases} and \code{.ssh/config} publish
+internal topology in a public-intent superproject (QL-REC18).
+
+\subsection{Unauthenticated services and Kubernetes posture}
+
+Ollama and \code{llm\_router} accept unauthenticated LAN requests but are iptables-locked to
+known clients; the private registry is anonymous (K8S-01) and Loki is unauthenticated (QL-R14).
+RKE2 runs with a flat pod network, no NetworkPolicies, no Pod Security Admission, and likely
+unencrypted secrets (QL-R15, K8S-02/03/04). These are lateral-movement value if a LAN host is
+compromised rather than direct external exposure. TLS is a strength: grade-A internal certificates
+from step-ca and Let's Encrypt via Cloudflare DNS-01. Patch lag is tracked separately (QL-R13).
+
+\subsection{Reconciliation with the prior security assessment}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.12\linewidth} p{0.10\linewidth} p{0.50\linewidth} p{0.20\linewidth}@{}}
+\toprule
+\rh{ID} & \rh{Sev} & \rh{Finding} & \rh{Status}\\
+\midrule
+\endhead
+F-001 & High & Untrusted IoT/printer/mobile on mgmt VLAN & Open (needs UDR admin)\\
+F-003 & High & Workstation cleartext FTP / EOL SMB/NFS & Open\\
+F-006 & High & Unencrypted cluster-root SSH keys & Open\\
+K8S-01 & High & Anonymous private registry & Open\\
+NET-01 & Med & OOB/BMC asymmetric isolation & Done (VLAN 20 egress clamp)\\
+VIRT-01 & Med & Hypervisor firewall disabled & Partial\\
+VIRT-02 & Med & Mgmt API on all interfaces & Partial (5/7)\\
+HOST-01 & Med & Password root SSH on some hosts & Jarvis hardened; others via role (DR-12)\\
+AI-01 & Med & Unauthenticated LLM endpoint & Mitigated (iptables lock)\\
+DETECT-01b/c/d & Info & Guest SIEM, adversary alerts, 2nd channel & Open\\
+\bottomrule
+\end{longtable}}
+
+\begin{callout}[title=Positive controls]
+No inbound exposure; L3 segmentation with default-deny and deny-logging; applied BMC egress
+clamp; authenticated cluster heartbeat; unprivileged containers; least-privilege API tokens for
+the dashboard and monitor; grade-A TLS; a working SIEM with dead-man alerts; an age-encrypted
+break-glass credential path independent of the cluster. For a single-operator home lab this is a
+strong, coherent posture. The material gaps are enforcement of the hardening role, rotation of
+the at-rest workstation credentials, and detection coverage of guests and the network edge.
+\end{callout}

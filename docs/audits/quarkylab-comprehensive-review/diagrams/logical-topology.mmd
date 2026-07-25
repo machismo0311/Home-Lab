@@ -1,0 +1,26 @@
+%% Logical topology - VLANs / subnets / gateways (OPNsense on VM100/pve2)
+graph LR
+  OPN["OPNsense VM100 @ pve2<br/>router/firewall/DHCP(Kea)/inter-VLAN gw<br/>v25.1.12"]
+  UNBOUND["Unbound resolver .1"]
+  PH1["Pi-hole .177 (pve1 CT103)"]
+  PH2["Pi-hole .178 (pve5 CT108)"]
+
+  OPN --- V1 & V20 & V30 & V40 & V50 & V60 & V70
+  V1["VLAN 1 mgmt<br/>192.168.10.0/24<br/>PVE hosts, corosync, services"]
+  V20["VLAN 20 OOB<br/>192.168.20.0/24<br/>iDRAC x2 + IPMI + Ares jump"]
+  V30["VLAN 30 servers<br/>192.168.30.0/24<br/>NFS/PBS/GPU egress"]
+  V40["VLAN 40 IoT<br/>192.168.40.0/24"]
+  V50["VLAN 50 VoIP<br/>192.168.50.0/24 (FreePBX planned)"]
+  V60["VLAN 60 guest<br/>192.168.60.0/24"]
+  V70["VLAN 70 lab<br/>192.168.70.0/24 (sandbox)"]
+
+  OPN --> UNBOUND
+  PH1 --> UNBOUND
+  PH2 --> UNBOUND
+  V1 -. DHCP hands out both DNS .-> PH1 & PH2
+
+  V20 -.->|inbound: Ares only| V20
+  V30 -.->|BLOCK -> VLAN1 /24 except :9100 scrape| V1
+  V20 -.->|BMC egress clamp: no VLAN1/30/internet| OPN
+  V40 & V50 & V60 & V70 -.->|isolated, DNS :53 pinhole only| PH1
+  V1 -.->|egress lockdown DEFERRED (not enforced)| WAN[Internet]

@@ -1,0 +1,65 @@
+\section{Risk Register}\label{sec:risks}
+
+Severity follows a fixed model and is deliberately not inflated. \sevcrit an immediate, credible risk of catastrophic outage, unrecoverable loss, or serious compromise. \sevhigh a significant risk requiring prompt corrective planning. \sevmed a material weakness to schedule. \sevlow an improvement opportunity or limited risk. \sevinfo a documentation or visibility observation. Every risk is tied to environment evidence; the full field set (description, existing controls, residual risk, validation method, confidence) is in \code{data/risk-register.csv}.
+
+\subsection{Summary}
+
+\textbf{0 Critical, 7 High, 12 Medium, 3 Low.} No finding meets the Critical bar today: the most dangerous condition (a faulted drive in the \code{bulk} pool) is still tolerated by RAIDZ2 with no data errors and a replacement in progress. It is rated High rather than Critical, but it is the top operational priority because QL-R01 pairs with QL-R02 (the \code{bulk} pool has no second copy) to form the single most serious combined exposure in the estate: one more drive failure in the same vdev before replacement would mean permanent loss of data that exists nowhere else.
+
+\subsection{High}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.07\linewidth} p{0.30\linewidth} p{0.13\linewidth} p{0.34\linewidth}@{}}
+\toprule
+\rh{ID} & \rh{Title} & \rh{Category} & \rh{Treatment} \\
+\midrule
+\endhead
+QL-R01 & Faulted bulk drive in a degraded RAIDZ2 vdev & Storage & Replace mpathv + scrub (QL-REC01) \\
+QL-R02 & bulk pool has no second copy & Backup & Add bulk/fernanda to PBS or B2 (QL-REC03) \\
+QL-R03 & All backups on one node/rack/UPS (3-2-1 gap) & Backup/DR & Second target R730xd or B2 (QL-REC03) \\
+QL-R04 & OPNsense is a single point of failure & Network & CARP HA pair (QL-REC10) \\
+QL-R05 & Randy is a single storage node & Storage & Second storage/backup target \\
+QL-R11 & ZfsPoolDegraded alert delivery unverified & Monitoring & Verify Discord delivery (QL-REC02) \\
+\bottomrule
+\end{longtable}}
+
+\noindent QL-R01 through QL-R05 and QL-R11 are the High tier. QL-R11 is rated High because a silent critical alert is more dangerous than no alert: the degraded pool was in fact surfaced by a staleness alert, not by the pool-health rule, so the delivery path is unproven.
+
+\subsection{Medium}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.07\linewidth} p{0.32\linewidth} p{0.14\linewidth} p{0.31\linewidth}@{}}
+\toprule
+\rh{ID} & \rh{Title} & \rh{Category} & \rh{Treatment} \\
+\midrule
+\endhead
+QL-R06 & pve1 guests unprotected (no backup) & Backup & vzdump pve1 to Randy (QL-REC04) \\
+QL-R07 & GitHub PAT plaintext at rest on Ares & Security & Rotate + move to env (QL-REC05) \\
+QL-R08 & Secrets-recovery circular dependency & Security/DR & Keep break-glass current + test \\
+QL-R09 & Single WAN/Discord alert path & Monitoring & Add out-of-band channel (QL-REC14) \\
+QL-R10 & Observability stack co-located on one CT & Monitoring & External alert eval / heartbeat \\
+QL-R12 & Kernel/GPU hold asymmetry on Jarvis & Reliability & Mirror QuarkyLab holds (QL-REC12) \\
+QL-R13 & Fleet patch lag (63-142/node) & Security & Staged patch + reboots (QL-REC19) \\
+QL-R14 & Unauthenticated LAN AI/service endpoints & Security & Registry auth; keep locks (QL-REC15) \\
+QL-R15 & No NetworkPolicies / PSA in RKE2 & Security & Default-deny + PSA (QL-REC15) \\
+QL-R16 & EX3400 config not captured; SSH broken & Network/DR & Reconcile SSH + Oxidized (QL-REC09) \\
+QL-R17 & UPS-A overloaded / short runtime & Power & Rebalance loads (QL-REC08) \\
+QL-R22 & Wazuh coverage limited to hypervisors & Security & Guest agents + detections \\
+\bottomrule
+\end{longtable}}
+
+\subsection{Low and Accepted}
+
+{\footnotesize\sansfont
+\begin{longtable}{@{}p{0.07\linewidth} p{0.34\linewidth} p{0.14\linewidth} p{0.29\linewidth}@{}}
+\toprule
+\rh{ID} & \rh{Title} & \rh{Category} & \rh{Disposition} \\
+\midrule
+\endhead
+QL-R18 & HA fencing in standby (no auto recovery) & Availability & Decide per guest; may be accepted \\
+QL-R20 & Randy PVE version drift (9.2.3 vs docs) & Configuration & Doc reconcile (Low) \\
+QL-R21 & raidz1 on aged disks & Storage & Accepted; monitor SMART, spares \\
+\bottomrule
+\end{longtable}}
+
+Every entry above traces to a cited evidence item and, where verifiable, was confirmed by at least two independent read-only methods (for example QL-R01 by live \code{zpool status}, the prior audit capture, and the DS4246 slot-15 incident record). Confidence per risk is recorded in the CSV; the two items carrying Medium confidence are QL-R05 and QL-R11, both constrained by what a read-only pass can prove.
