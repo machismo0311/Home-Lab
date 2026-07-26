@@ -1,0 +1,13 @@
+# Keep GitHub's Linguist language stats focused on the real infrastructure
+# work (Ansible/Python/Shell/config), not the large LaTeX + Markdown
+# documentation set that would otherwise report this repo as "TeX".
+*.tex   linguist-documentation
+*.sty   linguist-documentation
+*.cls   linguist-documentation
+*.bib   linguist-documentation
+docs/**            linguist-documentation
+audit/**           linguist-documentation
+runbooks/**        linguist-documentation
+student-guide/**   linguist-documentation
+vault/**           linguist-documentation
+topology/**        linguist-documentation
