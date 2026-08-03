@@ -39,8 +39,14 @@ backup_verify_scrutiny_url: "http://192.168.10.183:8080"
 # now runs 3 vdevs (8+8+6). Bump this whenever drives are added, or this check
 # fails and BackupVerifyFailing fires on a healthy shelf.
 backup_verify_ds4246_expected: 22
+# `timeout` guards against a wedged 9207-8e / DS4246 passthrough hanging lsblk
+# indefinitely (a hang would stall the whole play into staleness — the worst
+# failure mode, since it masks a dead job). If lsblk is killed the pipe yields
+# 0 disks, so the check degrades to a recorded fail (found != expected) instead
+# of hanging. Only lsblk needs the guard; the awk/sort/wc stages cannot block.
+backup_verify_ds4246_timeout: 30               # seconds
 backup_verify_ds4246_count_cmd: >-
-  lsblk -dnb -o TYPE,SIZE,WWN |
+  timeout {{ backup_verify_ds4246_timeout }} lsblk -dnb -o TYPE,SIZE,WWN |
   awk '$1=="disk" && $2 > 3.5e12 && $2 < 4.6e12 {print $3}' |
   sort -u | wc -l
 

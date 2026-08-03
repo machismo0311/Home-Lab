@@ -1,28 +1,59 @@
 ---
 # Each check appends to backup_verify_results; report.yml serialises them.
-# The accumulator is initialised under `always` so a tag-scoped run (e.g.
-# --tags scrutiny) still produces a coherent report.
+# The accumulator (and the run-error flag) is initialised under `always` so a
+# tag-scoped run (e.g. --tags scrutiny) still produces a coherent report.
+#
+# Graceful degradation (2026-07-22, NF-INC-2026-07-22): the four checks run
+# inside a block/rescue. Individual checks already use `failed_when: false`
+# (a nonzero rc is *recorded* as a fail, not raised), but a check can still
+# raise fatally — a Jinja/templating error on an unexpected API shape, an
+# unreachable endpoint, etc. Without this wrapper such a raise aborts the play
+# *before* report.yml, so NO .prom is written and the job looks merely "stale"
+# — indistinguishable from a dead scheduler. With it, a raise is caught, a
+# `run_error` result is recorded, and report.yml STILL runs: it writes the
+# .prom with a fresh timestamp and backup_verify_run_error=1. Net effect:
+#   - a STALE report  => the job/scheduler is dead (nothing wrote the file)
+#   - run_error / overall=fail => the job ran and a subcheck is unhappy
+# The DS4246 count is additionally wrapped in `timeout` (defaults/main.yml) so
+# a wedged HBA degrades to a recorded fail instead of hanging the play forever
+# (a hang is NOT a task failure, so block/rescue cannot catch it — the timeout
+# is what converts that failure mode into a clean, reportable one).
 
 - name: Initialise results accumulator
   ansible.builtin.set_fact:
     backup_verify_results: []
+    backup_verify_run_error: 0
   tags: always
 
-- name: PBS backup freshness
-  ansible.builtin.import_tasks: pbs.yml
-  tags: [pbs]
+- name: Run storage-health checks (degrade gracefully on a fatal error)
+  block:
+    - name: PBS backup freshness
+      ansible.builtin.import_tasks: pbs.yml
+      tags: [pbs]
 
-- name: ZFS pool health
-  ansible.builtin.import_tasks: zfs.yml
-  tags: [zfs]
+    - name: ZFS pool health
+      ansible.builtin.import_tasks: zfs.yml
+      tags: [zfs]
 
-- name: Scrutiny drive health
-  ansible.builtin.import_tasks: scrutiny.yml
-  tags: [scrutiny]
+    - name: Scrutiny drive health
+      ansible.builtin.import_tasks: scrutiny.yml
+      tags: [scrutiny]
 
-- name: DS4246 shelf enumeration
-  ansible.builtin.import_tasks: ds4246.yml
-  tags: [ds4246]
+    - name: DS4246 shelf enumeration
+      ansible.builtin.import_tasks: ds4246.yml
+      tags: [ds4246]
+  rescue:
+    - name: Record run-level failure so a report is still written
+      ansible.builtin.set_fact:
+        backup_verify_run_error: 1
+        backup_verify_results: >-
+          {{ backup_verify_results | default([]) + [ {
+               'name': 'run_error',
+               'status': 'error',
+               'detail': ('verify run aborted in '
+                          ~ (ansible_failed_task.name | default('unknown task'))
+                          ~ ': ' ~ (ansible_failed_result.msg | default('unknown error')))
+             } ] }}
 
 - name: Write JSON report
   ansible.builtin.import_tasks: report.yml

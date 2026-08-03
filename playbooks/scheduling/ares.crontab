@@ -20,10 +20,20 @@
 #   - SSH key trusted by every inventory host as root
 
 # --- 06:00 backup + storage-health verification -----------------------------
-# Writes backup-report.json + backup_verify.prom on Randy. 06:00 is after the
-# nightly backups (LXC 02:00 / VM 03:00) and the 03:17 OPNsense backup, so the
-# newest snapshot is well inside the 25h freshness window.
-0 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-backup-verify.sh >> /home/machismo/.config/netframe-backup-verify/run.log 2>&1
+# MIGRATED 2026-07-22 (NF-INC-2026-07-22) from cron to a systemd USER timer.
+# WHY: Ares is a laptop that suspends overnight, and a plain user crontab has NO
+# catch-up — every 06:00 that landed while it was asleep was silently skipped,
+# freezing the report and firing BackupVerifyReportStale with nothing actually
+# broken on Randy. The timer uses Persistent=true, so a missed run fires on the
+# next wake. Units are versioned at scheduling/systemd/. Reinstall on a rebuild:
+#   mkdir -p ~/.config/systemd/user
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-backup-verify.service ~/.config/systemd/user/
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-backup-verify.timer   ~/.config/systemd/user/
+#   loginctl enable-linger machismo
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now netframe-backup-verify.timer
+# (Prereqs below still apply.) Old cron line, kept for record:
+# 0 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-backup-verify.sh >> /home/machismo/.config/netframe-backup-verify/run.log 2>&1
 
 # --- 06:30 hardening drift check (NOT YET REINSTATED) -----------------------
 # Runs desired-state.yml in --check mode (read-only, never enforces) and writes

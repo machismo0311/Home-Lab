@@ -1,0 +1,25 @@
+# Daily 06:00 trigger for netframe-backup-verify.service, with catch-up.
+#
+# Persistent=true is the whole point: it records the last trigger time on disk,
+# so if the scheduled 06:00 was missed because Ares was suspended/off, the run
+# fires as soon as the machine (and the user manager) is back — instead of being
+# silently dropped the way the old user cron dropped it. See the .service header
+# and NF-INC-2026-07-22.
+#
+# 06:00 is deliberately after the nightly backups (LXC 02:00 / VM 03:00) and the
+# 03:17 OPNsense backup, so the newest snapshot is well inside the 25h window.
+
+[Unit]
+Description=Run NETFRAME backup-verify daily at 06:00 (Persistent: catches up after downtime)
+Documentation=https://github.com/machismo0311/Home-Lab
+
+[Timer]
+OnCalendar=*-*-* 06:00:00
+Persistent=true
+# Spread the wake-up a little so it never races the tail of the 03:00 backups
+# on a delayed morning; harmless at 06:00.
+RandomizedDelaySec=5min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

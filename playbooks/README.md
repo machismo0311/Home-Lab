@@ -111,17 +111,36 @@ check records `status: error` and the report's `overall` is `fail` by design.
 
 ## Scheduling
 
-Runs daily from **Ares** (the control node) via a **user cron job**, mirroring
-the `opnsense-config-backup` pattern (Ares has no passwordless sudo, and the
-sibling backup automation already uses user cron, not a system unit).
+Runs daily at 06:00 from **Ares** (the control node) via a **systemd _user_
+timer** (`scheduling/systemd/netframe-backup-verify.{service,timer}`).
+
+> **Migrated from user cron 2026-07-22 (NF-INC-2026-07-22).** Ares is a laptop
+> that suspends overnight, and a plain user crontab has **no catch-up**: every
+> 06:00 that landed while it was asleep was silently skipped, freezing the
+> report and firing `BackupVerifyReportStale` while nothing was actually broken
+> on Randy. The timer sets **`Persistent=true`**, so a run missed during
+> sleep/downtime fires on the next wake. It's a *user* unit (not system/root)
+> because it needs machismo's ansible venv, vault-pass, SSH key and vault.yml.
 
 `scheduling/run-backup-verify.sh` is the versioned wrapper (it adds the vault
-password file only when it exists, and appends to a run log). The crontab entry
-itself is Ares-local state — reproduce it with:
+password file only when it exists, and appends to a run log). Reproduce the
+schedule on a rebuilt Ares with:
+
+```bash
+mkdir -p ~/.config/systemd/user
+ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-backup-verify.service ~/.config/systemd/user/
+ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-backup-verify.timer   ~/.config/systemd/user/
+loginctl enable-linger machismo            # run even when not logged in
+systemctl --user daemon-reload
+systemctl --user enable --now netframe-backup-verify.timer
+# inspect: systemctl --user list-timers netframe-backup-verify.timer
+```
+
+The **06:30 hardening drift check** is not yet reinstated; when it is, give it
+the same treatment (a sibling Persistent user timer, not a cron line):
 
 ```cron
-0 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-backup-verify.sh >> /home/machismo/.config/netframe-backup-verify/run.log 2>&1
-30 6 * * * /home/machismo/Home-Lab/playbooks/scheduling/run-hardening-drift-check.sh >> /home/machismo/.config/netframe-backup-verify/hardening-drift.log 2>&1
+# (retired) 30 6 * * * .../run-hardening-drift-check.sh >> .../hardening-drift.log 2>&1
 ```
 
 The 06:30 job is the **hardening drift check** (`run-hardening-drift-check.sh`):
@@ -140,9 +159,9 @@ wrapper exits 0 when the *run* succeeds; the pass/fail verdict lives in the
 report's `overall` field (and the `generated` freshness stamp), not the exit
 code. Inspect with `tail ~/.config/netframe-backup-verify/run.log`.
 
-> If you later want a systemd system timer instead (needs root on Ares), the
-> equivalent is a `Type=oneshot` service with `User=machismo` calling the same
-> wrapper, plus a daily `OnCalendar=*-*-* 06:00:00` `Persistent=true` timer.
+> A *system* (root) timer is deliberately avoided: the job runs as `machismo`
+> and depends on that user's venv/vault/SSH key, so the user timer above is the
+> correct fit. `enable-linger` is what lets it fire without an active login.
 
 ## Secrets
 
@@ -162,7 +181,8 @@ ansible-playbook backup-verify.yml --vault-password-file ~/.ansible-vault-pass
 
 ## Still open
 
-1. ~~Scheduling~~ — **done:** daily 06:00 user cron on Ares (see Scheduling).
+1. ~~Scheduling~~ — **done:** daily 06:00 systemd _user_ timer on Ares,
+   `Persistent=true` (migrated from user cron 2026-07-22; see Scheduling).
 2. ~~Live-verify the `pbs` path~~ — **done:** token created (`root@pam!ansible-verify`,
    `DatastoreAudit`), vault encrypted; live run parses real snapshots and all
    four checks pass. `vault.yml` is gitignored.
