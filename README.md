@@ -39,7 +39,7 @@ The same RTX 8000 is shared with **~15 university computer-science students per 
 
 ## Why this exists
 
-I'm a U.S. Marine Corps aviator (EC-135/145 Instructor Pilot, FOQA Officer) transitioning into network & infrastructure engineering, currently pursuing my **CCNA**. NETFRAME is where I apply the discipline of mission-critical aviation - checklists, root-cause analysis, and zero-defect execution - to infrastructure that real people depend on:
+I'm a U.S. Marine Corps veteran as wells a helicopter instructor pilot (EC-135/145 Instructor Pilot, FOQA Officer) transitioning into network & infrastructure engineering, currently pursuing my **CCNA**. NETFRAME is where I apply the discipline of mission-critical aviation - checklists, root-cause analysis, and zero-defect execution - to infrastructure that real people depend on:
 
 - **FOQA flight-data analysis → observability:** metrics, dashboards, and anomaly detection (Prometheus / Grafana / Loki, Wazuh SIEM)
 - **Instructor-pilot checklists → runbooks & change control:** every buildout and incident is written up as a repeatable procedure, with formal RCAs
@@ -236,7 +236,7 @@ PDU: APC AP7901 on EX3400 ge-0/0/38.
 - [ ] Large-scale DUNE dataset landing + offsite restic→B2 backup tier (parked pending data)
 - [ ] Headscale Phase 2 - QuarkyLab + a DUNE researcher's Mac (must migrate together)
 - [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
-- [ ] Cyberpunk monitoring dashboard - live API integration
+- [x] Cyberpunk monitoring dashboard - live API integration
 
 ---
 
