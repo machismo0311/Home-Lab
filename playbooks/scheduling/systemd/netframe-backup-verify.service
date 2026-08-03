@@ -1,0 +1,36 @@
+# NETFRAME backup + storage-health verification — runs from Ares (control node).
+#
+# This replaces the former user *cron* entry (0 6 * * *). Ares is a laptop that
+# suspends overnight, and a plain user crontab has NO catch-up: every 06:00 that
+# landed while the machine was asleep was silently skipped, freezing the report
+# and firing BackupVerifyReportStale with nothing actually broken on Randy
+# (NF-INC-2026-07-22). The paired .timer uses Persistent=true so a run missed
+# during sleep/downtime fires on the next wake instead of being lost.
+#
+# Install as a USER unit (it needs machismo's ansible venv, vault-pass, SSH key
+# and vault.yml — a system/root unit would have the wrong environment):
+#   mkdir -p ~/.config/systemd/user
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-backup-verify.service ~/.config/systemd/user/
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/netframe-backup-verify.timer   ~/.config/systemd/user/
+#   loginctl enable-linger machismo          # run even when not logged in
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now netframe-backup-verify.timer
+# Inspect: systemctl --user list-timers netframe-backup-verify.timer
+#          journalctl --user -u netframe-backup-verify.service
+#          tail ~/.config/netframe-backup-verify/run.log
+
+[Unit]
+Description=NETFRAME backup + storage-health verification (Ansible, from Ares)
+Documentation=https://github.com/machismo0311/Home-Lab
+
+[Service]
+Type=oneshot
+# The redirect preserves the append-only run.log the old cron produced (the
+# wrapper writes to stdout; without this it would only reach the journal), so
+# existing tooling/muscle-memory that tails run.log keeps working. Output also
+# lands in the journal via systemd.
+ExecStart=/bin/sh -c '/home/machismo/Home-Lab/playbooks/scheduling/run-backup-verify.sh >> /home/machismo/.config/netframe-backup-verify/run.log 2>&1'
+# The wrapper exits 0 when the *run* succeeds; pass/fail lives in the report's
+# overall field + freshness stamp, not the exit code. A nonzero here means the
+# run itself failed to execute (venv/vault/ssh problem) — worth a failed unit.
+Nice=10
