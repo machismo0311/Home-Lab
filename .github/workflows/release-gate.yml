@@ -1,0 +1,60 @@
+# Publication tooling only. Does not build, deploy, or validate estate configuration.
+#
+# This workflow runs the REPOSITORY-ENVELOPE scope and the gate's own test suites. It
+# deliberately does NOT run the publication-content scope, which requires the operator's
+# estate vocabulary. That file is never committed and no secret is used to smuggle it in,
+# so the content scope runs locally before publication. See
+# release-gate/docs/PUBLICATION-CONTRACT.md.
+#
+# A green result here means the repository is structurally complete and the gate still
+# works. It does NOT mean content has been cleared for publication.
+#
+# The gate's own workflow cannot live beside its code: GitHub activates workflows only from
+# the repository root, so a nested file would be inert and the campaign would silently stop
+# running, which is the exact failure the gate exists to prevent.
+#
+# Deliberately NOT a required status check. It must never block an unrelated change.
+name: publication-gate
+
+on:
+  push:
+    paths:
+      - "platform/**"
+      - "release-gate/**"
+      - ".github/workflows/release-gate.yml"
+  pull_request:
+    paths:
+      - "platform/**"
+      - "release-gate/**"
+      - ".github/workflows/release-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Publication gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Every mutation must be caught by its EXPECTED check, and the unmutated baseline
+      # must pass. A campaign in which everything fails proves nothing.
+      - name: Mutation campaign
+        run: python3 release-gate/scripts/verify-publication --self-test
+
+      # Fail-closed, determinism and scope-contract properties the campaign cannot cover.
+      - name: Unit assertions
+        run: python3 release-gate/tests/test_publication_gate.py
+
+      # Repository-envelope scope. Needs no private information. A non-zero exit fails the
+      # job, so a missing licence, changelog or metadata field blocks the build.
+      - name: Repository envelope
+        run: |
+          python3 release-gate/scripts/verify-publication \
+            --tree . --scope envelope \
+            --metadata platform/publication-metadata.json

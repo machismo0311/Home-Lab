@@ -1,0 +1,3 @@
+{"description":"Governance, release process, and mutation-testing methodology from the NetFRAME platform.",
+ "topics":["governance","platform-engineering","sre","mutation-testing","reliability","documentation"],
+ "homepage":"https://kylemason.org","license":"MIT"}

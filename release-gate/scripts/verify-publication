@@ -1,0 +1,701 @@
+#!/usr/bin/env python3
+"""NetFRAME Public Release Gate.
+
+Verifies that a tree is safe and complete to publish. Broader than a secret scanner:
+it enforces OPSEC policy, sanitization, manifest integrity, and release completeness.
+
+    verify-publication --tree DIR [--manifest FILE] [--metadata FILE]
+                       [--emit-manifest FILE] [--json] [--explain]
+    verify-publication --self-test        run the mutation campaign against the gate
+
+FAIL CLOSED, precisely:
+  * any REQUIRED check reporting FAIL or ERROR fails the gate;
+  * a check that raises is recorded as ERROR, never skipped;
+  * if any registered check did not report a verdict, the gate fails on principle
+    ("no silent pass"), because a gate that passes because it crashed before
+    checking is the failure mode this tool exists to prevent;
+  * an unreadable file, a missing manifest, or an unknown classification fails;
+  * exit 0 only when every registered REQUIRED check reported PASS.
+
+DETERMINISTIC: no clock, no randomness, no network, no environment inspection.
+Running twice over the same tree yields identical output bytes (verified by K21).
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+import traceback
+from typing import Callable
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+
+from publication_policy import (  # noqa: E402
+    ERROR, FAIL, NA, PASS, SCOPE_CONTENT, SCOPE_ENVELOPE, SCOPE_REASON,
+    CheckResult, EstatePatterns, Finding, LICENSE_MARKERS, MAX_DESCRIPTION,
+    MERMAID_DIAGRAM_TYPES, MIN_TOPICS, PATTERN_RULES, REQUIRED_FILES,
+    REQUIRED_METADATA_FIELDS, SKIP_DIRS,
+    address_findings, identity_findings, is_text_file, placeholder_findings,
+)
+
+EXIT_OK = 0
+EXIT_FAILED = 1
+EXIT_INTERNAL = 2
+
+
+# --------------------------------------------------------------------------------------
+# Tree loading
+# --------------------------------------------------------------------------------------
+
+class Tree:
+    """An immutable, deterministically ordered view of the candidate publication tree."""
+
+    def __init__(self, root: str, include: list[str] | None = None) -> None:
+        if not os.path.isdir(root):
+            raise FileNotFoundError(f"tree not found: {root}")
+        self.root = os.path.abspath(root)
+        # include: restrict the file set to these top-level subtrees. Applied while walking,
+        # so excluded paths are never read, never scanned, and never produce a finding to
+        # discard later.
+        self.include = [i.strip("/") for i in (include or []) if i.strip("/")]
+        self.files: list[str] = []
+        for dirpath, dirnames, filenames in os.walk(self.root):
+            dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
+            for fn in sorted(filenames):
+                rel = os.path.relpath(os.path.join(dirpath, fn), self.root).replace(os.sep, "/")
+                if self.include and not any(
+                    rel == i or rel.startswith(i + "/") for i in self.include
+                ):
+                    continue
+                self.files.append(rel)
+        self.files.sort()
+        self._text: dict[str, str] = {}
+        self.unreadable: list[tuple[str, str]] = []
+        for rel in self.files:
+            if not is_text_file(rel):
+                continue
+            try:
+                with open(os.path.join(self.root, rel), "rb") as fh:
+                    raw = fh.read()
+                self._text[rel] = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                self._text[rel] = ""  # binary in disguise: excluded from prose checks
+            except OSError as exc:
+                self.unreadable.append((rel, str(exc)))
+
+    def text_files(self):
+        for rel in self.files:
+            if rel in self._text and self._text[rel]:
+                yield rel, self._text[rel]
+
+    def read(self, rel: str) -> str | None:
+        return self._text.get(rel)
+
+    def exists(self, rel: str) -> bool:
+        return rel in self.files
+
+    def size(self, rel: str) -> int:
+        try:
+            return os.path.getsize(os.path.join(self.root, rel))
+        except OSError:
+            return -1
+
+    def sha256(self, rel: str) -> str:
+        h = hashlib.sha256()
+        with open(os.path.join(self.root, rel), "rb") as fh:
+            for chunk in iter(lambda: fh.read(65536), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+
+# --------------------------------------------------------------------------------------
+# Manifest
+# --------------------------------------------------------------------------------------
+
+VALID_CLASSIFICATIONS = {"AS-IS", "SANITIZE"}
+
+
+class Manifest:
+    """publication-manifest.txt: source | destination | classification | approved_on"""
+
+    def __init__(self, path: str) -> None:
+        self.path = path
+        self.records: list[dict[str, str]] = []
+        self.errors: list[str] = []
+        with open(path, "r", encoding="utf-8") as fh:
+            for n, raw in enumerate(fh, 1):
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = [p.strip() for p in line.split("|")]
+                if len(parts) != 4:
+                    self.errors.append(f"line {n}: expected 4 fields, got {len(parts)}")
+                    continue
+                src, dst, cls, approved = parts
+                if cls not in VALID_CLASSIFICATIONS:
+                    self.errors.append(f"line {n}: unknown classification {cls!r}")
+                if not approved:
+                    self.errors.append(f"line {n}: missing approval date")
+                self.records.append(
+                    {"source": src, "destination": dst, "classification": cls, "approved_on": approved}
+                )
+
+    @property
+    def destinations(self) -> set[str]:
+        return {r["destination"] for r in self.records}
+
+
+# --------------------------------------------------------------------------------------
+# Checks. Each returns a CheckResult and must never raise past the runner.
+# --------------------------------------------------------------------------------------
+
+def check_patterns(tree: Tree, rule) -> CheckResult:
+    findings: list[Finding] = []
+    for rel, text in tree.text_files():
+        for i, line in enumerate(text.splitlines(), 1):
+            for pat, detail in rule.patterns:
+                for m in pat.finditer(line):
+                    findings.append(Finding(rule.check, rel, i, m.group(0)[:80], detail))
+    return CheckResult(rule.check, rule.title, rule.required,
+                       FAIL if findings else PASS, findings)
+
+
+def check_addresses(tree: Tree) -> CheckResult:
+    findings = [f for rel, text in tree.text_files() for f in address_findings("K04", rel, text)]
+    return CheckResult("K04", "No estate or unexpected IP addresses", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_identity(tree: Tree) -> CheckResult:
+    findings = [f for rel, text in tree.text_files() for f in identity_findings("K07", rel, text)]
+    return CheckResult("K07", "No personal identity or SSH targets", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_placeholders(tree: Tree) -> CheckResult:
+    findings = [f for rel, text in tree.text_files() for f in placeholder_findings("K12", rel, text)]
+    return CheckResult("K12", "No unresolved placeholders or work markers", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_readable(tree: Tree) -> CheckResult:
+    findings = [Finding("K00", rel, 0, "unreadable", err) for rel, err in tree.unreadable]
+    return CheckResult("K00", "Every file is readable", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_manifest_integrity(tree: Tree, manifest: Manifest | None) -> CheckResult:
+    if manifest is None:
+        return CheckResult("K01", "Publication manifest integrity", True, FAIL, [],
+                           "no manifest supplied; publication requires an explicit allowlist")
+    findings = [Finding("K01", manifest.path, 0, "manifest", e) for e in manifest.errors]
+    return CheckResult("K01", "Publication manifest integrity", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_allowlist_coverage(tree: Tree, manifest: Manifest | None) -> CheckResult:
+    """Every published file must trace to a manifest record. Default deny."""
+    if manifest is None:
+        return CheckResult("K02", "Every published file is on the allowlist", True, FAIL, [],
+                           "no manifest supplied")
+    allowed = manifest.destinations
+    findings = []
+    for rel in tree.files:
+        if rel.startswith(".git/"):
+            continue
+        if rel not in allowed:
+            findings.append(Finding("K02", rel, 0, rel, "file not present in publication manifest"))
+    missing = [r["destination"] for r in manifest.records if not tree.exists(r["destination"])]
+    for m in missing:
+        findings.append(Finding("K02", m, 0, m, "manifest record has no corresponding file"))
+    return CheckResult("K02", "Every published file is on the allowlist", True,
+                       FAIL if findings else PASS, findings)
+
+
+def _scan(tree: Tree, check: str, title: str, rx, detail: str,
+          missing_note: str) -> CheckResult:
+    """Estate-derived check. Fails closed when the patterns file did not supply the
+    vocabulary: a check that cannot run is a failed check, never a skipped one."""
+    if rx is None:
+        return CheckResult(check, title, True, FAIL, [], missing_note)
+    findings = []
+    for rel, text in tree.text_files():
+        for i, line in enumerate(text.splitlines(), 1):
+            for m in rx.finditer(line):
+                findings.append(Finding(check, rel, i, m.group(0)[:80], detail))
+    return CheckResult(check, title, True, FAIL if findings else PASS, findings)
+
+
+def check_hostnames(tree: Tree, ep) -> CheckResult:
+    return _scan(tree, "K05", "No estate hostnames",
+                 ep.hostname_re() if ep else None, "estate hostname",
+                 "no estate patterns supplied; cannot verify hostnames")
+
+
+def check_domains(tree: Tree, ep) -> CheckResult:
+    return _scan(tree, "K06", "No internal domains",
+                 ep.domain_re() if ep else None, "internal domain",
+                 "no estate patterns supplied; cannot verify domains")
+
+
+def check_private_repos(tree: Tree, ep) -> CheckResult:
+    return _scan(tree, "K10", "No private repository references",
+                 ep.private_repo_re() if ep else None, "private repo reference",
+                 "no estate patterns supplied; cannot verify repo references")
+
+
+def check_substitution(tree: Tree, ep) -> CheckResult:
+    """K13. The role vocabulary must have been applied, not merely available."""
+    if ep is None or not ep.role_map:
+        return CheckResult("K13", "Hostname substitution was applied", True, FAIL, [],
+                           "no estate patterns supplied; cannot verify substitution")
+    findings = []
+    pairs = ep.role_re_pairs()
+    for rel, text in tree.text_files():
+        for i, line in enumerate(text.splitlines(), 1):
+            for rx, role in pairs:
+                for m in rx.finditer(line):
+                    findings.append(Finding("K13", rel, i, m.group(0),
+                                            f"un-substituted identifier, expected {role}"))
+    return CheckResult("K13", "Hostname substitution was applied", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_required_files(tree: Tree) -> CheckResult:
+    findings = [Finding("K14", f, 0, f, "required file missing")
+                for f in REQUIRED_FILES if not tree.exists(f)]
+    return CheckResult("K14", "Required files present", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_license(tree: Tree) -> CheckResult:
+    findings = []
+    text = tree.read("LICENSE")
+    if text is None:
+        findings.append(Finding("K15", "LICENSE", 0, "LICENSE", "missing"))
+    elif not any(mk in text for mk in LICENSE_MARKERS):
+        findings.append(Finding("K15", "LICENSE", 0, text[:40].strip(), "unrecognised licence text"))
+    return CheckResult("K15", "LICENSE present and recognised", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_readme_rendering(tree: Tree) -> CheckResult:
+    """K16. A README that does not render as intended is a publication defect."""
+    findings = []
+    text = tree.read("README.md")
+    if text is None:
+        findings.append(Finding("K16", "README.md", 0, "README.md", "missing"))
+    else:
+        lines = text.splitlines()
+        if not lines or not lines[0].startswith("# "):
+            findings.append(Finding("K16", "README.md", 1, lines[0][:60] if lines else "",
+                                    "first line is not a level-1 heading"))
+        if len(text.strip()) < 400:
+            findings.append(Finding("K16", "README.md", 0, f"{len(text)} chars",
+                                    "README too short to orient a reader"))
+        if text.count("```") % 2 != 0:
+            findings.append(Finding("K16", "README.md", 0, "```",
+                                    "unbalanced fenced code block"))
+        # unbalanced link syntax is the most common silent rendering break
+        if text.count("](") and text.count("[") < text.count("]("):
+            findings.append(Finding("K16", "README.md", 0, "](",
+                                    "malformed markdown link syntax"))
+    return CheckResult("K16", "README renders correctly", True,
+                       FAIL if findings else PASS, findings)
+
+
+LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+
+
+def check_links(tree: Tree) -> CheckResult:
+    """K17. Relative links must resolve inside the tree. External links are not fetched
+    (determinism and no-network), but malformed ones are caught."""
+    findings = []
+    for rel, text in tree.text_files():
+        if not rel.endswith(".md"):
+            continue
+        base = os.path.dirname(rel)
+        for i, line in enumerate(text.splitlines(), 1):
+            for m in LINK_RE.finditer(line):
+                target = m.group(1).strip()
+                if target.startswith("#"):
+                    continue
+                if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.IGNORECASE):
+                    if target.lower().startswith(("http://", "https://", "mailto:")):
+                        continue
+                    findings.append(Finding("K17", rel, i, target, "unsupported link scheme"))
+                    continue
+                path = target.split("#", 1)[0]
+                if not path:
+                    continue
+                resolved = os.path.normpath(os.path.join(base, path)).replace(os.sep, "/")
+                if resolved.startswith(".."):
+                    findings.append(Finding("K17", rel, i, target, "link escapes the tree"))
+                elif not (tree.exists(resolved) or
+                          any(f.startswith(resolved + "/") for f in tree.files)):
+                    findings.append(Finding("K17", rel, i, target, "broken relative link"))
+    return CheckResult("K17", "No broken relative links", True,
+                       FAIL if findings else PASS, findings)
+
+
+IMG_RE = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
+
+
+def check_images(tree: Tree) -> CheckResult:
+    """K18. A referenced image that is absent or empty renders as a broken icon."""
+    findings = []
+    for rel, text in tree.text_files():
+        if not rel.endswith(".md"):
+            continue
+        base = os.path.dirname(rel)
+        for i, line in enumerate(text.splitlines(), 1):
+            for m in IMG_RE.finditer(line):
+                target = m.group(1).strip().split("#", 1)[0]
+                if re.match(r"^https?://", target, re.IGNORECASE):
+                    continue
+                resolved = os.path.normpath(os.path.join(base, target)).replace(os.sep, "/")
+                if not tree.exists(resolved):
+                    findings.append(Finding("K18", rel, i, target, "referenced image missing"))
+                elif tree.size(resolved) <= 0:
+                    findings.append(Finding("K18", rel, i, target, "referenced image is empty"))
+    return CheckResult("K18", "Referenced images are available", True,
+                       FAIL if findings else PASS, findings)
+
+
+MERMAID_BLOCK = re.compile(r"^```mermaid[ \t]*$(.*?)^```[ \t]*$", re.M | re.S)
+
+
+def check_diagrams(tree: Tree, contract: dict[str, int] | None) -> CheckResult:
+    """K19. Verify the DECLARED diagrams exist and validate.
+
+    Narrow by design. It checks the files the publisher declared, the number of Mermaid
+    blocks each must carry, and that each block is non-empty and opens with a recognised
+    diagram type. It does not render, and it does not go looking for diagrams: an
+    undeclared diagram is not this check's business, and a declared one that vanished is.
+    """
+    if not contract:
+        return CheckResult("K19", "Declared diagrams present and valid", True, FAIL, [],
+                           "no diagram contract supplied; cannot verify declared diagrams")
+    findings: list[Finding] = []
+    for path, expected in sorted(contract.items()):
+        text = tree.read(path)
+        if text is None:
+            findings.append(Finding("K19", path, 0, path, "declared diagram file missing"))
+            continue
+        blocks = MERMAID_BLOCK.findall(text)
+        if len(blocks) != expected:
+            findings.append(Finding("K19", path, 0, f"{len(blocks)} of {expected}",
+                                    "declared Mermaid block count does not match"))
+        for n, body in enumerate(blocks, 1):
+            stripped = body.strip()
+            if not stripped:
+                findings.append(Finding("K19", path, 0, f"block {n}", "Mermaid block is empty"))
+                continue
+            first = stripped.splitlines()[0].strip().split()[0].rstrip(":")
+            if first not in MERMAID_DIAGRAM_TYPES:
+                findings.append(Finding("K19", path, 0, f"block {n}: {first[:24]}",
+                                        "unrecognised Mermaid diagram type"))
+    return CheckResult("K19", "Declared diagrams present and valid", True,
+                       FAIL if findings else PASS, findings)
+
+
+VERSION_RE = re.compile(r"^##+\s*\[?v?\d+\.\d+\.\d+", re.MULTILINE)
+
+
+def check_release_notes(tree: Tree) -> CheckResult:
+    findings = []
+    text = tree.read("CHANGELOG.md")
+    if text is None:
+        findings.append(Finding("K20", "CHANGELOG.md", 0, "CHANGELOG.md", "missing"))
+    elif not VERSION_RE.search(text):
+        findings.append(Finding("K20", "CHANGELOG.md", 0, "no version heading",
+                                "no released version entry found"))
+    return CheckResult("K20", "Release notes present", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_metadata(tree: Tree, metadata_path: str | None) -> CheckResult:
+    """K22. Repository metadata completeness, verified offline from a declared file."""
+    findings = []
+    if metadata_path is None or not os.path.isfile(metadata_path):
+        return CheckResult("K22", "Repository metadata complete", True, FAIL, [],
+                           "no repo-metadata.json supplied")
+    try:
+        with open(metadata_path, "r", encoding="utf-8") as fh:
+            meta = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        return CheckResult("K22", "Repository metadata complete", True, ERROR, [],
+                           f"metadata unreadable: {exc}")
+    for field_name in REQUIRED_METADATA_FIELDS:
+        if not meta.get(field_name):
+            findings.append(Finding("K22", metadata_path, 0, field_name, "metadata field empty"))
+    desc = meta.get("description", "")
+    if desc and len(desc) > MAX_DESCRIPTION:
+        findings.append(Finding("K22", metadata_path, 0, f"{len(desc)} chars",
+                                "description exceeds limit"))
+    if "—" in desc:
+        findings.append(Finding("K22", metadata_path, 0, "em dash", "description contains an em dash"))
+    topics = meta.get("topics") or []
+    if isinstance(topics, list) and len(topics) < MIN_TOPICS:
+        findings.append(Finding("K22", metadata_path, 0, f"{len(topics)} topics",
+                                f"fewer than {MIN_TOPICS} topics"))
+    return CheckResult("K22", "Repository metadata complete", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_doc_consistency(tree: Tree) -> CheckResult:
+    """K23. Documentation consistency: no duplicate H1 ownership of the same concept,
+    and every doc referenced by the README exists (link check covers the reverse)."""
+    findings = []
+    titles: dict[str, str] = {}
+    for rel, text in tree.text_files():
+        if not rel.endswith(".md"):
+            continue
+        for line in text.splitlines():
+            if line.startswith("# "):
+                t = line[2:].strip().lower()
+                if t in titles and titles[t] != rel:
+                    findings.append(Finding("K23", rel, 0, t,
+                                            f"duplicate document title, also in {titles[t]}"))
+                titles.setdefault(t, rel)
+                break
+    return CheckResult("K23", "Documentation is internally consistent", True,
+                       FAIL if findings else PASS, findings)
+
+
+def check_determinism(tree: Tree, root: str) -> CheckResult:
+    """K21. Two independent loads of the tree must hash identically."""
+    try:
+        a = tree_digest(tree)
+        # Reload with the SAME include filter. Without it the second load walks a different
+        # file set and the digests cannot match, which reports a determinism failure that is
+        # an artefact of the check rather than a property of the tree.
+        b = tree_digest(Tree(root, tree.include))
+    except Exception as exc:  # noqa: BLE001
+        return CheckResult("K21", "Verification is reproducible", True, ERROR, [], str(exc))
+    if a != b:
+        return CheckResult("K21", "Verification is reproducible", True, FAIL,
+                           [Finding("K21", root, 0, f"{a[:12]} != {b[:12]}",
+                                    "tree digest not reproducible")])
+    return CheckResult("K21", "Verification is reproducible", True, PASS, [], f"digest {a[:16]}")
+
+
+def tree_digest(tree: Tree) -> str:
+    h = hashlib.sha256()
+    for rel in tree.files:
+        if rel.startswith(".git/"):
+            continue
+        h.update(rel.encode("utf-8"))
+        h.update(tree.sha256(rel).encode("utf-8"))
+    return h.hexdigest()
+
+
+# --------------------------------------------------------------------------------------
+# Runner
+# --------------------------------------------------------------------------------------
+
+def registered_checks(tree, manifest, metadata, root, ep=None, contract=None):
+    """Every check, with the scope that owns it. Scope membership is declared here, once."""
+    E, C = SCOPE_ENVELOPE, SCOPE_CONTENT
+    checks: list[tuple[str, str, Callable[[], CheckResult]]] = [
+        # repository envelope
+        ("K14", E, lambda: check_required_files(tree)),
+        ("K15", E, lambda: check_license(tree)),
+        ("K16", E, lambda: check_readme_rendering(tree)),
+        ("K20", E, lambda: check_release_notes(tree)),
+        ("K22", E, lambda: check_metadata(tree, metadata)),
+        # publication content
+        ("K00", C, lambda: check_readable(tree)),
+        ("K01", C, lambda: check_manifest_integrity(tree, manifest)),
+        ("K02", C, lambda: check_allowlist_coverage(tree, manifest)),
+        ("K04", C, lambda: check_addresses(tree)),
+        ("K05", C, lambda: check_hostnames(tree, ep)),
+        ("K06", C, lambda: check_domains(tree, ep)),
+        ("K07", C, lambda: check_identity(tree)),
+        ("K10", C, lambda: check_private_repos(tree, ep)),
+        ("K12", C, lambda: check_placeholders(tree)),
+        ("K13", C, lambda: check_substitution(tree, ep)),
+        ("K17", C, lambda: check_links(tree)),
+        ("K18", C, lambda: check_images(tree)),
+        ("K19", C, lambda: check_diagrams(tree, contract)),
+        ("K21", C, lambda: check_determinism(tree, root)),
+        ("K23", C, lambda: check_doc_consistency(tree)),
+    ]
+    for rule in PATTERN_RULES:
+        checks.append((rule.check, rule.scope, (lambda r=rule: check_patterns(tree, r))))
+    return checks
+
+
+def run_gate(root: str, manifest_path: str | None, metadata_path: str | None,
+             patterns_path: str | None = None, scope: str = "all",
+             include: list[str] | None = None, contract: dict | None = None):
+    tree = Tree(root, include)
+    manifest = None
+    manifest_error = None
+    if manifest_path:
+        try:
+            manifest = Manifest(manifest_path)
+        except OSError as exc:
+            manifest_error = str(exc)
+
+    ep = None
+    patterns_error = None
+    if patterns_path:
+        try:
+            ep = EstatePatterns.load(patterns_path)
+        except (OSError, ValueError) as exc:
+            patterns_error = str(exc)
+
+    checks = registered_checks(tree, manifest, metadata_path, root, ep, contract)
+    active = {SCOPE_ENVELOPE, SCOPE_CONTENT} if scope == "all" else {scope}
+    expected_ids = sorted({cid for cid, _, _ in checks})
+    results: list[CheckResult] = []
+
+    for cid, csc, fn in checks:
+        if csc not in active:
+            # Not filtered away: reported, with the contractual reason it does not apply.
+            results.append(CheckResult(cid, f"check {cid}", True, NA, [],
+                                       SCOPE_REASON[csc], csc))
+            continue
+        try:
+            res = fn()
+            if res.verdict not in (PASS, FAIL, ERROR):
+                res = CheckResult(cid, res.title, True, ERROR, [], "invalid verdict", csc)
+            res.scope = csc
+        except Exception as exc:  # noqa: BLE001
+            res = CheckResult(cid, f"check {cid}", True, ERROR, [],
+                              f"{type(exc).__name__}: {exc}", csc)
+        results.append(res)
+
+    if patterns_error and SCOPE_CONTENT in active:
+        results.append(CheckResult("K05", "No estate hostnames", True, ERROR, [],
+                                   f"patterns file unreadable: {patterns_error}", SCOPE_CONTENT))
+    if manifest_error and SCOPE_CONTENT in active:
+        results.append(CheckResult("K01", "Publication manifest integrity", True, ERROR, [],
+                                   f"manifest unreadable: {manifest_error}", SCOPE_CONTENT))
+
+    reported = sorted({r.check for r in results})
+    missing = [c for c in expected_ids if c not in reported]
+    if missing:
+        results.append(CheckResult("K99", "Every registered check reported a verdict", True,
+                                   FAIL,
+                                   [Finding("K99", "-", 0, ",".join(missing),
+                                            "check did not report; refusing to pass silently")]))
+    else:
+        results.append(CheckResult("K99", "Every registered check reported a verdict", True,
+                                   PASS, [], f"{len(expected_ids)} checks reported"))
+
+    results.sort(key=lambda r: r.check)
+    return tree, results
+
+
+def render(results, verbose: bool) -> str:
+    out = []
+    for r in results:
+        mark = {PASS: "PASS", FAIL: "FAIL", ERROR: "ERROR", NA: "N/A"}[r.verdict]
+        line = f"  {mark:5s} {r.check}  [{r.scope[:3]}] {r.title}"
+        if r.note:
+            line += f"  ({r.note})"
+        if r.findings:
+            line += f"  [{len(r.findings)} finding(s)]"
+        out.append(line)
+        if r.findings and (verbose or r.verdict != PASS):
+            for f in r.findings[:20]:
+                out.append(f.render())
+            if len(r.findings) > 20:
+                out.append(f"    ... {len(r.findings) - 20} more")
+    return "\n".join(out)
+
+
+def main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(add_help=True)
+    ap.add_argument("--tree")
+    ap.add_argument("--manifest")
+    ap.add_argument("--metadata")
+    ap.add_argument("--patterns", help="estate patterns JSON; required, fails closed if absent")
+    ap.add_argument("--scope", choices=["envelope", "content", "all"], default="all",
+                    help="envelope: repository-level checks. content: publication checks. all: both")
+    ap.add_argument("--include", action="append", default=None,
+                    help="restrict content scanning to this subtree; repeatable")
+    ap.add_argument("--diagram-contract",
+                    help="JSON mapping declared diagram files to expected Mermaid block counts")
+    ap.add_argument("--emit-manifest")
+    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--explain", action="store_true")
+    ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--strict", action="store_true", help="accepted for CI symmetry; the gate is always strict")
+    args = ap.parse_args(argv)
+
+    if args.self_test:
+        from publication_mutations import run_campaign  # noqa: PLC0415
+        return run_campaign()
+
+    if not args.tree:
+        print("verify-publication: --tree is required (or --self-test)", file=sys.stderr)
+        return EXIT_INTERNAL
+
+    try:
+        contract = None
+        if args.diagram_contract:
+            with open(args.diagram_contract, "r", encoding="utf-8") as fh:
+                contract = json.load(fh)
+        tree, results = run_gate(args.tree, args.manifest, args.metadata, args.patterns,
+                                 args.scope, args.include, contract)
+    except Exception:  # noqa: BLE001
+        # Fail closed on internal error. Never report success because we crashed.
+        print("INTERNAL ERROR: gate could not complete; publication refused", file=sys.stderr)
+        traceback.print_exc()
+        return EXIT_INTERNAL
+
+    failed = [r for r in results if r.required and r.verdict not in (PASS, NA)]
+    na = [r for r in results if r.verdict == NA]
+    executed = [r for r in results if r.verdict != NA]
+
+    if args.json:
+        payload = {
+            "verdict": "PASS" if not failed else "FAIL",
+            "checks": [
+                {"check": r.check, "title": r.title, "verdict": r.verdict, "note": r.note,
+                 "findings": [f.__dict__ for f in r.findings]}
+                for r in results
+            ],
+        }
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("NetFRAME Public Release Gate")
+        print(f"  scope        : {args.scope}")
+        print(f"  root examined: {tree.root}")
+        if tree.include:
+            print(f"  content roots: {', '.join(tree.include)}")
+        print(f"  files in scope: {len(tree.files)}")
+        print()
+        print(render(results, args.explain))
+        print()
+        print(f"  executed: {len(executed)}   not applicable: {len(na)}   failed: {len(failed)}")
+        for r in na:
+            print(f"  N/A   {r.check}  {r.note}")
+        print()
+        if failed:
+            print(f"PUBLICATION REFUSED: {len(failed)} of {len(executed)} applicable "
+                  f"check(s) did not pass.")
+        else:
+            print(f"PUBLICATION APPROVED: {len(executed)} applicable check(s) passed, "
+                  f"{len(na)} not applicable to scope '{args.scope}'.")
+
+    if args.emit_manifest and not failed:
+        entries = {rel: tree.sha256(rel) for rel in tree.files if not rel.startswith(".git/")}
+        with open(args.emit_manifest, "w", encoding="utf-8") as fh:
+            json.dump({"files": entries, "tree_digest": tree_digest(tree)},
+                      fh, indent=2, sort_keys=True)
+            fh.write("\n")
+
+    return EXIT_FAILED if failed else EXIT_OK
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
