@@ -1,15 +1,60 @@
-# NETFRAME - a research & education compute cluster
+# NetFRAME
 
 > **Kyle Mason** · USMC Veteran · EC-135/145 Instructor Pilot
 > [`kylemason.org`](https://kylemason.org) · [`machismo0311`](https://github.com/machismo0311)
 
+**A production platform, operated like one.** Seven nodes carrying three real workloads with real
+users, and the engineering discipline to run them safely: infrastructure as code, tested recovery,
+continuous observability, and a virtual network that proves its own reachability on every commit.
+
+Built and operated by one engineer, documented as if a team had to inherit it tomorrow.
+
 [![CI](https://github.com/machismo0311/Home-Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/ci.yml)
-[![netlab (virtual network)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml)
+[![netlab: reachability asserted in CI](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/netlab.yml)
 [![diagram-as-code](https://github.com/machismo0311/Home-Lab/actions/workflows/diagram.yml/badge.svg)](https://github.com/machismo0311/Home-Lab/actions/workflows/diagram.yml)
 
-NETFRAME (**km-cluster**) is a self-designed, self-operated **7-node Proxmox VE cluster** that does three real jobs at once: it provides dedicated GPU compute for **Deep Underground Neutrino Experiment (DUNE)** research, it runs a **multi-tenant AI/ML teaching cluster** used by university computer-science students, and it hosts a **self-hosted large-language-model inference platform** - all riding on enterprise-grade networking, storage, monitoring, and backups. It lives in a NetFRAME CS9000 42U rack and is documented here as a working technical portfolio.
+![NetFRAME](netframe-datacenter-hero.png)
 
----
+|  |  |
+|---|---|
+| **Runs** | GPU compute for **DUNE** neutrino-physics research, a multi-tenant **AI/ML teaching cluster** for university students, and self-hosted **72B-parameter LLM inference** |
+| **Proves** | A virtual network boots in CI and **asserts real reachability** on every push; the topology diagram is **generated from a source-of-truth inventory** and the build fails when the picture drifts from reality |
+| **Governs** | Every estate change carries a stated rollback in an append-only change log; every incident becomes a formal RCA; assessments are tracked to closure with explicit lifecycle status |
+| **Operates** | 7-node Proxmox cluster, VLAN-segmented Juniper and OPNsense networking, RKE2 Kubernetes, Ansible, Prometheus/Grafana/Loki, Wazuh SIEM, tested Proxmox Backup Server recovery |
+
+## Start here
+
+| If you are | Read this |
+|---|---|
+| Evaluating engineering judgement | [Engineering decisions](#engineering-decisions) below, then the [reliability assessment](https://github.com/machismo0311/netframe-reliability-assessment-public) |
+| Assessing reliability practice | [SRE assessment](https://github.com/machismo0311/netframe-reliability-assessment-public): telemetry-measured availability, a 12-mode FMEA, RTO and RPO targets |
+| Assessing security practice | [Security assessment](https://github.com/machismo0311/netframe-security-assessment-public): findings with lifecycle status and a prioritized roadmap |
+| Looking for working code | [netframe-monitor](https://github.com/machismo0311/netframe-monitor): a deterministic policy engine, an evidence engine, and an LLM confined to wording |
+| Looking for the hardware | [Infrastructure reference](docs/infrastructure.md) and the [delivery record](docs/roadmap.md) |
+
+## Engineering decisions
+
+The problems worth reading about are the ones with a constraint attached.
+
+**Sharing one GPU between production research and a classroom.** A single RTX 8000 serves a
+physicist's production workload and roughly fifteen students at once. MIG is unavailable on Turing,
+so per-job NVIDIA MPS enforces a hard VRAM cap instead; every job runs network-less in an Apptainer
+container with a private home and read-only shared data; and the research partition **preempts and
+requeues** student work so a researcher can reclaim the whole card on demand, with student jobs
+auto-restarting afterwards. Research never waits, and no student job can starve another.
+Details in [compute tenancy](#compute-tenancy-research--teaching-on-one-gpu).
+
+**Making the documentation fail the build.** A topology diagram that drifts from reality is worse
+than no diagram, because it is trusted. The diagram is therefore generated from an inventory file
+and CI fails when the two disagree, which converts documentation accuracy from a habit into a gate.
+
+**Proving the network, not describing it.** Network changes are easy to describe and hard to
+verify, so a containerlab topology running FRR and OSPF boots in CI and asserts genuine end-to-end
+reachability on every push. A routing claim that no longer holds breaks the build.
+
+**Treating the estate as something to assess, not just to build.** The platform is subjected to
+its own security and reliability assessments, published in redacted form, with findings carried
+to closure under explicit lifecycle states rather than published once and abandoned.
 
 ## 🎯 What it powers
 
@@ -62,80 +107,6 @@ Every change to the estate is recorded in an **append-only change log with a sta
 
 ---
 
-## Cluster Nodes
-
-| Hostname | Role | IP | CPU | RAM | GPU | PVE | Kernel |
-|---|---|---|---|---|---|---|---|
-| **QuarkyLab** | DUNE research + student AI/ML (SLURM) | 192.168.10.179 | 2× E5-2699 v4 (44c/88t) | 512 GB | RTX 8000 48GB† | 9.2.3 | 6.14.11-9-pve† |
-| **Jarvis** | LLM inference platform | 192.168.10.31 | 2× E5-2687W v4 | 384 GB | 2× RTX 6000 (48GB total)‡ | 9.2.3 | 6.14.11-9-pve‡ |
-| **Randy** | Storage / PBS backup | 192.168.10.187 | 2× E5-2690 v3 (24c/48t) | 128 GB | RX 580 8GB (planned)◊ | 9.1.1 | 7.0.12-1 |
-| **pve2** | OPNsense host | 192.168.10.204 | i7-8700 | 32 GB | - | 9.2.3 | 7.0.12-1 |
-| **pve3** | Core services / RKE2 CP | 192.168.10.201 | i7-8700 | 48 GB | - | 9.2.3 | 7.0.12-1 |
-| **pve4** | Cluster node / RKE2 CP | 192.168.10.202 | i5-7500T | 32 GB | - | 9.2.3 | 7.0.12-1 |
-| **pve5** | Cluster node / RKE2 CP | 192.168.10.203 | i5-7500T | 32 GB | - | 9.2.3 | 7.0.12-1 |
-
-†QuarkyLab: RTX 8000 48GB installed & verified 2026-07-01 (nvidia-smi reports 48GB on NVIDIA 550.163.01; driver-free Turing swap). Kernel pinned - NVIDIA 550.163.01 requires 6.14.11-9-pve.  
-‡Jarvis: **2× RTX 6000 installed & verified 2026-07-04** - 24GB each / 48GB total (driver 550.163.01, kernel 6.14.11-9-pve). Required a nouveau blacklist on first boot; fans managed by the `gpu-fan-control` daemon. Ollama GPU-backed, qwen2.5:72b pulled.  
-◊Randy: RX 580 8GB is seated but **not yet powered** (pending a PCIe aux power cable), so the OS does not enumerate it - Jellyfin transcoding is currently CPU-only. Intended for display/transcode (ROCm), not compute.
-
----
-
-## Network
-
-- **Juniper EX3400-48P** - enterprise fabric, JunOS 23.4R2-S7.4, IP `192.168.10.50`
-- **UniFi Switch 24 PRO (PoE+)** - consumer fabric (IoT, VoIP, guest)
-- **OPNsense 25.1.12** - VM 100 on pve2, handles routing/firewall/DHCP for all VLANs
-- **10G fabric** - Mellanox ConnectX-3 DAC links from Randy/QuarkyLab/Jarvis to EX3400 xe- ports
-
-### Topology
-
-```mermaid
-flowchart TB
-    WAN1["WAN1 · Spectrum<br/>public /19 · primary"] -->|primary| OPN
-    WAN2["WAN2 · FirstNet 5G<br/>192.168.1.0/24 · failover"] -->|failover| OPN
-    OPN["OPNsense VM 100 (pve2)<br/>192.168.10.1 · edge<br/>router / firewall / DHCP · dual-WAN"]
-    OPN <-->|trunk| EX3400
-
-    subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
-        EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4 · STP root"]
-        USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
-        EX3400 <-->|ge-0/0/46 trunk| USW
-    end
-
-    UDR["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]
-    EX3400 -->|VLAN 1 wifi| UDR
-
-    subgraph PVE["km-cluster - Proxmox nodes"]
-        PVE2["pve2 · .204<br/>OPNsense host"]
-        PVE3["pve3 · .201<br/>NPM·Vault·Homepage · (Grafana→pve4, Headscale→pve5 since 2026-07-16)"]
-        PVE4["pve4 · .202"]
-        PVE5["pve5 · .203"]
-        QUARK["QuarkyLab · .179<br/>RTX 8000 48GB · Wazuh VM 104 ·184"]
-        JARVIS["Jarvis · .31<br/>LLM node · 2× RTX 6000 48GB"]
-        RANDY["Randy · .187<br/>PBS · Jellyfin · storage"]
-    end
-
-    PVE1["pve1 · .193<br/>Mac Mini standalone<br/>Pi-hole .177"]
-
-    EX3400 --> PVE2 & PVE3 & PVE4 & PVE5 & QUARK & JARVIS & RANDY & PVE1
-
-    style WAN1 fill:#cc4400,color:#fff
-    style WAN2 fill:#cc4400,color:#fff
-    style OPN fill:#163016,color:#eee
-    style EX3400 fill:#1a1a2e,color:#eee
-```
-
-### VLANs
-
-| ID | Name | Subnet |
-|---|---|---|
-| 1 | mgmt | 192.168.10.0/24 |
-| 20 | trusted | 192.168.20.0/24 |
-| 30 | servers | 192.168.30.0/24 |
-| 40 | IoT | 192.168.40.0/24 |
-| 50 | VoIP | 192.168.50.0/24 |
-| 60 | guest | 192.168.60.0/24 |
-| 70 | lab | 192.168.70.0/24 |
 
 ---
 
@@ -150,118 +121,16 @@ QuarkyLab's single RTX 8000 is safely shared between production research and a c
 - **Fairness** - multifactor priority + fairshare so the queue favors students who've used the GPU least.
 - **Access** - key-only SSH over a Cloudflare Tunnel (`quarkylab.kylemason.org`); no VPN, no inbound ports, server IP hidden. Onboarding is scripted per-roster with a hardened key-install helper and a published LaTeX student guide.
 
----
-
-## Storage
-
-### Randy - Internal (Proxmox Backup Server)
-
-- **Boot:** RAID-1 mirror on 2× Seagate SAS SSDs via AVAGO 3108 MegaRAID
-- **Data pool:** ZFS `datastore` - 4× RAIDZ2 vdevs: 3× 6-wide Toshiba AL15SEB18EQ 1.6TB 10K SAS + 1× 4-wide Seagate ST2000NX0423 1.8TB SATA (all in-pool, no spares)
-- **Capacity:** 36.7TB raw / ~23TB usable | **PBS fingerprint:** `(stored in Vaultwarden - not published)`
-- **PBS UI:** `https://192.168.10.187:8007`
-
-### DS4246 - External JBOD
-
-- 22× 4TB SAS, dual-path via LSI 9207-8e HBA (IT mode) + multipath, SFF-8644→SFF-8088 cables (2 bays free)
-- **Pool `bulk` - built 2026-07-08, expanded 2026-07-17:** 3× RAIDZ2 vdevs (8+8+6-wide), 80.0TB raw / ~55 TiB usable, reboot-verified (auto-imports cleanly)
-
-### QuarkyLab - Local ZFS workspace pool
-
-- **Controller:** Dell PERC H330 Mini (LSI SAS-3 3008), RAID-Mode + JBOD ON - drives pass through for ZFS; 8-bay BP13G+ backplane
-- **Pool `workspace`:** 6-wide RAIDZ1 (5× 2TB SATA + 1× 2TB SAS) - **10.9TB raw / ~9.1TB usable**, lz4, `/workspace` - student/researcher homes + system containerd store
-- **Hot spare:** 1× 2TB SAS (auto-resilvers on a member failure)
-- **Boot/OS:** separate 2TB disk (Proxmox `pve` LVM + Wazuh VM 104); expanded 5→6 wide via RAIDZ expansion on 2026-07-13
 
 ---
 
-## Services
+## Infrastructure
 
-| Service | Host | URL / Port | Notes |
-|---|---|---|---|
-| Proxmox Backup Server | Randy | `:8007` | v4.2.2, ZFS 36.7TB raw / ~23TB usable - daily backups 02:00/03:00 |
-| OPNsense | pve2 (VM 100) | `192.168.10.1` | v25.1.12 |
-| Pi-hole (primary) | pve1 (LXC, Mac Mini) | `192.168.10.177` | DNS filter - standalone node, NOT pve3 |
-| Pi-hole (secondary) | pve5 (CT 108) | `192.168.10.178` | DNS HA - mirror of .177 via nebula-sync; OPNsense DHCP hands out both (2026-07-10) |
-| Headscale | pve5 (LXC 105) | `192.168.10.186` | v0.29.1, self-hosted VPN |
-| Wazuh | QuarkyLab (VM 104) | `https://192.168.10.184` | SIEM |
-| step-ca | pve2 | `https://192.168.10.204:443` | Internal CA, `*.netframe.local` TLS |
-| Vaultwarden | pve3 (LXC 102) | `http://192.168.10.182` | Active ✅ (healthy, onboot=1) |
-| Open WebUI | pve3 (LXC 107) | `http://chat.netframe.local` | ChatGPT-style UI → llm_router; models `local`/`rag` |
-| Jellyfin | Randy | `:8096` | v10.11.11; media on `/datastore/media` |
-| Ollama + Qwen2.5 72B | Jarvis | `llm.netframe.local` | v0.31.1, GPU-backed on 2× RTX 6000 (installed 2026-07-04); qwen2.5:72b tensor-split across both |
-
-> Selected services - full container/service inventory (NPM, Grafana/Prometheus/Loki, Homepage, Scrutiny, llm_router, …) is in the vault.
+The full hardware, network, storage, and service inventory now lives in the
+[infrastructure reference](docs/infrastructure.md), and the delivery record in the
+[roadmap](docs/roadmap.md). Nothing was removed; the top-level page simply leads with
+engineering rather than with a parts list.
 
 ---
 
-## LLM Infrastructure
-
-Jarvis runs **Ollama** serving **Qwen2.5 72B Q4_K_M** across **2× RTX 6000** (48GB VRAM total, 24GB each) - GPUs installed & verified 2026-07-04, qwen2.5:72b pulled (tensor-splits across both cards). Stack: kernel 6.14.11-9-pve, NVIDIA 550.163.01, models on the `tank/models` ZFS dataset (7.2TB pool, since 2026-07-08).
-
-A **FastAPI `llm_router.py`** (OpenAI-compatible) implements hybrid routing:
-- Default: local Ollama inference (Qwen2.5 72B)
-- Escalation: Claude API (`claude-opus-4-8`) on an explicit `escalate` flag, a `model=claude-*` request, or local failure. (Ollama exposes no logprobs, so routing is by flag/model/failure - not confidence scoring.)
-- Optional `model:"rag"` grounds answers on the NETFRAME vault with `[source]` citations.
-
-The **[netframe-monitor](https://github.com/machismo0311/netframe-monitor)** companion repo uses this same local LLM to interpret cluster-health diagnostics and publish a web report.
-
----
-
-## Power
-
-| UPS | Feeds | Capacity |
-|---|---|---|
-| Middle Atlantic UPS-OL2200R | R730s, Randy, DS4246 | 6× 12V 9Ah AGM series (76.4V) |
-| Tripp Lite SMART1500VA | EX3400, UniFi, small compute | 1500VA |
-
-PDU: APC AP7901 on EX3400 ge-0/0/38.
-
----
-
-## Planned / In Progress
-
-- [x] Randy commissioned - PBS live, ZFS datastore 36.7TB raw / ~23TB usable
-- [x] Cluster upgrade - all cluster nodes to PVE 9.2.3 / kernel 7.0.12-1 (2026-06-22); Randy kernel/ZFS-only, stays on pve-manager 9.1.1
-- [x] QuarkyLab RTX 8000 48GB swap ✅ 2026-07-01 (nvidia-smi reports 48GB, NVIDIA 550.163.01)
-- [x] Jarvis 2× RTX 6000 install ✅ 2026-07-04 (24GB each / 48GB total; Ollama GPU-backed, qwen2.5:72b)
-- [x] Multi-tenant SLURM + Apptainer + MPS GPU sharing on QuarkyLab ✅ validated 2026-07-02 (research preemption + per-job VRAM caps)
-- [x] Backup schedules configured - daily to randy-pbs, 7d+4w retention
-- [x] Wazuh SIEM + Promtail→Loki on all 8 nodes ✅ 2026-06-25
-- [x] DS4246 → Randy - pool `bulk` built 2026-07-08, 3rd vdev added 2026-07-17 (8+8+6-wide RAIDZ2, 80.0TB raw / ~55 TiB usable, reboot-verified)
-- [x] VLAN activation ✅ 2026-06-25 - EX3400 ge-0/0/46 trunk live, verified end-to-end. Fix: native-vlan-id at interface level (ELS)
-- [x] Scrutiny - drive health UI live (~56 drives, collectors on Randy + QuarkyLab, 6h) ✅
-- [x] RKE2 Kubernetes ✅ Phases 1-7 (2026-07-10/11) - HA control plane (VMs 201-203, VIP .54), Cilium, MetalLB (.71-.75), Randy NFS StorageClass + bare-metal storage worker, private registry (step-ca TLS + auto-renew). **NVIDIA GPU Operator deferred** (SLURM/Ollama own the cards). See `vault/Runbook/RKE2-Phase1-HA-ControlPlane-2026-07-10.md`
-- [x] Headscale Phase 1 - pve3/4/5/Jarvis migrated to self-hosted (2026-06-22)
-- [ ] Large-scale DUNE dataset landing + offsite restic→B2 backup tier (parked pending data)
-- [ ] Headscale Phase 2 - QuarkyLab + a DUNE researcher's Mac (must migrate together)
-- [ ] FreePBX + 5× Cisco CP-8841 VoIP phones
-- [x] Cyberpunk monitoring dashboard - live API integration
-
----
-
-## Repo Structure
-
-```
-Home-Lab/
-├── README.md
-├── CLAUDE.md                     # Cluster context for Claude Code (canonical)
-├── index.html                    # Personal landing page (kylemason.org)
-├── homelab-setup.md              # Bare-metal build notes
-├── docs/                         # Runbooks, incident reports, LaTeX sources (.tex)
-├── runbooks/                     # Session runbooks (EX3400, VLAN, Homepage)
-├── vault/                        # Obsidian knowledge base - canonical runbooks & topic docs
-│   └── Compute/ Infrastructure/ Networking/ Runbook/ Projects/
-├── scripts/                      # llm_router (FastAPI), jarvis-oncall bot, SLURM, gpu-fan-control
-├── playbooks/                    # Ansible: backup-verify, hardening desired-state + cron wrappers
-├── .githooks/                    # pre-commit (secret scanning) + installer
-├── netlab/                       # containerlab virtual network (FRR/OSPF) + CI reachability tests
-├── topology/                     # Network topology reference + diagram-as-code (inventory → Mermaid)
-├── student-guide/                # QuarkyLab student & researcher onboarding guides
-├── headscale/                    # Headscale VPN docs
-└── dotfiles/                     # .bashrc, .bash_aliases
-```
-
----
-
-*NETFRAME · Kyle Mason · Greater Cleveland, OH · A research & education compute cluster, built and operated with aviation discipline.*
+*NetFRAME · Kyle Mason · Greater Cleveland, OH · A production platform built and operated with aviation discipline.*
