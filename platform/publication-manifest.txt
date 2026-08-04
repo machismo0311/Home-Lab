@@ -1,0 +1,28 @@
+# NetFRAME publication manifest. Default deny.
+# source_path | destination_path | classification | owner_approved_on
+#
+# This file is an INPUT, not an output. It is authored once, reviewed, and committed.
+# It must never be generated from the tree it constrains: a manifest derived from the
+# tree can only ever agree with it, which turns default-deny into a tautology.
+#
+# Any file present in the tree but absent here is REFUSED.
+#
+src/docs/adr/ADR-022-registry-scalability.md   | docs/adr/ADR-022-registry-scalability.md       | AS-IS    | 2026-08-04
+src/docs/adr/ADR-026-kernel-owns-admission.md  | docs/adr/ADR-026-kernel-owns-admission.md      | AS-IS    | 2026-08-04
+src/docs/adr/ADR-027-session-ownership-lifecycle.md | docs/adr/ADR-027-session-ownership-lifecycle.md | AS-IS    | 2026-08-04
+src/docs/adr/ADR-029-history-freshness-gate.md | docs/adr/ADR-029-history-freshness-gate.md     | AS-IS    | 2026-08-04
+src/docs/adr/ADR-030-incident-memory.md        | docs/adr/ADR-030-incident-memory.md            | AS-IS    | 2026-08-04
+src/docs/adr/ADR-035-dependency-direction-gate.md | docs/adr/ADR-035-dependency-direction-gate.md  | AS-IS    | 2026-08-04
+src/docs/adr/README.md                         | docs/adr/README.md                             | SANITIZE | 2026-08-04
+src/docs/architecture.md                       | docs/architecture.md                           | SANITIZE | 2026-08-04
+src/docs/capabilities.md                       | docs/capabilities.md                           | SANITIZE | 2026-08-04
+src/docs/engineering-stories.md                | docs/engineering-stories.md                    | SANITIZE | 2026-08-04
+src/docs/glossary.md                           | docs/glossary.md                               | SANITIZE | 2026-08-04
+src/docs/governance-compiler.md                | docs/governance-compiler.md                    | SANITIZE | 2026-08-04
+src/docs/governance.md                         | docs/governance.md                             | SANITIZE | 2026-08-04
+src/docs/mutation-testing.md                   | docs/mutation-testing.md                       | SANITIZE | 2026-08-04
+src/docs/release-process.md                    | docs/release-process.md                        | SANITIZE | 2026-08-04
+src/publication-diagrams.json                  | publication-diagrams.json                      | SANITIZE | 2026-08-04
+src/publication-metadata.json                  | publication-metadata.json                      | SANITIZE | 2026-08-04
+src/README.md                                  | README.md                                      | SANITIZE | 2026-08-04
+publication-manifest.txt                       | publication-manifest.txt                       | AS-IS    | 2026-08-04

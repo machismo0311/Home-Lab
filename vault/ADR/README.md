@@ -1,5 +1,7 @@
 # Architecture Decision Records (ADR)
 
+> These records decide **infrastructure**. Decisions about the platform software are recorded separately in [`platform/docs/adr/`](../../platform/docs/adr/).
+
 **Tags:** #adr #decision #reference
 
 This folder records the significant architecture decisions behind NetFRAME: the context, the choice, and the consequences. Each record is immutable once accepted. If a decision changes, a new ADR supersedes the old one rather than editing history. Format follows the Michael Nygard ADR template.

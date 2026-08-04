@@ -30,6 +30,7 @@ Built and operated by one engineer, documented as if a team had to inherit it to
 | Assessing reliability practice | [SRE assessment](https://github.com/machismo0311/netframe-reliability-assessment-public): telemetry-measured availability, a 12-mode FMEA, RTO and RPO targets |
 | Assessing security practice | [Security assessment](https://github.com/machismo0311/netframe-security-assessment-public): findings with lifecycle status and a prioritized roadmap |
 | Looking for working code | [netframe-monitor](https://github.com/machismo0311/netframe-monitor): a deterministic policy engine, an evidence engine, and an LLM confined to wording |
+| Judging platform engineering | [Platform documentation](platform/): decision records, governance, engineering stories, and the publication gate |
 | Looking for the hardware | [Infrastructure reference](docs/infrastructure.md) and the [delivery record](docs/roadmap.md) |
 
 ## Engineering decisions
