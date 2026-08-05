@@ -24,14 +24,34 @@ Built and operated by one engineer, documented as if a team had to inherit it to
 
 ## Start here
 
-| If you are | Read this |
+| | |
 |---|---|
-| Evaluating engineering judgement | [Engineering decisions](#engineering-decisions) below, then the [reliability assessment](https://github.com/machismo0311/netframe-reliability-assessment-public) |
-| Assessing reliability practice | [SRE assessment](https://github.com/machismo0311/netframe-reliability-assessment-public): telemetry-measured availability, a 12-mode FMEA, RTO and RPO targets |
-| Assessing security practice | [Security assessment](https://github.com/machismo0311/netframe-security-assessment-public): findings with lifecycle status and a prioritized roadmap |
-| Looking for working code | [netframe-monitor](https://github.com/machismo0311/netframe-monitor): a deterministic policy engine, an evidence engine, and an LLM confined to wording |
-| Judging platform engineering | [Platform documentation](platform/): decision records, governance, engineering stories, and the publication gate |
-| Looking for the hardware | [Infrastructure reference](docs/infrastructure.md) and the [delivery record](docs/roadmap.md) |
+| **[Platform engineering](platform/)** | The engineering record: architecture, capabilities, and release process |
+| **[Architecture decision records](platform/docs/adr/)** | Six decisions, each with the alternatives it rejected |
+| **[Engineering stories](platform/docs/engineering-stories.md)** | Six things that went wrong. Four are defects I found in my own work |
+| **[Governance](platform/docs/governance.md)** | Rules registered with the executable witness that enforces them |
+| **[Release gate](release-gate/)** | A fail-closed publication verifier: 24 checks, proven by a 36-mutation campaign |
+| **[Assessments](#security--reliability-engineering)** | Security and reliability, assessed against this estate and published in redacted form |
+| **[Working code](https://github.com/machismo0311/netframe-monitor)** | netframe-monitor: a deterministic policy engine, an evidence engine, and an LLM confined to wording |
+| **[Hardware](docs/infrastructure.md)** | The infrastructure reference and the [delivery record](docs/roadmap.md) |
+
+## Evidence
+
+**The publication gate refused its own author.** Its first production run, on real content,
+for a correct reason. The migration stopped before anything was committed.
+
+![The publication gate refusing its author's publication](release-gate/docs/first-refusal.png)
+
+- **[The gate](release-gate/)** — 24 checks plus a meta-check that fails the run if any
+  registered check did not report, proven by a
+  [36-mutation campaign](release-gate/scripts/publication_mutations.py) in which every seeded
+  defect must be caught by its *expected* check.
+- **[The network proves itself](netlab/)** — a containerlab topology running FRR and OSPF boots
+  in CI and asserts real end-to-end reachability on every push.
+- **[The diagram fails the build](topology/)** — generated from
+  [`inventory.yml`](topology/inventory.yml). Both the committed diagram and the one rendered in
+  [the infrastructure reference](docs/infrastructure.md) are generated, and CI fails when either
+  drifts from the inventory.
 
 ## Engineering decisions
 
@@ -63,7 +83,7 @@ to closure under explicit lifecycle states rather than published once and abando
 **QuarkyLab** - a 44-core Dell R730 with **512 GB RAM** and an **NVIDIA RTX 8000 (48 GB)** - is a dedicated research node for the **Deep Underground Neutrino Experiment (DUNE)**. It runs a physicist's production ML workload and hosts a retrieval-augmented **"DUNE Agent"**: a RAG pipeline over the experiment's `dunereco` reconstruction codebase (Ollama + a Qdrant vector store) built to help new scientists navigate that codebase during onboarding. Off-site researchers reach the node over a **Cloudflare Tunnel** (no inbound ports, server IP hidden) with full GPU access.
 
 ### 🎓 A multi-tenant AI/ML teaching cluster
-The same RTX 8000 is shared with **~15 university computer-science students per semester** learning AI/ML on real GPU hardware - without ever threatening the research workload. A **SLURM** scheduler with `gres/shard` + per-job **NVIDIA MPS** enforces a hard ~6 GB VRAM cap per job and up to **8 concurrent GPU jobs**; every job is isolated in a network-less **Apptainer** container (own home, read-only shared data, RAM-bounded); and research always wins - a researcher job **preempts and requeues** student jobs to reclaim the whole card, then they auto-restart. Students onboard with key-only SSH and a published lab guide. *(Multi-tenant GPU sharing validated end-to-end 2026-07-02.)*
+The same RTX 8000 is shared with **~15 university computer-science students per semester** learning AI/ML on real GPU hardware, without ever threatening the research workload. Students onboard with key-only SSH and a published lab guide. *(Multi-tenant GPU sharing validated end-to-end 2026-07-02.)* The scheduling, isolation and preemption mechanics are in [compute tenancy](#compute-tenancy-research--teaching-on-one-gpu).
 
 ### 🤖 A self-hosted LLM inference platform
 **Jarvis** - an R730 with **384 GB RAM** and **2× RTX 6000 (48 GB VRAM total)** - serves **Qwen2.5-72B** via Ollama behind a custom **OpenAI-compatible router** (`llm_router`) with **RAG over this repository's documentation**, a ChatGPT-style web UI (Open WebUI), and a Discord **on-call bot** that can troubleshoot any cluster node through read-only SSH diagnostics and LLM tool-calling.
