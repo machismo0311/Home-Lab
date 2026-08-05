@@ -7,6 +7,16 @@ IOS-style routing config, and is validated **end-to-end in CI**  every push spin
 network up, checks it, and tears it down. The green badge above means the routing
 actually works (and *survives a link failure*), not just that a YAML file parses.
 
+Here is what the badge is actually asserting. The primary link is failed mid-test, OSPF
+reconverges through the backup path, and end-to-end connectivity is re-established before
+the link is restored and the preferred path returns:
+
+![OSPF reroutes around a failed link in four seconds](netlab-failover.png)
+
+Verbatim output of the failover step from
+[run 30949807889](https://github.com/machismo0311/Home-Lab/actions/runs/30949807889).
+The timings are that run's, not a target: **4 s** to reroute, **3 s** to revert.
+
 ```
                     primary: r1 ⇄ r2  (OSPF cost 10)
    h1 ───── r1 ═══════════════════════ r2 ───── h2
