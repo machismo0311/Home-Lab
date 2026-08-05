@@ -6,17 +6,23 @@ It exists because publishing from a private repository is a decision made under 
 usually by one person, usually late. Reviewing a diff by eye finds typos. It does not reliably find
 the one address in the one fixture in the one directory nobody opened.
 
-```
-$ verify-publication --tree ./out --manifest publication-manifest.txt \
-                     --metadata repo-metadata.json --patterns estate-patterns.json
+## Its first production run refused my own publication
 
-PUBLICATION REFUSED: 3 required check(s) did not pass.
-  FAIL  K04  No estate or unexpected IP addresses  [1 finding(s)]
-    docs/architecture.md:42  RFC1918 address  [192.168.99.99]
-  FAIL  K12  No unresolved placeholders or work markers  [1 finding(s)]
-    README.md:8  work marker  [TODO]
-  FAIL  K20  Release notes present  (no released version entry found)
-```
+![The publication gate refusing its author's publication: 19 files in scope, K17 failing on two links that escape the publication tree](docs/first-refusal.png)
+
+This is the real output of the first time this tool was run for its actual purpose: publishing the
+platform package that now sits alongside it in this repository. It refused.
+
+`K17` was correct. Both links resolve when the file is read from the repository root and are
+unresolvable inside the publication tree, so a reader treating the package as a self-contained unit
+would have hit dead navigation. The migration stopped there. Nothing was committed until the links
+were rewritten as inline code paths, which changed no check and weakened no rule.
+
+Before that run, every claim on this page was a claim that the control worked. That refusal is the
+first evidence, and the more useful half of it is that the author was the one refused.
+
+The image above is reproduced with a fictional patterns file, so the vocabulary shown is not the
+estate's. The verdicts, findings and counts are the ones the real run produced.
 
 ## What it checks
 
@@ -69,11 +75,11 @@ Two suites, both runnable offline from a fresh clone.
 
 ```
 $ scripts/verify-publication --self-test
-  34/34 mutations caught by the expected check
+  36/36 mutations caught by the expected check
   CAMPAIGN PASS
 
 $ python3 tests/test_publication_gate.py
-  35/35 assertions passed
+  46/46 assertions passed
 ```
 
 **The mutation campaign** builds a clean baseline tree, applies exactly one defect, and asserts the
@@ -143,6 +149,7 @@ docs/
   PUBLICATION-CONTRACT.md       the two scopes, the trust boundary, the operator sequence
   DESIGN.md                     why it is built this way
   LIMITATIONS.md                what it does not do
+  first-refusal.png             the first production run, refused
 ```
 
 CI for this directory is defined at the repository root, in
