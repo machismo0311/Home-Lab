@@ -1,6 +1,6 @@
 # NetFRAME
 
-> **Kyle Mason** · USMC Veteran · EC-135/145 Instructor Pilot
+> **Kyle Mason** · USMC Infantry Veteran · EMS Helicopter Instructor Pilot
 > [`kylemason.org`](https://kylemason.org) · [`machismo0311`](https://github.com/machismo0311)
 
 **A production platform, operated like one.** Seven nodes carrying three real workloads with real
@@ -111,7 +111,7 @@ The same RTX 8000 is shared with **~15 university computer-science students per 
 
 ## Why this exists
 
-I'm a U.S. Marine Corps veteran as well a EMS helicopter (EC-135/145 Instructor Pilot, FOQA Officer) transitioning into network & infrastructure engineering, currently pursuing my **CCNA**. NETFRAME is where I apply the discipline of mission-critical aviation - checklists, root-cause analysis, and zero-defect execution - to infrastructure that real people depend on:
+I'm a U.S. Marine Corps infantry veteran and, afterwards, an EMS helicopter instructor pilot (EC-135/145) and FOQA officer, now transitioning into network & infrastructure engineering, currently pursuing my **CCNA**. NETFRAME is where I apply the discipline of mission-critical aviation - checklists, root-cause analysis, and zero-defect execution - to infrastructure that real people depend on:
 
 - **FOQA flight-data analysis → observability:** metrics, dashboards, and anomaly detection (Prometheus / Grafana / Loki, Wazuh SIEM)
 - **Instructor-pilot checklists → runbooks & change control:** every buildout and incident is written up as a repeatable procedure, with formal RCAs
