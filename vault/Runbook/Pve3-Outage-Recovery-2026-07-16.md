@@ -10,7 +10,7 @@
   `c8:d9:d2:17:5c:d0` got no response - a NIC with standby power would normally wake,
   so the box likely has no AC at all. Physical check needed: UPS state, outlet, PSU.
 - **Why no alert fired:** Grafana (the alerting stack) lived on pve3. Known
-  monitoring-on-the-monitored SPOF; see also the new OPEN-ITEMS entry - the netframe
+  monitoring-on-the-monitored SPOF; see also the tracked follow-up - the netframe
   collector has no UNREACHABLE verdict, so a dead node reads as scattered WARNs.
 
 ## Impact while down
@@ -71,7 +71,7 @@ network without re-IP hacks. Cached Bitwarden clients keep working offline.
 
 ## Follow-ups filed
 
-- OPEN-ITEMS (netframe-monitor): collector UNREACHABLE verdict gap; pve3 revival item.
+- Tracked in the private operations register: collector UNREACHABLE verdict gap; pve3 revival item.
 - Consider: alerting SPOF (Grafana on one node) is now demonstrated, not theoretical -
   feeds the Compute HA roadmap item.
 
@@ -109,7 +109,7 @@ orphaning zombie etcd containers that never re-elected.
    hosts etcd or other latency-critical VMs - recovery IO is a failure vector.
 2. A 2-member etcd has zero stall tolerance: any single-member IO pause = leaderless.
 3. rke2 v1.35.6 fatal-on-lost-lease + containerd-zombie deadlock amplifies a ~60s
-   stall into a permanent outage - the OPEN-ITEMS failover test now has a repro
+   stall into a permanent outage - the tracked failover test now has a repro
    recipe (IO-stall a CP node's disk while a member is already down).
 
 ## Resolution (evening 2026-07-16): actual root cause = e1000e NIC hang, NOT power
@@ -139,6 +139,6 @@ removed; **NPM (101) and Grafana (103) migrated back to pve3** (`pct migrate
 container needed a manual `docker start` (Exited 255, restart policy didn't
 recover it); all fronts + chat.netframe.local serving; netframe cycle green;
 recovery DM delivered by the new deterministic alerter. Original topology fully
-restored. Follow-ups that remain: RKE2 failover test (OPEN-ITEMS), consider
+restored. Follow-ups that remain: RKE2 failover test (tracked), consider
 BIOS "power on after AC loss" for headless recovery, and watch for e1000e
 recurrence.

@@ -53,12 +53,12 @@ HAOS updates itself from the UI (Settings → System → Updates); never reinsta
 - Manual vzdump to randy-pbs succeeded; scheduled job present in `/etc/pve/jobs.cfg`
 - pve5 headroom after install: ~20 GiB RAM free with CT 108 + VM 203 + VM 110 running
 
-## Owner follow-ups (in OPEN-ITEMS)
+## Owner follow-ups
 
 1. **Onboarding:** browse to http://homeassistant.netframe.local:8123 and create the owner account (first visit claims the instance - do it soon). File credentials in Vaultwarden.
 2. ~~DHCP static mapping~~ **DONE 2026-07-16:** MAC `BC:24:11:27:B2:5C` → `192.168.10.60` (Services → ISC DHCPv4 → LAN → static mappings). Verified by VM reboot picking up .60. Two gotchas found:
    - **In-pool static maps are rejected**: the LAN pool is .100-.199 and the GUI refuses a mapping at .153 (the form silently redisplays with a validation error that is easy to miss). Use an address outside the pool; .60 was verified free first. (The .177/.178 Pi-hole mappings inside the pool predate this validation path.)
-   - **`/api/core/backup/download/this` served a stale config**: even after the mapping was live (VM re-leased .60), the endpoint kept returning the 2026-07-13 revision without it. The nightly `opnsense-config-backup` uses this same endpoint - verify the next nightly backup contains the mapping (tracked in OPEN-ITEMS).
+   - **`/api/core/backup/download/this` served a stale config**: even after the mapping was live (VM re-leased .60), the endpoint kept returning the 2026-07-13 revision without it. The nightly `opnsense-config-backup` uses this same endpoint - verify the next nightly backup contains the mapping (tracked).
 3. **Add-ons when wanted:** Mosquitto broker (MQTT), ESPHome, Zigbee2MQTT / Z-Wave JS as hardware arrives. All via Settings → Add-ons.
 
 ## Future planning notes
