@@ -25,6 +25,14 @@ HERE = pathlib.Path(__file__).resolve().parent
 INVENTORY = HERE / "inventory.yml"
 OUTPUT = HERE / "topology.mmd"
 
+# GitHub renders Mermaid inside Markdown, not from a bare .mmd file, so the diagram a
+# reader actually sees lives in docs/infrastructure.md. That copy is generated too, from
+# the same inventory, and --check verifies it: a second hand-maintained diagram would be
+# exactly the drift this generator exists to prevent.
+EMBED = HERE.parent / "docs" / "infrastructure.md"
+EMBED_BEGIN = "<!-- BEGIN GENERATED TOPOLOGY -- edit topology/inventory.yml, not this block -->"
+EMBED_END = "<!-- END GENERATED TOPOLOGY -->"
+
 # Mermaid classDef styling per node role.
 ROLE_STYLE = {
     "edge": "fill:#cc4400,color:#fff",
@@ -75,6 +83,14 @@ def render(inventory: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def splice(doc: str, diagram: str) -> str:
+    """Return *doc* with the region between the markers replaced by *diagram*."""
+    start = doc.index(EMBED_BEGIN)
+    end = doc.index(EMBED_END, start)
+    block = f"{EMBED_BEGIN}\n```mermaid\n{diagram}```\n"
+    return doc[:start] + block + doc[end:]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -87,21 +103,32 @@ def main() -> int:
     inventory = yaml.safe_load(INVENTORY.read_text())
     generated = render(inventory)
 
+    embed_doc = EMBED.read_text()
+    if EMBED_BEGIN not in embed_doc or EMBED_END not in embed_doc:
+        print(f"{EMBED.name} is missing the generated-topology markers.", file=sys.stderr)
+        return 1
+    embed_wanted = splice(embed_doc, generated)
+
     if args.check:
-        current = OUTPUT.read_text() if OUTPUT.exists() else ""
-        if current != generated:
+        stale = []
+        if (OUTPUT.read_text() if OUTPUT.exists() else "") != generated:
+            stale.append(str(OUTPUT.relative_to(HERE.parent)))
+        if embed_doc != embed_wanted:
+            stale.append(str(EMBED.relative_to(HERE.parent)))
+        if stale:
             print(
-                "topology.mmd is out of date with inventory.yml.\n"
+                f"out of date with inventory.yml: {', '.join(stale)}\n"
                 "Run: python3 topology/gen_diagram.py",
                 file=sys.stderr,
             )
             return 1
-        print("topology.mmd is in sync with inventory.yml ✓")
+        print("topology.mmd and docs/infrastructure.md are in sync with inventory.yml ✓")
         return 0
 
     OUTPUT.write_text(generated)
-    print(f"wrote {OUTPUT.relative_to(HERE.parent)} ({len(inventory['nodes'])} nodes, "
-          f"{len(inventory['links'])} links)")
+    EMBED.write_text(embed_wanted)
+    print(f"wrote {OUTPUT.relative_to(HERE.parent)} and {EMBED.relative_to(HERE.parent)} "
+          f"({len(inventory['nodes'])} nodes, {len(inventory['links'])} links)")
     return 0
 
 

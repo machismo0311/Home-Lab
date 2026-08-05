@@ -35,41 +35,50 @@ Back to the [platform overview](../README.md).
 
 ### Topology
 
+<!-- BEGIN GENERATED TOPOLOGY -- edit topology/inventory.yml, not this block -->
 ```mermaid
 flowchart TB
-    WAN1["WAN1 · Spectrum<br/>public /19 · primary"] -->|primary| OPN
-    WAN2["WAN2 · FirstNet 5G<br/>192.168.1.0/24 · failover"] -->|failover| OPN
-    OPN["OPNsense VM 100 (pve2)<br/>192.168.10.1 · edge<br/>router / firewall / DHCP · dual-WAN"]
-    OPN <-->|trunk| EX3400
+    wan1["WAN1 · Spectrum<br/>public /19 · primary"]
+    wan2["WAN2 · FirstNet 5G<br/>192.168.1.0/24 · failover"]
+    opnsense["OPNsense (VM 100, pve2)<br/>192.168.10.1 · edge + router / firewall / DHCP · dual-WAN"]
+    udr["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]
+    ex3400["Juniper EX3400-48P<br/>192.168.10.50 · JunOS 23.4R2 · core"]
+    usw["UniFi USW-24-250W<br/>trunk on Port 24"]
+    pve2["pve2<br/>.204 · OPNsense host"]
+    pve3["pve3<br/>.201 · NPM/Vault/Grafana/Homepage/Headscale"]
+    pve4["pve4<br/>.202"]
+    pve5["pve5<br/>.203"]
+    quarkylab["QuarkyLab<br/>.179 · RTX 8000 48GB · Wazuh VM 104"]
+    jarvis["Jarvis<br/>.31 · LLM · 2× RTX 6000"]
+    randy["Randy<br/>.187 · PBS · Jellyfin · storage"]
+    pve1["pve1 (Mac Mini)<br/>.193 · standalone · Pi-hole .177"]
 
-    subgraph CORE["Core Switching (192.168.10.0/24 + VLANs)"]
-        EX3400["Juniper EX3400-48P<br/>192.168.10.50<br/>JunOS 23.4R2-S7.4 · STP root"]
-        USW["UniFi USW-24-250W<br/>U39 · trunk on Port 24"]
-        EX3400 <-->|ge-0/0/46 trunk| USW
-    end
+    wan1 -->|primary| opnsense
+    wan2 -->|failover| opnsense
+    opnsense -->|trunk| ex3400
+    ex3400 -->|VLAN 1 wifi| udr
+    ex3400 -->|ge-0/0/46| usw
+    ex3400 --> pve2
+    ex3400 --> pve3
+    ex3400 --> pve4
+    ex3400 --> pve5
+    ex3400 --> quarkylab
+    ex3400 --> jarvis
+    ex3400 --> randy
+    ex3400 --> pve1
 
-    UDR["UniFi Dream Router<br/>192.168.10.2 · VLAN 1 wireless controller / AP"]
-    EX3400 -->|VLAN 1 wifi| UDR
-
-    subgraph PVE["km-cluster - Proxmox nodes"]
-        PVE2["pve2 · .204<br/>OPNsense host"]
-        PVE3["pve3 · .201<br/>NPM·Vault·Homepage · (Grafana→pve4, Headscale→pve5 since 2026-07-16)"]
-        PVE4["pve4 · .202"]
-        PVE5["pve5 · .203"]
-        QUARK["QuarkyLab · .179<br/>RTX 8000 48GB · Wazuh VM 104 ·184"]
-        JARVIS["Jarvis · .31<br/>LLM node · 2× RTX 6000 48GB"]
-        RANDY["Randy · .187<br/>PBS · Jellyfin · storage"]
-    end
-
-    PVE1["pve1 · .193<br/>Mac Mini standalone<br/>Pi-hole .177"]
-
-    EX3400 --> PVE2 & PVE3 & PVE4 & PVE5 & QUARK & JARVIS & RANDY & PVE1
-
-    style WAN1 fill:#cc4400,color:#fff
-    style WAN2 fill:#cc4400,color:#fff
-    style OPN fill:#163016,color:#eee
-    style EX3400 fill:#1a1a2e,color:#eee
+    classDef edge fill:#cc4400,color:#fff
+    classDef firewall fill:#163016,color:#eee
+    classDef switch fill:#1a1a2e,color:#eee
+    classDef node fill:#20143a,color:#eee
+    classDef standalone fill:#2b2b2b,color:#cccccc
+    class wan1,wan2 edge
+    class opnsense firewall
+    class udr,pve2,pve3,pve4,pve5,quarkylab,jarvis,randy node
+    class ex3400,usw switch
+    class pve1 standalone
 ```
+<!-- END GENERATED TOPOLOGY -->
 
 ### VLANs
 
