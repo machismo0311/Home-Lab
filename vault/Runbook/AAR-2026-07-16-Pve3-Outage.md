@@ -152,7 +152,7 @@ dependency between the credential store and the infrastructure it describes.
 | 5 | RKE2 recovery procedure documented and proven (killall + simultaneous restart) | Runbook #24 |
 | 6 | Original topology restored with bandwidth-limited migrations | pve3/pve4 |
 
-**Filed and tracked (OPEN-ITEMS):**
+**Filed and tracked:**
 
 | # | Action | Rationale |
 |---|---|---|
@@ -193,5 +193,5 @@ dependency between the credential store and the infrastructure it describes.
 
 - `Runbook/Pve3-Outage-Recovery-2026-07-16.md` (incident runbook + RKE2 addendum + resolution; Home-Lab PRs #23, #24, #25, #26)
 - netframe-monitor PRs #62 (config-drift env coverage), #63 (UNREACHABLE + DM alerter)
-- `netframe-monitor/docs/OPEN-ITEMS.md` (tracked follow-ups)
+- Operational follow-ups recorded in the private operations register
 - Grafana/Loki metrics gap: 06:00–12:52 UTC (restored from the 06:00 backup)
