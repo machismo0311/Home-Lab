@@ -37,8 +37,16 @@ Built and operated by one engineer, documented as if a team had to inherit it to
 
 ## Evidence
 
+**The network reroutes around a failed link in four seconds.** [`netlab/`](netlab/) boots three
+FRR routers in CI on every push, then fails the primary link mid-test to prove OSPF reconverges
+over the backup path and reverts when the link returns. This is the verbatim output of
+[that run](https://github.com/machismo0311/Home-Lab/actions/runs/30949807889), not a diagram of
+a network:
+
+![OSPF reroutes around a failed link in four seconds](netlab/netlab-failover.png)
+
 **The publication gate refused its own author.** Its first production run, on real content,
-for a correct reason. The migration stopped before anything was committed.
+for a correct reason. The migration stopped before anything was committed:
 
 ![The publication gate refusing its author's publication](release-gate/docs/first-refusal.png)
 
@@ -46,8 +54,6 @@ for a correct reason. The migration stopped before anything was committed.
   registered check did not report, proven by a
   [36-mutation campaign](release-gate/scripts/publication_mutations.py) in which every seeded
   defect must be caught by its *expected* check.
-- **[The network proves itself](netlab/)** — a containerlab topology running FRR and OSPF boots
-  in CI and asserts real end-to-end reachability on every push.
 - **[The diagram fails the build](topology/)** — generated from
   [`inventory.yml`](topology/inventory.yml). Both the committed diagram and the one rendered in
   [the infrastructure reference](docs/infrastructure.md) are generated, and CI fails when either
