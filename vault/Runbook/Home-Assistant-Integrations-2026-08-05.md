@@ -166,6 +166,9 @@ sensors for the WAN.
 
 ---
 
+> **Paste-ready YAML** for everything below (config, automations, a NetFRAME Lovelace dashboard,
+> and the Grafana scrape job) lives in [[Runbook/Home-Assistant-Config-Package-2026-08-05]].
+
 ## Step 9 - Prometheus export (into the existing Grafana)
 
 Push HA's own metrics into the `netframe-monitoring-stack` Prometheus so HA shows up in Grafana.
