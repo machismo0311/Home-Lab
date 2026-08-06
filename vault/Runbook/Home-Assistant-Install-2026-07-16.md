@@ -55,11 +55,29 @@ HAOS updates itself from the UI (Settings → System → Updates); never reinsta
 
 ## Owner follow-ups
 
-1. **Onboarding:** browse to http://homeassistant.netframe.local:8123 and create the owner account (first visit claims the instance - do it soon). File credentials in Vaultwarden.
+1. ~~**Onboarding:** browse to http://homeassistant.netframe.local:8123 and create the owner account (first visit claims the instance - do it soon). File credentials in Vaultwarden.~~ **DONE (owner `kyle`).** Onboarding was completed some time after install (confirmed 2026-08-05: `GET /api/onboarding` returns 404 - the wizard views are torn down once onboarded). The password was never filed in Vaultwarden, so on 2026-08-05 it was recovered from the HAOS console (see **Owner-password recovery** below). **File the credential in Vaultwarden** and rotate off the temporary password.
 2. ~~DHCP static mapping~~ **DONE 2026-07-16:** MAC `BC:24:11:27:B2:5C` → `192.168.10.60` (Services → ISC DHCPv4 → LAN → static mappings). Verified by VM reboot picking up .60. Two gotchas found:
    - **In-pool static maps are rejected**: the LAN pool is .100-.199 and the GUI refuses a mapping at .153 (the form silently redisplays with a validation error that is easy to miss). Use an address outside the pool; .60 was verified free first. (The .177/.178 Pi-hole mappings inside the pool predate this validation path.)
    - **`/api/core/backup/download/this` served a stale config**: even after the mapping was live (VM re-leased .60), the endpoint kept returning the 2026-07-13 revision without it. The nightly `opnsense-config-backup` uses this same endpoint - verify the next nightly backup contains the mapping (tracked).
 3. **Add-ons when wanted:** Mosquitto broker (MQTT), ESPHome, Zigbee2MQTT / Z-Wave JS as hardware arrives. All via Settings → Add-ons.
+
+## Console access & owner-password recovery (2026-08-05)
+
+**No serial port.** The install `qm create` never added `--serial0`, so `qm terminal 110` fails with `unable to find a serial interface`. Two ways to reach the HAOS console:
+- **noVNC (no reboot):** pve5 web UI → VM 110 → Console. Press Enter for the `ha >` prompt.
+- **Serial from the pve5 shell:** `qm set 110 --serial0 socket && qm reboot 110`, then `qm terminal 110` (exit `Ctrl+O`). If serial stays blank (HAOS doesn't always bind a getty to ttyS0), fall back to noVNC.
+
+**Reset a lost owner password** (done 2026-08-05 for `kyle`):
+```bash
+# at the HAOS console: `ha >` prompt, then
+login                                   # drops to the host root shell (#)
+docker exec homeassistant hass --script auth --config /config list                       # confirm username
+docker exec homeassistant hass --script auth --config /config change_password kyle '<pw>' # reset
+docker restart homeassistant            # REQUIRED - see gotcha
+```
+**Gotcha that cost us an hour:** `hass --script auth change_password` edits `/config/.storage/auth_provider.homeassistant` on disk, but the *running* HA has the auth store cached in memory and will not re-read it. So `... validate kyle <pw>` reports `Auth valid` (reads disk) while the browser login still returns `invalid_auth` (checks memory). **`docker restart homeassistant` (or an HA restart) is mandatory** for the new password to go live. Verify against the live server, not just the disk: a `POST /auth/login_flow` submit returning `type:create_entry` = success; `errors.base:invalid_auth` = not reloaded yet. `docker ps` uptime tells you whether the restart actually happened.
+
+Note: these `docker exec` / restart steps can be issued remotely via `ssh root@192.168.10.203 "qm guest exec 110 -- ..."` (HAOS guest-exec is enabled), but any mutating step (change_password, restart) is stopped by the session change-classifier and must be run by the operator at the console.
 
 ## Future planning notes
 
