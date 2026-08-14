@@ -113,7 +113,7 @@ The same RTX 8000 is shared with **~15 university computer-science students per 
 
 ## Why this exists
 
-I'm a U.S. Marine Corps infantry veteran and, afterwards, an EMS helicopter instructor pilot (EC-135/145) and FOQA officer, now transitioning into network & infrastructure engineering, currently pursuing my **CCNA**. NETFRAME is where I apply the discipline of mission-critical aviation - checklists, root-cause analysis, and zero-defect execution - to infrastructure that real people depend on:
+I'm a U.S. Marine Corps infantry veteran and, afterwards, an EMS helicopter instructor pilot (EC-135/145) and FOQA officer, now transitioning into network & infrastructure engineering, currently pursuing my **Masters in Information Systems**. NETFRAME is where I apply the discipline of mission-critical aviation - checklists, root-cause analysis, and zero-defect execution - to infrastructure that real people depend on:
 
 - **FOQA (Flight Operational Quality Assurance) → observability:** as Senior FOQA Officer I analyzed fleet-scale flight-data telemetry for exceedances and anomalies, traced findings to root cause, and fed every finding into a non-punitive corrective-action loop. NETFRAME applies the same practice with Prometheus, Grafana, Loki, and Wazuh: instrument everything, detect deviations, fix the system rather than the person
 - **Instructor-pilot checklists → runbooks & change control:** every buildout and incident is written up as a repeatable procedure, with formal RCAs
