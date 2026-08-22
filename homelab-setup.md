@@ -40,11 +40,7 @@
 | Core switch | Juniper EX3400-48P | 192.168.10.50 | JunOS 23.4R2-S7.4; ge-0/0/32 is copper uplink to UniFi (access port, not trunk) |
 | Access switch | UniFi USW-24-250W | — | — |
 
-> **⚠️ WiFi → EX3400 path is broken.** Ares on WiFi cannot reach EX3400-connected devices. Must use wired `enp0s31f6` with a static IP to access the switch and cluster nodes:
-> ```bash
-> sudo ip addr add 192.168.10.100/24 dev enp0s31f6
-> sudo ip link set enp0s31f6 up
-> ```
+> **⚠️ Stale as written.** Ares has **no `enp0s31f6`**; its wired NIC is **`enp2s0`** (Realtek RTL8111, `r8169`), and as of 2026-08-21 that NIC gets no carrier at all. Ares reaches the EX3400 and cluster nodes over **WiFi** (`wlp3s0`, 192.168.10.152) today. The wired leg is reserved for the VLAN 20 OOB design (`enp2s0.20` → `ge-0/0/41`).
 
 > **⚠️ ge-0/0/32 uplink** is configured as an access port on default VLAN only — VLANs are not yet trunked to the rest of the network. Fixing this is the next network task.
 
@@ -528,11 +524,9 @@ qm terminal 100
 ```
 If the VM config is read-only: `chmod 640 /etc/pve/nodes/pve2/qemu-server/100.conf`
 
-### Ares cannot reach EX3400/cluster nodes over WiFi
-WiFi path to EX3400 is broken. Use wired interface with static IP:
+### Ares reaching EX3400/cluster nodes
+Superseded 2026-08-21: WiFi (`wlp3s0`) does reach both. The old wired workaround named `enp0s31f6`, which does not exist on this machine; the wired NIC is `enp2s0` and currently has no carrier.
 ```bash
-sudo ip addr add 192.168.10.100/24 dev enp0s31f6
-sudo ip link set enp0s31f6 up
 ssh mason@192.168.10.50   # EX3400
 ssh root@192.168.10.201   # pve3, etc.
 ```

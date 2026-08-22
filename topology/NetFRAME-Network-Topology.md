@@ -135,9 +135,10 @@ U2–1  Middle Atlantic UPS-2200R (UPS A)      bottom / ML bus · rack anchor
 | EX3400 | `xe-0/2/3` | UniFi SFP 2 (DAC) | — | 10 G DAC | — | ⚠️ **DOWN** — 10 G vs 1 G EEPROM speed mismatch |
 | EX3400 | `ge-0/0/24` | QuarkyLab `nic2` | vmbr0 | Copper | 1 G | Trunk (native 1 + tagged 30) |
 | EX3400 | `ge-0/0/22` | Jarvis `nic2` | vmbr0 | Copper | 1 G | Native VLAN 1 (mgmt/corosync); tagged-30 now vestigial |
-| EX3400 | `ge-0/0/30·32·44` | (OOB) | — | Copper | 1 G | **Tagged VLAN 20 only** → iDRAC/IPMI |
-| Ares | `enp0s31f6` | EX3400 | — | Copper | 1 G | Primary mgmt leg (⚠️ currently link-down) |
-| Ares | `enp0s31f6.20` | — | — | 802.1Q | — | VLAN 20 OOB jump leg |
+| EX3400 | `ge-0/0/30·32·44` | (OOB) | — | Copper | 1 G | **Tagged VLAN 20 only** → the three BMCs. **OCCUPIED — these are the BMC ports themselves, not spares** (verified live 2026-08-21) |
+| EX3400 | `ge-0/0/41` | Ares OOB | — | Copper | 1 G | Trunk, `native-vlan-id 1` + tagged VLAN 20. **The free VLAN-20 port**; designated Ares OOB uplink (verified live 2026-08-21) |
+| Ares | `enp2s0` | EX3400 `ge-0/0/41` | — | Copper | 1 G | Wired leg. ⚠️ **NIC fault 2026-08-21: no carrier on two cables and two known-good admin-up ports, `carrier_up_count` 0** |
+| Ares | `enp2s0.20` | — | — | 802.1Q | — | VLAN 20 OOB jump leg, `192.168.20.199/24`. NM profiles staged; inert until the NIC links |
 
 ### 3.4 Power distribution — split-bus
 
@@ -251,7 +252,7 @@ FirstNet 5G hotspot ──────────┘   dual-WAN gateway group (
 | .2 | UniFi USW-24 | Access switch mgmt |
 | .31 | **Jarvis** | R730 LLM node |
 | .50 | EX3400 | Core switch |
-| .100 | Ares (wired) | Admin workstation `enp0s31f6` |
+| .100 | *(unused)* | Stale claim; Ares' wired leg carries no VLAN 1 address by design |
 | .148 | Homepage | LXC 106 (pve3) |
 | .177 | Pi-hole | LXC 103 on **pve1** (Mac Mini) |
 | .179 | **QuarkyLab** | R730 ML node |
@@ -274,7 +275,7 @@ FirstNet 5G hotspot ──────────┘   dual-WAN gateway group (
 | `192.168.20.20` | QuarkyLab iDRAC | 20 | Moved to OOB 2026-07-03; credentials rotated to vault |
 | `192.168.20.21` | Jarvis iDRAC | 20 | " |
 | `192.168.20.22` | Randy IPMI (ch 1) | 20 | Enabling VLAN zeroes the IP — re-apply `ipmitool lan set 1 ipaddr` |
-| `192.168.20.199` | Ares OOB leg | 20 | `enp0s31f6.20` jump host |
+| `192.168.20.199` | Ares OOB leg | 20 | `enp2s0.20` jump host (staged, pending NIC repair) |
 | `192.168.30.179` | QuarkyLab | 30 | NFS/PBS/egress (dual-homed) |
 | `192.168.30.187` | Randy | 30 | NFS export + PBS + egress |
 | `192.168.30.31` | Jarvis | 30 | On dedicated 10G ConnectX (`vmbr1`) |
@@ -527,7 +528,7 @@ llm_router.service  (Jarvis :8000, FastAPI)         models: "local" | "rag" | "c
 
 ### 11.1 Segmentation posture
 
-- **OOB isolation (Phase 1, 2026-07-03):** all three BMCs (iDRAC ×2 + IPMI) moved off flat VLAN 1 onto **VLAN 20** (tagged), credentials rotated into the password vault. Reachable only from Ares' `enp0s31f6.20` leg.
+- **OOB isolation (Phase 1, 2026-07-03):** all three BMCs (iDRAC ×2 + IPMI) moved off flat VLAN 1 onto **VLAN 20** (tagged), credentials rotated into the password vault. Reachable only from Ares' `enp2s0.20` leg. **Not currently reachable from anywhere (R-71, 2026-08-21):** Ares' wired NIC has no link, so no surviving host can reach a BMC.
 - **Servers VLAN 30 (2026-07-02):** GPU/storage nodes dual-homed; NFS/PBS/egress on VLAN 30, corosync/mgmt on VLAN 1.
 - **Reverse-proxy chokepoint:** all web ingress via NPM; admin planes bound to localhost or Ares only (F-03/F-05).
 - **Defense-in-depth:** Wazuh SIEM + CrowdSec IPS + step-ca internal PKI + Vaultwarden secrets.
