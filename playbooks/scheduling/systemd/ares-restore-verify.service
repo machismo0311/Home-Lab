@@ -1,0 +1,31 @@
+# Monthly restore-verify drill for the Ares -> Randy restic backup, run from Ares.
+#
+# Previously this unit and its script lived only as untracked files under ~/.config and ~/.local/bin,
+# created 2026-07-13 and present in no repository. That is why a 2026-09-01 failure could sit
+# unnoticed for a month: there was nothing to review, nothing to test, and no way to tell whether the
+# deployed copy was the intended one. The unit and the script it runs are now tracked here.
+#
+# READ-ONLY with respect to production. It restores a single file into a fresh mktemp directory and
+# removes it again. It never restores into a VMID, CTID, datastore or any live path, and it never
+# prunes or forgets a backup. Its only possible repository mutation is clearing a STALE lock, which
+# is restic's own documented recovery and destroys no data.
+#
+# Install as a USER unit (needs machismo's restic password file and SSH key to randy):
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/ares-restore-verify.service ~/.config/systemd/user/
+#   ln -sf ~/Home-Lab/playbooks/scheduling/systemd/ares-restore-verify.timer   ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now ares-restore-verify.timer
+# Inspect: systemctl --user list-timers ares-restore-verify.timer
+#          cat ~/.local/state/ares-restore-verify.json
+#          tail ~/.local/state/ares-restore-verify.log
+
+[Unit]
+Description=Ares restic restore-verify drill (proves backups restore)
+Documentation=https://github.com/machismo0311/Home-Lab
+
+[Service]
+Type=oneshot
+# Exit 0 means the drill reached LEVEL 2 (a file was extracted from an identified snapshot).
+# Nonzero means it did not, and ares-restore-verify.json carries the failure class.
+ExecStart=/home/machismo/Home-Lab/playbooks/scheduling/ares-restore-verify.sh
+Nice=15

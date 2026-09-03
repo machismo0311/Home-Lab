@@ -39,8 +39,15 @@ jobs:
       - name: Ruff lint (scheduling)
         run: ruff check playbooks/scheduling/
 
-      - name: Scheduled provenance drift-check tests
-        run: python3 playbooks/scheduling/tests/test_provenance_drift.py
+      # Every scheduling test, not a named list: a suite that has to be registered by hand is a
+      # suite that eventually stops running when someone adds a file and forgets the second edit.
+      - name: Scheduling wrapper tests
+        run: |
+          set -e
+          for t in playbooks/scheduling/tests/test_*.py; do
+            echo "== $t"
+            python3 "$t"
+          done
 
   shellcheck:
     name: ShellCheck (bash)

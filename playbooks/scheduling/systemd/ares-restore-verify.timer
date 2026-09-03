@@ -1,0 +1,17 @@
+# Monthly trigger for ares-restore-verify.service, with catch-up.
+#
+# Persistent=true so a drill missed because Ares was off fires on the next boot rather than being
+# skipped silently. Monthly is deliberate: the drill reads the whole repository index, and the
+# nightly backup already proves the write path.
+
+[Unit]
+Description=Monthly restic restore-verify drill
+Documentation=https://github.com/machismo0311/Home-Lab
+
+[Timer]
+OnCalendar=monthly
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target
