@@ -39,12 +39,25 @@ jobs:
       - name: Ruff lint (scheduling)
         run: ruff check playbooks/scheduling/
 
+      - name: Ruff lint (recovery)
+        run: ruff check playbooks/recovery/
+
       # Every scheduling test, not a named list: a suite that has to be registered by hand is a
       # suite that eventually stops running when someone adds a file and forgets the second edit.
       - name: Scheduling wrapper tests
         run: |
           set -e
           for t in playbooks/scheduling/tests/test_*.py; do
+            echo "== $t"
+            python3 "$t"
+          done
+
+      # Recovery drills create and destroy real guests when an operator runs them, so their guards
+      # are tested here against stubs on every push.
+      - name: Recovery drill tests
+        run: |
+          set -e
+          for t in playbooks/recovery/tests/test_*.py; do
             echo "== $t"
             python3 "$t"
           done
@@ -59,3 +72,4 @@ jobs:
           shellcheck --version
           find scripts -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
           find playbooks/scheduling -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
+          find playbooks/recovery -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
