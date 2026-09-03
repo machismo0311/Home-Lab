@@ -33,6 +33,15 @@ jobs:
       - name: Syntax check (py_compile)
         run: find scripts -name '*.py' -print0 | xargs -0 python -m py_compile
 
+      # The scheduling wrappers are executed by systemd on Ares, unattended, and one of them now
+      # decides whether the estate's signed runtimes are trustworthy. Linted and tested here for
+      # the same reason scripts/ is: nobody is watching at 06:30.
+      - name: Ruff lint (scheduling)
+        run: ruff check playbooks/scheduling/
+
+      - name: Scheduled provenance drift-check tests
+        run: python3 playbooks/scheduling/tests/test_provenance_drift.py
+
   shellcheck:
     name: ShellCheck (bash)
     runs-on: ubuntu-latest
@@ -42,3 +51,4 @@ jobs:
         run: |
           shellcheck --version
           find scripts -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
+          find playbooks/scheduling -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error

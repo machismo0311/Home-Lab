@@ -53,8 +53,56 @@ while IFS= read -r line; do
 done < <(printf '%s\n' "${out}" | sed -n '/PLAY RECAP/,$p' | grep -E 'changed=')
 
 nodes_json="${nodes_json%,}"
-printf '{"generated_epoch":%s,"generated":"%s","any_drift":%s,"drifted_nodes":"%s","nodes":{%s}}\n' \
-	"${epoch}" "${now}" "${any_drift}" "${drifted% }" "${nodes_json}" > "${report_local}"
+
+# MANAGED-RUNTIME PROVENANCE, carried by this same daily check rather than a second timer.
+#
+# It belongs here and not on Jarvis: verification needs the tracked trust root, the signed
+# manifests and the declared intended versions, all of which live in the NetFRAME repository on
+# this control node. Jarvis holds only the artifact being audited, and a host that verifies its own
+# deployment can attest to nothing an attacker with write access could not also forge.
+#
+# Detection only, exactly like the hardening check above: no repair, no redeploy, no symlink switch,
+# no restart. Drift is surfaced for a human.
+echo "--- managed-runtime provenance ---"
+prov_json="$("${playbook_dir}/scheduling/provenance-drift.sh" 2>/dev/null)"
+if ! printf '%s' "${prov_json}" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+	prov_json='{"schema":"netframe.provenance-drift-report/1","status":"unknown","exit_code":null,"runtimes":[],"reason":"provenance check produced no usable report"}'
+fi
+prov_status="$(printf '%s' "${prov_json}" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("status","unknown"))' 2>/dev/null)"
+prov_status="${prov_status:-unknown}"
+printf '%s' "${prov_json}" | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+print("provenance: %s%s" % (d.get("status"), (" - " + d["reason"]) if d.get("reason") else ""))
+for r in d.get("runtimes") or []:
+    print("  %-26s %-19s sig=%-8s artifact=%-8s version=%-8s active=%-7s intended=%s deployed=%s%s" % (
+        r.get("runtime"), r.get("composite_state"), r.get("signature_status"),
+        r.get("artifact_integrity"), r.get("version_status"), r.get("active_target_status"),
+        (r.get("intended_sha") or "-")[:12], r.get("deployed_sha") or "-",
+        ("  CLASSES: " + ", ".join(r["classes"])) if r.get("classes") else ""))
+' 2>/dev/null
+
+# Anything other than a proven-intact result is operator-visible drift. "Could not verify" and
+# "verified corruption" stay distinguishable inside the provenance object; both raise the flag the
+# dashboard actually reads, because a provenance check nobody can see is not a check.
+if [[ "${prov_status}" != "intact" ]]; then
+	any_drift="true"
+	drifted="${drifted}provenance "
+fi
+
+write_report() {
+	printf '{"generated_epoch":%s,"generated":"%s","any_drift":%s,"drifted_nodes":"%s","nodes":{%s}%s}\n' \
+		"${epoch}" "${now}" "${any_drift}" "${drifted% }" "${nodes_json}" "${1:-}" > "${report_local}"
+}
+
+write_report ",\"provenance\":${prov_json}"
+# The pre-existing hardening report must not regress because provenance was added to it. If the
+# combined document is not valid JSON, the provenance section is dropped and the original report is
+# written instead - a lost addition beats a broken consumer.
+if ! python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "${report_local}" 2>/dev/null; then
+	echo "WARN: provenance section produced invalid JSON; report written without it" >&2
+	write_report ""
+fi
 
 # Push the report to Randy (world-readable), where the monitor reads it. Never fatal.
 "${ansible_adhoc}" randy -b -m ansible.builtin.copy \
