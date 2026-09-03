@@ -47,6 +47,18 @@ probe_match="unknown"
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 iso() { date -Is; }
 
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Publication is deliberately NON-FATAL to the restore verdict. Whether Randy received the evidence
+# is a different fact from whether the restore worked, and collapsing them would let a network
+# problem be reported as a backup problem. A publication failure is logged; monitoring sees the
+# consequence as a missing or stale report, which is exactly what it is.
+publish_evidence() {
+	[[ "${ARES_RESTORE_VERIFY_PUBLISH:-1}" == "1" ]] || return 0
+	"${here}/publish-restore-evidence.sh" >/dev/null 2>&1 \
+		|| echo "$(ts) PUBLISH: FAILED (restore verdict unaffected)" >> "${log_file}"
+	return 0
+}
+
 write_evidence() { # status class detail
 	# Built by python3 rather than printf. `detail` carries captured restic stderr, which can contain
 	# quotes, backslashes and newlines; hand-assembled JSON would emit a broken document exactly when
@@ -100,10 +112,14 @@ fail() { # class detail
 	if ! cleanup_dest; then
 		write_evidence "fail" "CLEANUP_FAILED" "$2 (and the restore directory could not be removed)"
 		echo "$(ts) FAIL[CLEANUP_FAILED]: $2 (and ${dest} could not be removed)" >> "${log_file}"
+		publish_evidence
 		exit 1
 	fi
 	write_evidence "fail" "$1" "$2"
 	echo "$(ts) FAIL[$1]: $2" >> "${log_file}"
+	# A failed drill must reach the monitor as a fresh explicit FAIL. Left unpublished it would
+	# instead age into "stale", which reads as "nobody ran it" rather than "it ran and it failed".
+	publish_evidence
 	exit 1
 }
 
@@ -189,3 +205,4 @@ cleanup_dest || fail "CLEANUP_FAILED" "restore directory ${dest} could not be re
 
 write_evidence "pass" "" ""
 echo "$(ts) OK: LEVEL 2 RESTORE_EXTRACTED snapshot=${snapshot} bytes=${restored_bytes} probe=${probe_match} stale_lock_recovered=${unlocked}" >> "${log_file}"
+publish_evidence

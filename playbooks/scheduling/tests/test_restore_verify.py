@@ -99,6 +99,8 @@ def run(**env):
         "STUB_CALLS": os.path.join(td, "calls"),
         "STUB_STATE": os.path.join(td, "state"),
         "STUB_PROBE": probe,
+        # Publication has its own suite; this one tests restore semantics only.
+        "ARES_RESTORE_VERIFY_PUBLISH": "0",
     })
     if env.pop("_no_restic", False):
         # A PATH that genuinely has no restic on it. Ares carries TWO restic binaries
