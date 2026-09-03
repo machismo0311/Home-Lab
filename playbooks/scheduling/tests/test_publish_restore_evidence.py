@@ -49,6 +49,7 @@ for a in "$@"; do
   esac
 done
 if [[ "${op:-}" == "copy" ]]; then
+  if [[ -n "${STUB_SILENT_NOOP:-}" ]]; then echo "$STUB_SILENT_NOOP"; exit 0; fi
   [[ "${STUB_COPY_FAIL:-0}" == "1" ]] && exit 1
   mkdir -p "$(dirname "$STUB_REMOTE_ROOT$dest")"
   if [[ "${STUB_PARTIAL:-0}" == "1" ]]; then
@@ -158,6 +159,26 @@ chk("a delivered copy that does not match the source is a failure",
 rc, delivered, src, log, calls = run_publish(STUB_PARTIAL=1)
 chk("a truncated delivery is detected and reported, never accepted", rc != 0)
 chk("a partial document is never treated as published", "does not match" in log)
+
+print()
+print("== ansible exits 0 when it does nothing at all (measured 2026-09-02) ==")
+# Both of these were observed returning rc=0 while copying nothing. Trusting the transport's exit
+# status would have reported a successful publication with an empty destination.
+rc, delivered, src, log, calls = run_publish(
+    STUB_SILENT_NOOP="[WARNING]: Could not match supplied host pattern, ignoring: randy")
+chk("a host pattern that matches nothing is a publication failure, not a success",
+    rc != 0 and delivered is None)
+chk("the operator is told the transport could not reach the target",
+    "could not reach" in log, log.strip().splitlines()[-1] if log else "")
+
+rc, delivered, src, log, calls = run_publish(
+    STUB_SILENT_NOOP="[ERROR]: Attempting to decrypt but no vault secrets found.")
+chk("a vault failure is a publication failure, not a success",
+    rc != 0 and delivered is None)
+
+rc, delivered, src, log, calls = run_publish(STUB_SILENT_NOOP="randy | SUCCESS => changed=false")
+chk("a transport that exits 0 having copied nothing is still caught by the read-back",
+    rc != 0 and delivered is None)
 
 print()
 print("== it refuses to publish what it should not ==")
