@@ -72,7 +72,7 @@ Runs on `storage` (Randy), read-only except for writing one JSON report to
 |---|---|---|
 | `pbs` | PBS REST API (`https://127.0.0.1:8007`) | newest snapshot per datastore within 25h; needs a vault token (below) |
 | `zfs` | `zpool` on Randy | all pools ONLINE + `status -x` healthy; covers `datastore` **and** `bulk` |
-| `scrutiny` | Scrutiny API (`.183:8080`) | asserts 0 failing drives (count is reported, not hardcoded — it's ~79 cluster-wide) |
+| `drive_health` (alias `scrutiny`) | `smartctl` on Randy | every expected shelf disk must report SMART healthy; the expected count comes from the same WWN-deduplicated inventory `ds4246` uses, so a missing disk fails rather than shrinking the denominator. Replaced the Scrutiny API on 2026-09-04 — that deployment answers with device records last updated 2026-07-25 |
 | `ds4246` | `lsblk` on Randy | counts physical shelf disks (dedup by WWN — the shelf is dual-pathed) vs. expected 16 |
 
 ```bash

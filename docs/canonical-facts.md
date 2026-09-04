@@ -27,7 +27,7 @@ _Last reconciled: 2026-07-22 · basis commit 65f3681 · live-scanned all 8 nodes
 ## Services (location authoritative)
 | Service | Canonical location | IP |
 |---|---|---|
-| Grafana / Prometheus / Loki | **LXC 103 on pve4** (moved 2026-07-16) | 192.168.10.183 |
+| Grafana / Prometheus / Loki | **LXC 103 on pve3** (moved 2026-09-04 off pve4's single 5400-rpm disk) | 192.168.10.183 |
 | Headscale | **LXC 105 on pve5** (moved 2026-07-16) | 192.168.10.186 |
 | Homepage | **LXC 106 on pve3** (migrated from pve1 LXC104, 2026-06-24) | 192.168.10.148 |
 | OPNsense | VM 100 on pve2, **v25.1.12** (25.7 = future upgrade target only) | 192.168.10.1 |
