@@ -55,10 +55,11 @@ backup_verify_disk_max_bytes: 4600000000000
 # 0 disks, so the check degrades to a recorded fail (found != expected) instead
 # of hanging. Only lsblk needs the guard; the awk/sort/wc stages cannot block.
 backup_verify_ds4246_timeout: 30               # seconds
+# Every continuation line sits at the SAME indentation as the first: a folded scalar keeps the
+# newline on any line indented further, which would split the awk program in half and yield 0 disks.
 backup_verify_ds4246_count_cmd: >-
   timeout {{ backup_verify_ds4246_timeout }} lsblk -dnb -o TYPE,SIZE,WWN |
-  awk '$1=="disk" && $2 > {{ backup_verify_disk_min_bytes }}
-       && $2 < {{ backup_verify_disk_max_bytes }} {print $3}' |
+  awk '$1=="disk" && $2 > {{ backup_verify_disk_min_bytes }} && $2 < {{ backup_verify_disk_max_bytes }} {print $3}' |
   sort -u | wc -l
 
 # --- report tag -------------------------------------------------------------

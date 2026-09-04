@@ -249,6 +249,20 @@ chk("the capacity band is declared once and shared",
     and "{{ backup_verify_disk_min_bytes }}" in defaults)
 chk("no Scrutiny URL default remains", "backup_verify_scrutiny_url" not in defaults)
 
+# A folded YAML scalar keeps the newline on any line indented further than the first, which silently
+# split the DS4246 awk program in half and made a healthy 22-disk shelf enumerate as 0. The shared
+# band must therefore stay on one physical line with the program that uses it.
+awk_lines = [ln for ln in defaults.splitlines() if "$1==\"disk\"" in ln]
+chk("the shelf enumeration awk program is one physical line", len(awk_lines) == 1,
+    str(awk_lines))
+chk("...carrying both bounds of the shared band",
+    awk_lines and "backup_verify_disk_min_bytes" in awk_lines[0]
+    and "backup_verify_disk_max_bytes" in awk_lines[0], str(awk_lines))
+folded = [ln for ln in defaults.splitlines()
+          if ln.startswith("  ") and "backup_verify_disk_m" in ln and "{{" in ln]
+chk("no continuation line is indented past the folded block's first line",
+    all(len(ln) - len(ln.lstrip()) == 2 for ln in folded), str(folded))
+
 print()
 print("----")
 print("DRIVE HEALTH:", "PASS" if not FAILURES else "FAIL %s" % FAILURES)
