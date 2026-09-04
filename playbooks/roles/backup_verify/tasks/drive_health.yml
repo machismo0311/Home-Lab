@@ -1,0 +1,54 @@
+---
+# Drive health from the host's own SMART stack.
+#
+# WAS: an HTTP GET against a Scrutiny API. That deployment is incomplete - its collectors last wrote
+# on 2026-07-25 and its web tier runs on CT 103, the container that spends five hours a day being
+# backed up on a saturated disk. The endpoint answers, which is the dangerous part: a check that can
+# pass on six-week-old device records stops anyone from looking.
+#
+# NOW: smartctl on the host that owns the disks, against the SAME expected-disk inventory the DS4246
+# enumeration check uses, so a missing disk is detectable rather than absorbed into the denominator.
+#
+# The emitted check name stays `scrutiny_drives` for v1 so historical reports and any consumer keyed
+# on it keep working; the `source` field records that the evidence now comes from smartctl.
+
+- name: Drive health — read SMART verdicts for the expected shelf disks
+  ansible.builtin.script: >-
+    files/drive-health.py
+    --expected {{ backup_verify_ds4246_expected | int }}
+    --min-bytes {{ backup_verify_disk_min_bytes | int }}
+    --max-bytes {{ backup_verify_disk_max_bytes | int }}
+    --timeout {{ backup_verify_drive_health_timeout | int }}
+  args:
+    executable: /usr/bin/python3
+  register: backup_verify_drive_health
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Drive health — record result
+  ansible.builtin.set_fact:
+    backup_verify_results: >-
+      {{ backup_verify_results + [ {
+           'name': 'scrutiny_drives',
+           'source': 'smartctl',
+           'status': ('pass' if (backup_verify_drive_health.rc == 0
+                                 and backup_verify_drive.status | default('') == 'pass') else 'fail'),
+           'detail': backup_verify_drive_detail,
+           'total': (backup_verify_drive.found | default(0) | int),
+           'expected': (backup_verify_drive.expected | default(backup_verify_ds4246_expected) | int),
+           'failed': (backup_verify_drive.failed | default([]))
+         } ] }}
+  vars:
+    # A reader that did not run, or whose output does not parse, leaves this empty - and an empty
+    # verdict is a failure, never a pass.
+    backup_verify_drive: >-
+      {{ (backup_verify_drive_health.stdout | from_json)
+         if (backup_verify_drive_health.rc == 0
+             and (backup_verify_drive_health.stdout | default('') | trim) is match('^\{'))
+         else {} }}
+    backup_verify_drive_detail: >-
+      {{ backup_verify_drive.detail
+         if backup_verify_drive.detail is defined
+         else ('drive-health reader produced no usable output (rc='
+               ~ (backup_verify_drive_health.rc | default('unknown')) ~ ')') }}

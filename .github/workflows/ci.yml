@@ -42,6 +42,14 @@ jobs:
       - name: Ruff lint (recovery)
         run: ruff check playbooks/recovery/
 
+      # Role-shipped readers run unattended on the storage host and decide whether a backup
+      # verification passes. Same reason as the two above: nobody is watching at 06:03.
+      - name: Ruff lint (roles)
+        run: ruff check playbooks/roles/
+
+      - name: Syntax check (role readers)
+        run: find playbooks/roles -name '*.py' -print0 | xargs -0 -r python -m py_compile
+
       # Every scheduling test, not a named list: a suite that has to be registered by hand is a
       # suite that eventually stops running when someone adds a file and forgets the second edit.
       - name: Scheduling wrapper tests

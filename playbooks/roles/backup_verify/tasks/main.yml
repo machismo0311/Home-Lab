@@ -35,9 +35,11 @@
       ansible.builtin.import_tasks: zfs.yml
       tags: [zfs]
 
-    - name: Scrutiny drive health
-      ansible.builtin.import_tasks: scrutiny.yml
-      tags: [scrutiny]
+    # Tagged with both names: `scrutiny` is kept so existing --tags invocations and runbooks do
+    # not break, `drive_health` says what it actually is now.
+    - name: Drive health (SMART)
+      ansible.builtin.import_tasks: drive_health.yml
+      tags: [drive_health, scrutiny]
 
     - name: DS4246 shelf enumeration
       ansible.builtin.import_tasks: ds4246.yml

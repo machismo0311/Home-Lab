@@ -27,8 +27,13 @@ backup_verify_pbs_expected_guests: [100, 101, 102, 103, 104, 105, 106, 107, 108,
 backup_verify_zfs_pools: []                    # [] = every pool on the host
                                                # (covers datastore AND bulk)
 
-# --- scrutiny tag: drive health (Scrutiny API) ------------------------------
-backup_verify_scrutiny_url: "http://192.168.10.183:8080"
+# --- drive_health tag: drive health (smartctl on the storage host) ----------
+# Replaced the Scrutiny API on 2026-09-04. That deployment never completed: its collectors last
+# wrote on 2026-07-25 and its web tier sits on CT 103, which is unreachable for hours each day while
+# it is itself backed up. The endpoint still answers 200 with those stale records, so the old check
+# could have PASSED on six-week-old device state - a worse failure than an outage, because a passing
+# check is one nobody revisits. SMART is now read on the host that owns the disks.
+backup_verify_drive_health_timeout: 20         # seconds per smartctl invocation
 
 # --- ds4246 tag: shelf enumeration ------------------------------------------
 # Confirms the expected number of DS4246 disks enumerate to Randy (catches an
@@ -39,6 +44,11 @@ backup_verify_scrutiny_url: "http://192.168.10.183:8080"
 # now runs 3 vdevs (8+8+6). Bump this whenever drives are added, or this check
 # fails and BackupVerifyFailing fires on a healthy shelf.
 backup_verify_ds4246_expected: 22
+# The shelf's capacity band, declared ONCE and consumed by both the enumeration count and the
+# drive-health reader. Two copies of this rule would be two disk inventories free to disagree, and
+# the whole point of the expected count is that it is a single authoritative denominator.
+backup_verify_disk_min_bytes: 3500000000000
+backup_verify_disk_max_bytes: 4600000000000
 # `timeout` guards against a wedged 9207-8e / DS4246 passthrough hanging lsblk
 # indefinitely (a hang would stall the whole play into staleness — the worst
 # failure mode, since it masks a dead job). If lsblk is killed the pipe yields
@@ -47,7 +57,8 @@ backup_verify_ds4246_expected: 22
 backup_verify_ds4246_timeout: 30               # seconds
 backup_verify_ds4246_count_cmd: >-
   timeout {{ backup_verify_ds4246_timeout }} lsblk -dnb -o TYPE,SIZE,WWN |
-  awk '$1=="disk" && $2 > 3.5e12 && $2 < 4.6e12 {print $3}' |
+  awk '$1=="disk" && $2 > {{ backup_verify_disk_min_bytes }}
+       && $2 < {{ backup_verify_disk_max_bytes }} {print $3}' |
   sort -u | wc -l
 
 # --- report tag -------------------------------------------------------------
