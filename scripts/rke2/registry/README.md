@@ -57,9 +57,41 @@ Force a run / check logs:
 kubectl -n registry create job --from=cronjob/registry-cert-renew renew-now
 kubectl -n registry logs job/renew-now -c renew    # OLD/NEW cert validity
 ```
-**If the cert ever lapses > 24h** (CA or cluster down for a day), mTLS renew can't
-recover an expired cert -> re-run the bootstrap step 1-2 once (needs the password).
-Worth a Grafana alert on this CronJob failing.
+## Recovery from an EXPIRED certificate
+`step ca renew` authenticates with the current cert, so once that cert has
+expired step-ca answers **HTTP 401** (`authority.authorizeRenew: certificate
+expired on ...`) and no amount of retrying escapes it. The renewal CronJob is
+then permanently stuck until a certificate is re-issued out of band.
+
+Do **not** re-run bootstrap step 1-2 for this. That path issues the private key
+on pve2 and then moves it to the operator workstation to create the Secret.
+Use the bounded procedure instead:
+
+```sh
+bash reissue-expired-cert.sh      # + 40-cert-reissue.yaml
+```
+
+It differs from the bootstrap in exactly the ways that matter for key handling:
+- the **private key is generated inside the cluster** by `40-cert-reissue.yaml`
+  and only ever lands in `secret/registry-tls`; it never touches pve2 or the
+  operator workstation
+- only the **CSR (out)** and the **signed chain (in)** cross the pod boundary,
+  and both are public material
+- signing runs on pve2 via `step ca sign --provisioner-password-file`, so the
+  provisioner password is referenced by path and **never read, printed, or
+  transmitted**, and the one-time token `step` mints internally never reaches
+  argv, a Kubernetes Secret, a log, or the workstation
+- the signed chain is checked against the CSR's public key and the root CA
+  **before** it is injected, so a mismatch fails without mutating anything
+
+The script ends with the acceptance checks: Secret contents, the certificate
+actually served on `.72:443`, and a `--cacert` trust-validating client that must
+report `ssl_verify_result=0`.
+
+Once a valid leaf is installed the normal `registry-cert-renew` CronJob resumes
+on its own; nothing needs to be re-enabled.
+
+Proven in anger 2026-09-05 (see the runbook's incident note).
 
 ## Access
 - URL: `https://registry.netframe.local` (MetalLB `192.168.10.72`), Pi-hole DNS on `.177`/`.178`.

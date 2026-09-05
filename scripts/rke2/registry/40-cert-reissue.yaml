@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: registry-cert-reissue
+  namespace: registry
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      serviceAccountName: registry-cert-renewer
+      restartPolicy: Never
+      securityContext:
+        fsGroup: 0
+      volumes:
+        - name: work
+          emptyDir: {}
+        - name: ca
+          configMap:
+            name: netframe-root-ca
+      initContainers:
+        # Generates the private key and a CSR INSIDE the cluster. The key never
+        # leaves this emptyDir except into secret/registry-tls. No CA credential
+        # of any kind is mounted here: signing happens on pve2, where the
+        # provisioner password already lives, and only PUBLIC material (the CSR
+        # out, the signed chain in) crosses the boundary.
+        - name: gen
+          image: smallstep/step-cli:latest
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              step certificate create registry.netframe.local \
+                /work/tls.csr /work/tls.key \
+                --csr --kty EC --curve P-256 --no-password --insecure \
+                --san registry.netframe.local --san 192.168.10.72
+              chmod 0644 /work/tls.csr /work/tls.key
+              echo CSR_READY
+              i=0
+              while [ ! -s /work/tls.crt ]; do
+                i=$((i + 1))
+                if [ "$i" -gt 300 ]; then
+                  echo TIMEOUT_WAITING_FOR_SIGNED_CERT
+                  exit 1
+                fi
+                sleep 2
+              done
+              step certificate verify /work/tls.crt --roots /ca/root.crt
+              step certificate inspect /work/tls.crt --short
+              chmod 0644 /work/tls.crt
+              echo CERT_ACCEPTED
+          volumeMounts:
+            - { name: work, mountPath: /work }
+            - { name: ca,   mountPath: /ca, readOnly: true }
+      containers:
+        - name: apply
+          image: alpine/kubectl:latest
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              kubectl create secret tls registry-tls -n registry \
+                --cert=/work/tls.crt --key=/work/tls.key \
+                --dry-run=client -o yaml | kubectl apply -f -
+              kubectl -n registry rollout restart deploy/registry
+              echo "SECRET_UPDATED_AND_REGISTRY_ROLLED"
+          volumeMounts:
+            - { name: work, mountPath: /work, readOnly: true }
