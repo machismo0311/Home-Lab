@@ -8,7 +8,7 @@ Stood up a **3-node HA control plane**. CPU-only (GPU scheduling deferred - see 
 ## What's running
 | Piece | Value |
 |---|---|
-| Nodes | `rke2-cp1` .51 (pve3/VMID 201), `rke2-cp2` .52 (pve4/202), `rke2-cp3` .53 (pve5/203) |
+| Nodes | `rke2-cp1` .51 (pve3/VMID 201), `rke2-cp2` .52 (**Randy**/202), `rke2-cp3` .53 (**Jarvis**/203). Originally pve3/pve4/pve5; cp2 and cp3 were relocated 2026-09-07 onto SSD-backed `local-lvm` for etcd latency and power-domain separation - see §Control-plane convergence. |
 | VM spec | Debian 12 cloud-init, 2 vCPU / 4 GB / 40 GB local-lvm, VLAN 1 (vmbr0), `onboot=1`, ciuser `rke2` (Ares key) |
 | Worker | `randy` .187 - **bare-metal agent on the PVE storage host** (not a VM); 2× E5-2690 v3 (48t) / 125 GiB; tainted `node.netframe.io/role=storage:NoSchedule`; kubelet-reserved → Allocatable **40 CPU / ~95.8 GiB** (added Phase 5, 2026-07-11 - see §Phase 5) |
 | RKE2 | v1.35.6+rke2r1; **3 etcd members** (survives 1 node/host loss) |
@@ -112,6 +112,37 @@ Exposed the registry via **MetalLB LoadBalancer `192.168.10.72:443`** with **reg
 **Expired-cert recovery - use `scripts/rke2/registry/reissue-expired-cert.sh` + `40-cert-reissue.yaml`, not bootstrap step 1-2.** The bootstrap path issues the private key on pve2 and then moves it to the operator workstation to build the Secret. The recovery path does not: the **key is generated inside the cluster** and only ever lands in `secret/registry-tls`; only the CSR (out) and the signed chain (in) cross the pod boundary, both public. Signing runs on pve2 via `step ca sign --provisioner-password-file`, so the provisioner password is referenced by path and never read/printed/transmitted, and the one-time token `step` mints internally never reaches argv, a Secret, a log, or the workstation. The signed chain is validated against the CSR's public key and the root CA *before* injection, so a mismatch fails without mutating anything. The script finishes with Secret / served-endpoint / `--cacert` trust-validating acceptance (`ssl_verify_result=0`).
 
 **Exercised for real 2026-09-05.** pve3/pve4/pve5 went down together 2026-08-22T20:40Z → 2026-08-23T16:19Z (~19h39m), taking VMs 201/202/203 and therefore the whole RKE2 control plane with them. The 00:00 and 08:00 renewals never ran; the cert expired 2026-08-23T16:00:05Z, **14 minutes before the hypervisors came back**; the 16:00 slot was then outside `startingDeadlineSeconds: 300` and was skipped. From 2026-08-24T00:00Z every run reached the CA and got 401. Recovery took ~36s and one `Recreate` rollout. **Note the structural exposure this proved: a 24h cert renewed every 8h tolerates at most ~16h of control-plane downtime before the expiry latch closes.**
+
+## Control-plane convergence (2026-09-07, DONE)
+
+Both remaining voters moved off rotational storage, closing the etcd-latency and power-domain gaps that the
+2026-08-22/23 outage exposed. Placement is now **cp1 pve3 (KIOXIA NVMe) · cp2 Randy · cp3 Jarvis**.
+
+| Voter | Host | Storage | WAL fsync p99 before | after |
+|---|---|---|---|---|
+| cp1 / 201 | pve3 | `local-lvm` on KIOXIA NVMe | 7.3 ms | unchanged (not moved) |
+| cp2 / 202 | Randy | `local-lvm` on LSI 3108 **RAID1 of 2x ST200FM0053** SAS SSD, WriteThrough/DirectIO | 124.2 ms | **1.8 ms** |
+| cp3 / 203 | Jarvis | `local-lvm` thinpool `pve/data` **pinned to `/dev/sda`** (ST200FM0053 SAS SSD) | 114.7 ms | **4.2 ms** |
+
+Design target is p99 <= 10 ms; all three now meet it, measured over a 6 h steady-state window (~136 000 samples
+per member, 1 h and 6 h windows agreeing).
+
+**Method, both migrations:** clean ACPI shutdown (no guest agent is installed on these VMs, so `qm shutdown`
+falls back to ACPI and the guest still shuts down cleanly), then
+`qm migrate <id> <target> --with-local-disks --targetstorage local-lvm`, then start. **No etcd membership surgery** -
+each guest rejoined as the same member (`2b8db7ce9d92afae`, `b7d9f1324b55c6fa`) with peer fan-out back to 2/2/2.
+VMID, MAC, IP, SMBIOS UUID and vmgenid all preserved. Both VMs run `cpu: x86-64-v2-AES` rather than `cpu: host`,
+deliberately - `host` couples a guest to one host's CPU and blocks cross-host movement.
+
+**Jarvis storage was created for this.** `lvcreate --type thin-pool -L 100G --poolmetadatasize 1G -n data pve
+/dev/sda` - the trailing PV argument is **mandatory**: VG `pve` also spans `/dev/sdh3`, the internal SD module.
+Every `data_tdata`/`data_tmeta`/`pmspare` extent was verified on `/dev/sda` afterwards. No `storage.cfg` change was
+needed; the existing cluster-wide `local-lvm` definition activated by itself once `pve/data` existed.
+`tank-guests` is **not** usable for etcd - raidz1 over five rotational disks with no SLOG.
+
+**Two things this did not fix.** All three voters still reach each other through the single EX3400, and all power
+still passes the Furman RP-8 and one wall circuit. A FEED_B repeat now leaves cp2 + cp3 = 2 of 3 voters and quorum
+holds; an EX3400 loss still takes the whole control plane.
 
 **Monitoring (2026-07-11):** Grafana alert **`RegistryCertExpiringSoon`** watches this - a blackbox `http_tls` probe of `https://registry.netframe.local/v2/` exports `probe_ssl_earliest_cert_expiry{job="registry-tls"}`, and the rule fires (→ `discord-alerts`) when the cert has **<12h** left, i.e. renewal has missed ≥1 cycle for any reason (Job broken, CA down, secret not updating) - ~12h of runway before TLS breaks. Config-as-code in `machismo0311/netframe-monitoring-stack` (`ct103/blackbox.yml`, `ct103/prometheus.yml`, `grafana-provisioning/alerting/alert-rules.yaml`); see that repo's README rule table.
 
