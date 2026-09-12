@@ -36,7 +36,13 @@
         regexp: '^\s*Enabled:'
         line: "Enabled: false"
         insertafter: EOF
-        validate: false
+        # No validate: here. `validate` takes a command template containing %s, as ssh.yml uses for
+        # `sshd -t -f %s`; ansible-core rejects a boolean with "validate must contain %s". This task
+        # carried `validate: false` and so could never apply - and because the daily drift check runs
+        # --check, which does not exercise the validate path, it reported "would change" every day
+        # for a task that would have failed the moment anyone enforced it. An APT .sources file has
+        # no syntax checker to call anyway, so the correct expression of "do not validate" is to omit
+        # the key.
       loop: "{{ hardening_enterprise_files.files | selectattr('path', 'search', '\\.sources$') | list }}"
       loop_control:
         label: "{{ item.path }}"
