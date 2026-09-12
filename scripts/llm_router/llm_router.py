@@ -19,7 +19,7 @@ import logging
 
 import httpx
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("llm_router")
@@ -346,6 +346,57 @@ async def chat_completions(request: Request):
         # NEVER fall through to Ollama/Claude: a generic answer to a NetFRAME question is the
         # exact failure this route exists to prevent. See ADR-049 + JOI-OPENAI-ADAPTER-DEPLOYMENT.
         _joi_url = os.environ.get("JOI_ADAPTER_URL", "http://127.0.0.1:8811")
+        if body.get("stream"):
+            # STREAMING. Open WebUI sets stream=true, the adapter honours it and answers
+            # text/event-stream, and this branch used to call _r.json() on that body regardless:
+            # the first byte is 'd' from "data: {", so the operator's first live acceptance
+            # question died as "503 evidence path unavailable: Expecting value: line 1 column 1
+            # (char 0)" on 2026-09-12. The answer had already been computed - 29 grounded claims -
+            # and was thrown away one line before it was returned.
+            #
+            # The bytes are proxied through untouched. Nothing is buffered and re-encoded, and
+            # nothing is re-parsed, so whatever contract the adapter honours is the contract the
+            # caller receives.
+            #
+            # CLIENT LIFETIME: the client is NOT used as a context manager here. `async with`
+            # would close it when this function returns, which is before StreamingResponse has
+            # drained a single chunk. The relay generator owns both the response and the client
+            # and closes them in its finally, so they live exactly as long as the body does and
+            # are released on normal end, on client disconnect, and on error.
+            _c = httpx.AsyncClient(timeout=120)
+            try:
+                _r = await _c.send(
+                    _c.build_request("POST", f"{_joi_url}/v1/chat/completions", json=body),
+                    stream=True,
+                )
+            except Exception as _e:
+                await _c.aclose()
+                raise HTTPException(503, f"evidence path unavailable: {_e}")
+            if _r.status_code >= 400:
+                # Still BEFORE the response is committed, so a real status can still be returned.
+                await _r.aclose()
+                await _c.aclose()
+                raise HTTPException(503, f"evidence path unavailable: adapter returned {_r.status_code}")
+
+            async def _relay():
+                # Once the first chunk is yielded the 200 is already on the wire, so a later
+                # adapter failure CANNOT become a 503 - it ends the stream instead. That is still
+                # fail-closed where it matters: no Ollama or Claude answer can ever be substituted,
+                # because no such call exists on this path.
+                try:
+                    async for _chunk in _r.aiter_raw():
+                        yield _chunk
+                except Exception:
+                    log.warning("JOI stream ended early", exc_info=True)
+                finally:
+                    await _r.aclose()
+                    await _c.aclose()
+
+            return StreamingResponse(
+                _relay(),
+                status_code=_r.status_code,
+                media_type=_r.headers.get("content-type", "text/event-stream"),
+            )
         try:
             async with httpx.AsyncClient(timeout=120) as _c:
                 _r = await _c.post(f"{_joi_url}/v1/chat/completions", json=body)
