@@ -38,7 +38,7 @@ nodes:
       qemu-guest-agent: a host reboot hard-stops it and wazuh-indexer comes back
       unhealthy — fix with `qm stop 104 && qm start 104` (host-level, NOT a
       restart_service target). iDRAC on VLAN 20 (.20.20).
-    zpools: [datastore]
+    zpools: [workspace]
     has_gpu: true
     restart: [slurmctld, slurmd, munge]
 
