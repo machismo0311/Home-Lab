@@ -321,6 +321,13 @@ async def health():
 @app.get("/v1/models")
 async def models():
     data = [{"id": LOCAL_MODEL, "object": "model", "owned_by": "ollama"}]
+    _joi_url = os.environ.get("JOI_ADAPTER_URL", "http://127.0.0.1:8811")
+    try:
+        async with httpx.AsyncClient(timeout=3) as _c:
+            if (await _c.get(f"{_joi_url}/health")).status_code == 200:
+                data.append({"id": "netframe-jarvis", "object": "model", "owned_by": "netframe-jarvis"})
+    except Exception:
+        pass
     if RAG_ENABLED:
         data.append({"id": "rag", "object": "model", "owned_by": "llm_router"})
     if CLAUDE_ENABLED:
@@ -334,6 +341,17 @@ async def chat_completions(request: Request):
     model = body.get("model", LOCAL_MODEL)
     if isinstance(model, str) and model.lower() == "rag":
         return await _rag_chat(body)
+    if isinstance(model, str) and model.lower() == "netframe-jarvis":
+        # Evidence-first path (JOI adapter, localhost). FAIL CLOSED: on any failure raise.
+        # NEVER fall through to Ollama/Claude: a generic answer to a NetFRAME question is the
+        # exact failure this route exists to prevent. See ADR-049 + JOI-OPENAI-ADAPTER-DEPLOYMENT.
+        _joi_url = os.environ.get("JOI_ADAPTER_URL", "http://127.0.0.1:8811")
+        try:
+            async with httpx.AsyncClient(timeout=120) as _c:
+                _r = await _c.post(f"{_joi_url}/v1/chat/completions", json=body)
+            return JSONResponse(status_code=_r.status_code, content=_r.json())
+        except Exception as _e:
+            raise HTTPException(503, f"evidence path unavailable: {_e}")
     if _wants_claude(model, body):
         return await _claude_chat(body)
     try:
