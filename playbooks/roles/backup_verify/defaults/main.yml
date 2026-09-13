@@ -23,6 +23,19 @@ backup_verify_pbs_max_age_hours: 25            # 24h cadence + 1h slack
 # [] = skip the per-guest check (backward compatible).
 backup_verify_pbs_expected_guests: [100, 101, 102, 103, 104, 105, 106, 107, 108, 201, 202, 203]
 
+# Per-HOST-GROUP coverage: every host-type backup group listed here must have a snapshot within
+# max_age_hours. Neither check above can see one. The datastore check asks for the newest snapshot
+# ANYWHERE, so seventeen healthy groups keep it green; the guest check matches `backup-id` against
+# the numeric vmids above, and a host backup's id is a hostname, so it is never selected. Between
+# 2026-07-02 and 2026-09-13 host/quarkylab held a single snapshot, and this report was green for 578
+# of the 770 hours still in Prometheus; its red hours came from checks that could not see it either.
+# The list is the denominator: a group that vanishes is reported MISSING precisely because it is
+# named here and not discovered. [] = skip the check (backward compatible).
+backup_verify_pbs_expected_host_groups: [quarkylab, quarkylab-workspace]
+# Read via PBS's own local CLI on the storage host, so this check needs no API token and keeps
+# working when one expires - the same reasoning that moved drive health onto smartctl.
+backup_verify_pbs_host_timeout: 30             # seconds per PBS API call
+
 # --- zfs tag: pool health ---------------------------------------------------
 backup_verify_zfs_pools: []                    # [] = every pool on the host
                                                # (covers datastore AND bulk)

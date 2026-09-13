@@ -140,3 +140,64 @@
       vars:
         backup_verify_gd: "{{ backup_verify_guest_detail | default([]) }}"
       when: backup_verify_pbs_expected_guests | length > 0
+
+# --- per-HOST-GROUP coverage: every expected host backup group must be fresh ---
+#
+# DELIBERATELY OUTSIDE THE TOKEN-GATED BLOCK ABOVE. This reader asks PBS's own local CLI as root on
+# the storage host, so it needs no API token and keeps reporting when one expires or is never set -
+# the same reasoning that moved drive health off a remote API and onto smartctl. A monitor that goes
+# blind exactly when credentials rot is a monitor that fails at the moment it is needed.
+#
+# It closes the gap that let host/quarkylab sit 73 days stale under a green report: neither of the
+# two checks above evaluates a host-type group, and no amount of freshness elsewhere in the
+# datastore can satisfy this one, because each group is judged only against its own snapshots.
+- name: PBS (host coverage) - evaluate expected host backup groups
+  ansible.builtin.script: >-
+    files/pbs-host-freshness.py
+    --expected {{ backup_verify_pbs_expected_host_groups | join(',') }}
+    --max-age-hours {{ backup_verify_pbs_max_age_hours | int }}
+    --now {{ ansible_date_time.epoch | int }}
+    --timeout {{ backup_verify_pbs_host_timeout | int }}
+  args:
+    executable: /usr/bin/python3
+  register: backup_verify_host_raw
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: backup_verify_pbs_expected_host_groups | length > 0
+
+- name: PBS (host coverage) - record result
+  ansible.builtin.set_fact:
+    backup_verify_results: >-
+      {{ backup_verify_results + [ {
+           'name': 'pbs_host_group_coverage',
+           'source': 'proxmox-backup-debug',
+           'status': backup_verify_host_status,
+           'detail': backup_verify_host_detail,
+           'threshold_hours': (backup_verify_pbs_max_age_hours | int),
+           'expected': (backup_verify_host.expected | default(0) | int),
+           'stale': (backup_verify_host.stale | default(0) | int),
+           'missing': (backup_verify_host.missing | default(0) | int),
+           'unknown': (backup_verify_host.unknown | default(0) | int),
+           'groups': (backup_verify_host.groups | default([]))
+         } ] }}
+  vars:
+    # A reader that did not run, or whose output does not parse, leaves this empty - and an empty
+    # verdict is a failure, never a pass.
+    backup_verify_host: >-
+      {{ (backup_verify_host_raw.stdout | from_json)
+         if (backup_verify_host_raw.rc | default(1)) == 0
+            and (backup_verify_host_raw.stdout | default('') | trim) is match('^\{')
+         else {} }}
+    # Three outcomes, three statuses. `unavailable` means PBS could not be asked, which is recorded
+    # as an error rather than a fail: the producer is not known to be broken, the monitor is known
+    # to be blind. Both still fail the report - "we could not tell" never becomes "pass".
+    backup_verify_host_status: >-
+      {{ 'pass' if backup_verify_host.status | default('') == 'pass'
+         else ('fail' if backup_verify_host.status | default('') == 'fail' else 'error') }}
+    backup_verify_host_detail: >-
+      {{ backup_verify_host.detail
+         if backup_verify_host.detail is defined
+         else ('host-group freshness reader produced no usable output (rc='
+               ~ (backup_verify_host_raw.rc | default('unknown')) ~ ')') }}
+  when: backup_verify_pbs_expected_host_groups | length > 0
