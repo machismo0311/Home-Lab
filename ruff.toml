@@ -8,7 +8,5 @@
 # This set matches what the repo is already green against; it is a no-op today
 # and a guard on the next bump.
 
-target-version = "py312"
-
 [lint]
 select = ["E4", "E7", "E9", "F"]
