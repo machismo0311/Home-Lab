@@ -25,15 +25,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCHED = os.path.abspath(os.path.join(HERE, ".."))
 SCRIPT = os.path.join(SCHED, "backup-coverage.py")
 
-FAILURES = []
 
 
 def chk(label, cond, detail=""):
-    if cond:
-        print("  PASS  %s" % label)
-    else:
-        print("  FAIL  %s%s" % (label, ("  [%s]" % detail) if detail else ""))
-        FAILURES.append(label)
+    """Assert one invariant.
+
+    Kept as a helper so every check label below is preserved verbatim from the
+    original script. It raises instead of appending to a module-level list, so a
+    violated invariant is a named failing test rather than a bare exit code.
+    """
+    assert cond, "%s%s" % (label, ("  [%s]" % detail) if detail else "")
 
 
 def job(jid, vmid, schedule, enabled=1):
@@ -73,118 +74,144 @@ def run(jobs, expected=EXPECTED, pairs=PAIRS):
         os.unlink(path)
 
 
-print("--- the estate after the split ---")
-rep, rc = run(AFTER)
-chk("the post-split configuration is coherent", rep["status"] == "ok", json.dumps(rep["findings"]))
-chk("...and exits zero", rc == 0)
-chk("every expected guest is covered", rep["covered_guests"] == rep["expected_guests"] == 16)
-chk("202 sits alone on its own schedule",
-    rep["coverage"]["202"] == [{"job": "vm202-1000", "schedule": "10:00", "enabled": 1}])
-chk("201 keeps the original job and time",
-    rep["coverage"]["201"][0]["job"] == "rke2-0400"
-    and rep["coverage"]["201"][0]["schedule"] == "04:00")
-chk("203 keeps the original job and time",
-    rep["coverage"]["203"][0]["job"] == "rke2-0400"
-    and rep["coverage"]["203"][0]["schedule"] == "04:00")
-chk("202 no longer shares a schedule with CT 103", rep["schedule_clashes"] == [])
 
-print()
-print("--- the ways a split goes wrong ---")
-dropped_201 = [j for j in AFTER if j["id"] != "rke2-0400"] + [job("rke2-0400", "203", "04:00")]
-rep, rc = run(dropped_201)
-chk("dropping 201 from the shared job is caught", rep["status"] == "fail")
-chk("...as a missing guest",
-    any(f["vmid"] == "201" and f["issue"] == "missing" for f in rep["findings"]))
-chk("...and exits nonzero", rc == 1)
 
-dropped_203 = [j for j in AFTER if j["id"] != "rke2-0400"] + [job("rke2-0400", "201", "04:00")]
-rep, _ = run(dropped_203)
-chk("dropping 203 from the shared job is caught",
-    any(f["vmid"] == "203" and f["issue"] == "missing" for f in rep["findings"]))
+# the estate after the split
+def test_the_estate_after_the_split():
+    rep, rc = run(AFTER)
+    chk("the post-split configuration is coherent", rep["status"] == "ok", json.dumps(rep["findings"]))
+    chk("...and exits zero", rc == 0)
+    chk("every expected guest is covered", rep["covered_guests"] == rep["expected_guests"] == 16)
+    chk("202 sits alone on its own schedule",
+        rep["coverage"]["202"] == [{"job": "vm202-1000", "schedule": "10:00", "enabled": 1}])
+    chk("201 keeps the original job and time",
+        rep["coverage"]["201"][0]["job"] == "rke2-0400"
+        and rep["coverage"]["201"][0]["schedule"] == "04:00")
+    chk("203 keeps the original job and time",
+        rep["coverage"]["203"][0]["job"] == "rke2-0400"
+        and rep["coverage"]["203"][0]["schedule"] == "04:00")
+    chk("202 no longer shares a schedule with CT 103", rep["schedule_clashes"] == [])
 
-still_in_both = [j for j in AFTER if j["id"] != "rke2-0400"] + [job("rke2-0400", "201,202,203",
-                                                                   "04:00")]
-rep, _ = run(still_in_both)
-chk("leaving 202 in both jobs is caught", rep["status"] == "fail")
-chk("...as a duplicate",
-    any(f["vmid"] == "202" and f["issue"] == "duplicated" for f in rep["findings"]))
-chk("...naming both jobs",
-    any("rke2-0400" in f["detail"] and "vm202-1000" in f["detail"]
-        for f in rep["findings"] if f["vmid"] == "202"))
 
-in_neither = [j for j in AFTER if j["id"] not in ("rke2-0400", "vm202-1000")] + [
-    job("rke2-0400", "201,203", "04:00")]
-rep, _ = run(in_neither)
-chk("removing 202 from both jobs is caught", rep["status"] == "fail")
-chk("...as a missing guest, not silence",
-    any(f["vmid"] == "202" and f["issue"] == "missing" for f in rep["findings"]))
 
-print()
-print("--- contention and unrelated drift ---")
-clashing = [j for j in AFTER if j["id"] != "vm202-1000"] + [job("vm202-1000", "202", "02:00")]
-rep, _ = run(clashing)
-chk("scheduling 202 back onto CT 103's slot is caught", rep["status"] == "fail")
-chk("...as a schedule clash", rep["schedule_clashes"]
-    and rep["schedule_clashes"][0]["schedule"] == "02:00")
-chk("...naming both guests", sorted(rep["schedule_clashes"][0]["vmids"]) == ["103", "202"])
+# the ways a split goes wrong
+def test_the_ways_a_split_goes_wrong():
+    dropped_201 = [j for j in AFTER if j["id"] != "rke2-0400"] + [job("rke2-0400", "203", "04:00")]
+    rep, rc = run(dropped_201)
+    chk("dropping 201 from the shared job is caught", rep["status"] == "fail")
+    chk("...as a missing guest",
+        any(f["vmid"] == "201" and f["issue"] == "missing" for f in rep["findings"]))
+    chk("...and exits nonzero", rc == 1)
 
-moved_other = [j for j in AFTER if j["id"] != "ha-0330"] + [job("ha-0330", "110", "10:00")]
-rep, _ = run(moved_other)
-chk("an unrelated job moving is visible in the coverage map",
-    rep["coverage"]["110"][0]["schedule"] == "10:00")
-chk("...while coverage itself stays intact", rep["status"] == "ok")
+    dropped_203 = [j for j in AFTER if j["id"] != "rke2-0400"] + [job("rke2-0400", "201", "04:00")]
+    rep, _ = run(dropped_203)
+    chk("dropping 203 from the shared job is caught",
+        any(f["vmid"] == "203" and f["issue"] == "missing" for f in rep["findings"]))
 
-disabled = [j for j in AFTER if j["id"] != "vm202-1000"] + [job("vm202-1000", "202", "10:00",
-                                                               enabled=0)]
-rep, _ = run(disabled)
-chk("a disabled job does not count as coverage", rep["status"] == "fail")
-chk("...the guest reads as missing",
-    any(f["vmid"] == "202" and f["issue"] == "missing" for f in rep["findings"]))
+    still_in_both = [j for j in AFTER if j["id"] != "rke2-0400"] + [job("rke2-0400", "201,202,203",
+                                                                       "04:00")]
+    rep, _ = run(still_in_both)
+    chk("leaving 202 in both jobs is caught", rep["status"] == "fail")
+    chk("...as a duplicate",
+        any(f["vmid"] == "202" and f["issue"] == "duplicated" for f in rep["findings"]))
+    chk("...naming both jobs",
+        any("rke2-0400" in f["detail"] and "vm202-1000" in f["detail"]
+            for f in rep["findings"] if f["vmid"] == "202"))
 
-extra = AFTER + [job("stray-0600", "999", "06:00")]
-rep, _ = run(extra)
-chk("a guest covered but not expected is reported",
-    any(f["vmid"] == "999" and f["issue"] == "unexpected" for f in rep["findings"]))
+    in_neither = [j for j in AFTER if j["id"] not in ("rke2-0400", "vm202-1000")] + [
+        job("rke2-0400", "201,203", "04:00")]
+    rep, _ = run(in_neither)
+    chk("removing 202 from both jobs is caught", rep["status"] == "fail")
+    chk("...as a missing guest, not silence",
+        any(f["vmid"] == "202" and f["issue"] == "missing" for f in rep["findings"]))
 
-print()
-print("--- unreadable input is never a pass ---")
-with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
-    fh.write("not json")
-    bad = fh.name
-p = subprocess.run([sys.executable, SCRIPT, "--jobs", bad, "--expected", EXPECTED],
-                   capture_output=True, text=True, timeout=60, check=False)
-os.unlink(bad)
-chk("malformed job definitions exit nonzero", p.returncode != 0)
-chk("...and report the parse failure", "did not parse" in p.stdout)
-chk("...and never report ok", '"status": "ok"' not in p.stdout)
 
-rep, _ = run([])
-chk("an empty job list fails rather than passing vacuously", rep["status"] == "fail")
-chk("...with every expected guest missing", len(rep["findings"]) == 16)
 
-print()
-print("--- the checker only reads ---")
-# The property is "cannot execute anything", proven from the import graph rather than by sniffing
-# for tool names - `pvesh` and `vzdump` both appear legitimately in help text and prose.
-src = open(SCRIPT, encoding="utf-8").read()
-tree = ast.parse(src)
-imported = set()
-for node in ast.walk(tree):
-    if isinstance(node, ast.Import):
-        imported.update(a.name.split(".")[0] for a in node.names)
-    elif isinstance(node, ast.ImportFrom) and node.module:
-        imported.add(node.module.split(".")[0])
-for forbidden in ("subprocess", "os", "shutil", "socket", "urllib", "requests", "paramiko"):
-    chk("the checker cannot reach %r" % forbidden, forbidden not in imported, str(sorted(imported)))
-calls = {n.func.attr for n in ast.walk(tree)
-         if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
-chk("the checker never calls system/popen", not ({"system", "popen", "spawn"} & calls))
-opens = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
-         and isinstance(n.func, ast.Name) and n.func.id == "open"]
-chk("the checker opens nothing for writing",
-    all(not any(isinstance(a, ast.Constant) and a.value == "w" for a in c.args) for c in opens))
+# contention and unrelated drift
+def test_contention_and_unrelated_drift():
+    clashing = [j for j in AFTER if j["id"] != "vm202-1000"] + [job("vm202-1000", "202", "02:00")]
+    rep, _ = run(clashing)
+    chk("scheduling 202 back onto CT 103's slot is caught", rep["status"] == "fail")
+    chk("...as a schedule clash", rep["schedule_clashes"]
+        and rep["schedule_clashes"][0]["schedule"] == "02:00")
+    chk("...naming both guests", sorted(rep["schedule_clashes"][0]["vmids"]) == ["103", "202"])
 
-print()
-print("----")
-print("BACKUP COVERAGE:", "PASS" if not FAILURES else "FAIL %s" % FAILURES)
-sys.exit(1 if FAILURES else 0)
+    moved_other = [j for j in AFTER if j["id"] != "ha-0330"] + [job("ha-0330", "110", "10:00")]
+    rep, _ = run(moved_other)
+    chk("an unrelated job moving is visible in the coverage map",
+        rep["coverage"]["110"][0]["schedule"] == "10:00")
+    chk("...while coverage itself stays intact", rep["status"] == "ok")
+
+    disabled = [j for j in AFTER if j["id"] != "vm202-1000"] + [job("vm202-1000", "202", "10:00",
+                                                                   enabled=0)]
+    rep, _ = run(disabled)
+    chk("a disabled job does not count as coverage", rep["status"] == "fail")
+    chk("...the guest reads as missing",
+        any(f["vmid"] == "202" and f["issue"] == "missing" for f in rep["findings"]))
+
+    extra = AFTER + [job("stray-0600", "999", "06:00")]
+    rep, _ = run(extra)
+    chk("a guest covered but not expected is reported",
+        any(f["vmid"] == "999" and f["issue"] == "unexpected" for f in rep["findings"]))
+
+
+
+# unreadable input is never a pass
+def test_unreadable_input_is_never_a_pass():
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+        fh.write("not json")
+        bad = fh.name
+    p = subprocess.run([sys.executable, SCRIPT, "--jobs", bad, "--expected", EXPECTED],
+                       capture_output=True, text=True, timeout=60, check=False)
+    os.unlink(bad)
+    chk("malformed job definitions exit nonzero", p.returncode != 0)
+    chk("...and report the parse failure", "did not parse" in p.stdout)
+    chk("...and never report ok", '"status": "ok"' not in p.stdout)
+
+    rep, _ = run([])
+    chk("an empty job list fails rather than passing vacuously", rep["status"] == "fail")
+    chk("...with every expected guest missing", len(rep["findings"]) == 16)
+
+
+
+# the checker only reads
+def test_the_checker_only_reads():
+    # The property is "cannot execute anything", proven from the import graph rather than by sniffing
+    # for tool names - `pvesh` and `vzdump` both appear legitimately in help text and prose.
+    src = open(SCRIPT, encoding="utf-8").read()
+    tree = ast.parse(src)
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+    for forbidden in ("subprocess", "os", "shutil", "socket", "urllib", "requests", "paramiko"):
+        chk("the checker cannot reach %r" % forbidden, forbidden not in imported, str(sorted(imported)))
+    calls = {n.func.attr for n in ast.walk(tree)
+             if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
+    chk("the checker never calls system/popen", not ({"system", "popen", "spawn"} & calls))
+    opens = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and isinstance(n.func, ast.Name) and n.func.id == "open"]
+    chk("the checker opens nothing for writing",
+        all(not any(isinstance(a, ast.Constant) and a.value == "w" for a in c.args) for c in opens))
+
+
+
+if __name__ == "__main__":
+    fns = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_") and callable(f)]
+    failed = 0
+    for name, fn in fns:
+        try:
+            fn()
+            print("  PASS  %s" % name)
+        except AssertionError as exc:
+            failed += 1
+            print("  FAIL  %s: %s" % (name, exc))
+        except Exception as exc:
+            # Recorded, not swallowed: a non-assertion failure must not abort the rest.
+            # `Exception` deliberately does not catch KeyboardInterrupt or SystemExit.
+            failed += 1
+            print("  FAIL  %s: %s: %s" % (name, type(exc).__name__, exc))
+    print("%d/%d passed" % (len(fns) - failed, len(fns)))
+    sys.exit(1 if failed else 0)
