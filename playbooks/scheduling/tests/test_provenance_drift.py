@@ -25,15 +25,16 @@ import provenance_report as P  # noqa: E402
 
 WRAPPER = os.path.join(SCHED, "provenance-drift.sh")
 
-FAILURES = []
 
 
 def chk(label, cond, detail=""):
-    if cond:
-        print("  PASS  %s" % label)
-    else:
-        print("  FAIL  %s%s" % (label, ("  [%s]" % detail) if detail else ""))
-        FAILURES.append(label)
+    """Assert one invariant.
+
+    Kept as a helper so every check label below is preserved verbatim from the
+    original script. It raises instead of appending to a module-level list, so a
+    violated invariant is a named failing test rather than a bare exit code.
+    """
+    assert cond, "%s%s" % (label, ("  [%s]" % detail) if detail else "")
 
 
 def runtime(name, state, classes=(), sig="VALID", art="OK", ver="CURRENT", act="MATCH",
@@ -62,145 +63,170 @@ def case(label, stdout, rc, expect_status, expect_classes=None, expected_runtime
     return got
 
 
-print("== A-H  controlled verifier results map to the right drift result ==")
-case("A  both CURRENT_AND_INTACT -> intact", BOTH_INTACT, P.RC_INTACT, P.INTACT)
 
-case("B  VERSION_DRIFT -> drift",
-     verifier_json(runtime("netframe-pipeline-canary", "STALE_BUT_INTACT", ["VERSION_DRIFT"],
-                           ver="STALE", deployed="a408369"),
-                   runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
-     P.RC_DRIFT, P.DRIFT, ["VERSION_DRIFT"])
 
-case("C  ARTIFACT_MUTATION -> drift",
-     verifier_json(runtime("netframe-pipeline-canary", "CURRENT_BUT_MUTATED", ["ARTIFACT_MUTATION"],
-                           art="MUTATED"),
-                   runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
-     P.RC_DRIFT, P.DRIFT, ["ARTIFACT_MUTATION"])
+# A-H  controlled verifier results map to the right drift result
+def test_a_h_controlled_verifier_results_map_to_the_right_drift_res():
+    case("A  both CURRENT_AND_INTACT -> intact", BOTH_INTACT, P.RC_INTACT, P.INTACT)
 
-case("D  SIGNATURE_FAILURE -> drift",
-     verifier_json(runtime("netframe-joi-adapter", "CURRENT_AND_INTACT", ["SIGNATURE_FAILURE"],
-                           sig="INVALID"),
-                   runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
-     P.RC_DRIFT, P.DRIFT, ["SIGNATURE_FAILURE"])
+    case("B  VERSION_DRIFT -> drift",
+         verifier_json(runtime("netframe-pipeline-canary", "STALE_BUT_INTACT", ["VERSION_DRIFT"],
+                               ver="STALE", deployed="a408369"),
+                       runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
+         P.RC_DRIFT, P.DRIFT, ["VERSION_DRIFT"])
 
-case("E  ACTIVE_TARGET_DRIFT -> drift",
-     verifier_json(runtime("netframe-joi-adapter", "CURRENT_AND_INTACT", ["ACTIVE_TARGET_DRIFT"],
-                           act="DRIFT"),
-                   runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
-     P.RC_DRIFT, P.DRIFT, ["ACTIVE_TARGET_DRIFT"])
+    case("C  ARTIFACT_MUTATION -> drift",
+         verifier_json(runtime("netframe-pipeline-canary", "CURRENT_BUT_MUTATED", ["ARTIFACT_MUTATION"],
+                               art="MUTATED"),
+                       runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
+         P.RC_DRIFT, P.DRIFT, ["ARTIFACT_MUTATION"])
 
-case("F  UNKNOWN / transport failure -> unknown",
-     verifier_json(runtime("netframe-pipeline-canary", "UNKNOWN", sig="UNKNOWN", art="UNKNOWN",
-                           ver="UNKNOWN", act="UNKNOWN"),
-                   runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
-     P.RC_UNKNOWN, P.UNKNOWN)
+    case("D  SIGNATURE_FAILURE -> drift",
+         verifier_json(runtime("netframe-joi-adapter", "CURRENT_AND_INTACT", ["SIGNATURE_FAILURE"],
+                               sig="INVALID"),
+                       runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
+         P.RC_DRIFT, P.DRIFT, ["SIGNATURE_FAILURE"])
 
-case("G  malformed verifier output -> unknown", "{not json at all", P.RC_INTACT, P.UNKNOWN)
-case("H  verifier timeout -> unknown", "", P.RC_TIMEOUT, P.UNKNOWN)
+    case("E  ACTIVE_TARGET_DRIFT -> drift",
+         verifier_json(runtime("netframe-joi-adapter", "CURRENT_AND_INTACT", ["ACTIVE_TARGET_DRIFT"],
+                               act="DRIFT"),
+                       runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
+         P.RC_DRIFT, P.DRIFT, ["ACTIVE_TARGET_DRIFT"])
 
-print()
-print("== the distinction the whole check exists to preserve ==")
-f = P.build("", P.RC_TIMEOUT, 2)
-c = P.build(verifier_json(runtime("netframe-joi-adapter", "CURRENT_BUT_MUTATED",
-                                  ["ARTIFACT_MUTATION"], art="MUTATED"),
-                          runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
-            P.RC_DRIFT, 2)
-chk("could-not-verify is NOT reported as artifact mutation",
-    f["status"] == P.UNKNOWN and "ARTIFACT_MUTATION" not in json.dumps(f))
-chk("verified corruption is NOT reported as unknown", c["status"] == P.DRIFT)
-chk("the two are different statuses", f["status"] != c["status"])
+    case("F  UNKNOWN / transport failure -> unknown",
+         verifier_json(runtime("netframe-pipeline-canary", "UNKNOWN", sig="UNKNOWN", art="UNKNOWN",
+                               ver="UNKNOWN", act="UNKNOWN"),
+                       runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
+         P.RC_UNKNOWN, P.UNKNOWN)
 
-print()
-print("== success needs evidence; failure is believed ==")
-chk("exit 0 with a contradicting body is UNKNOWN, not intact",
-    P.build(verifier_json(runtime("netframe-joi-adapter", "CURRENT_BUT_MUTATED",
-                                  ["ARTIFACT_MUTATION"], art="MUTATED"),
-                          runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
-            P.RC_INTACT, 2)["status"] == P.UNKNOWN)
-chk("exit 0 with no runtimes is UNKNOWN, not intact",
-    P.build(verifier_json(), P.RC_INTACT, 2)["status"] == P.UNKNOWN)
-chk("exit 0 reporting only ONE of two declared runtimes is UNKNOWN",
-    P.build(verifier_json(runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
-            P.RC_INTACT, 2)["status"] == P.UNKNOWN)
-chk("exit 3 with unparseable output stays DRIFT (a real finding is not downgraded)",
-    P.build("<<garbage>>", P.RC_DRIFT, 2)["status"] == P.DRIFT)
-chk("absent verifier is UNKNOWN", P.build("", P.RC_ABSENT, 2)["status"] == P.UNKNOWN)
-chk("stale checkout (exit 2) is UNKNOWN and says so",
-    P.build("", P.RC_USAGE, 2)["status"] == P.UNKNOWN
-    and "predate" in P.build("", P.RC_USAGE, 2)["reason"])
+    case("G  malformed verifier output -> unknown", "{not json at all", P.RC_INTACT, P.UNKNOWN)
+    case("H  verifier timeout -> unknown", "", P.RC_TIMEOUT, P.UNKNOWN)
 
-print()
-print("== no remediation, no secrets ==")
-src = open(os.path.join(SCHED, "provenance-drift.sh")).read()
-body = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
-for forbidden in ("systemctl restart", "systemctl start", "ln -sfn", "rsync", "git pull",
-                  "git fetch", "git checkout", "scp "):
-    chk("wrapper never runs %r" % forbidden, forbidden not in body)
-chk("wrapper bounds the verifier with timeout(1)", "timeout \"${timeout_s}\"" in body)
-chk("wrapper runs from a configurable pinned deploy, not a hard-coded operator worktree",
-    "netframe-current" not in src and ".local/share/netframe/deploy" in src)
-rep = P.build(BOTH_INTACT, P.RC_INTACT, 2)
-blob = json.dumps(rep).lower()
-for secret in ("private", "passphrase", "ssh-ed25519", "begin openssh"):
-    chk("report carries no %r" % secret, secret not in blob)
-for field in ("runtime", "composite_state", "classes", "intended_sha", "deployed_sha",
-              "signature_status", "artifact_integrity", "active_target_status"):
-    chk("operator can distinguish %s" % field, field in rep["runtimes"][0])
 
-print()
-print("== the wrapper end to end, against recorded verifier output ==")
-with tempfile.TemporaryDirectory() as td:
-    fx = os.path.join(td, "verifier.json")
-    open(fx, "w").write(BOTH_INTACT)
-    env = dict(os.environ, NETFRAME_PROVENANCE_FIXTURE=fx, NETFRAME_PROVENANCE_FIXTURE_RC="0")
-    p = subprocess.run(["bash", WRAPPER], capture_output=True, text=True, env=env, timeout=60)
-    out = json.loads(p.stdout)
-    chk("wrapper exits 0 and emits JSON", p.returncode == 0 and out["status"] == P.INTACT)
-    chk("a fixture run is stamped as one and can never read as a measurement",
-        out.get("fixture") is True and "FIXTURE MODE" in out["reason"])
 
-    open(fx, "w").write(verifier_json(runtime("netframe-joi-adapter", "CURRENT_BUT_MUTATED",
-                                              ["ARTIFACT_MUTATION"], art="MUTATED"),
-                                      runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")))
-    env["NETFRAME_PROVENANCE_FIXTURE_RC"] = "3"
-    p = subprocess.run(["bash", WRAPPER], capture_output=True, text=True, env=env, timeout=60)
-    out = json.loads(p.stdout)
-    chk("wrapper surfaces drift with its class", out["status"] == P.DRIFT
-        and out["classes"] == ["ARTIFACT_MUTATION"])
+# the distinction the whole check exists to preserve
+def test_the_distinction_the_whole_check_exists_to_preserve():
+    f = P.build("", P.RC_TIMEOUT, 2)
+    c = P.build(verifier_json(runtime("netframe-joi-adapter", "CURRENT_BUT_MUTATED",
+                                      ["ARTIFACT_MUTATION"], art="MUTATED"),
+                              runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
+                P.RC_DRIFT, 2)
+    chk("could-not-verify is NOT reported as artifact mutation",
+        f["status"] == P.UNKNOWN and "ARTIFACT_MUTATION" not in json.dumps(f))
+    chk("verified corruption is NOT reported as unknown", c["status"] == P.DRIFT)
+    chk("the two are different statuses", f["status"] != c["status"])
 
-    env2 = dict(os.environ, NETFRAME_DEPLOY=os.path.join(td, "no-such-checkout"))
-    env2.pop("NETFRAME_PROVENANCE_FIXTURE", None)
-    p = subprocess.run(["bash", WRAPPER], capture_output=True, text=True, env=env2, timeout=60)
-    out = json.loads(p.stdout)
-    chk("wrapper with no verifier present is UNKNOWN and contacts nothing",
-        out["status"] == P.UNKNOWN and out["exit_code"] == P.RC_ABSENT)
-    chk("a real (non-fixture) run is not stamped fixture", out.get("fixture") is not True)
 
-print()
-print("== the existing hardening report's consumer must not regress ==")
-# netframe_monitor's parse_hardening_drift reads exactly these keys off the daily report. The
-# provenance section is ADDITIVE: if adding it ever removed one of them, the dashboard's
-# hardening_drift check would go quiet rather than loud, which is the worst possible failure for a
-# monitoring change.
-wrapper = open(os.path.join(SCHED, "run-hardening-drift-check.sh")).read()
-for key in ("generated_epoch", "generated", "any_drift", "drifted_nodes", "nodes"):
-    chk("daily report still carries %r for netframe_monitor" % key,
-        '"%s"' % key in wrapper)
-chk("the provenance section is appended, not substituted for the node report",
-    '"nodes":{%s}%s' in wrapper)
-chk("an invalid combined document falls back to the original report",
-    "write_report \"\"" in wrapper and "without it" in wrapper)
-chk("provenance that is not proven-intact raises the flag the dashboard reads",
-    'if [[ "${prov_status}" != "intact" ]]; then' in wrapper and 'any_drift="true"' in wrapper)
-chk("the daily check still does not enforce anything",
-    "--check" in wrapper and "systemctl restart" not in wrapper)
-chk("the scheduled path invokes the wrapper rather than reimplementing it",
-    "scheduling/provenance-drift.sh" in wrapper)
 
-print()
-if FAILURES:
-    print("FAILED: %d" % len(FAILURES))
-    for f in FAILURES:
-        print("  - %s" % f)
-    sys.exit(1)
-print("ALL PASS")
+# success needs evidence; failure is believed
+def test_success_needs_evidence_failure_is_believed():
+    chk("exit 0 with a contradicting body is UNKNOWN, not intact",
+        P.build(verifier_json(runtime("netframe-joi-adapter", "CURRENT_BUT_MUTATED",
+                                      ["ARTIFACT_MUTATION"], art="MUTATED"),
+                              runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")),
+                P.RC_INTACT, 2)["status"] == P.UNKNOWN)
+    chk("exit 0 with no runtimes is UNKNOWN, not intact",
+        P.build(verifier_json(), P.RC_INTACT, 2)["status"] == P.UNKNOWN)
+    chk("exit 0 reporting only ONE of two declared runtimes is UNKNOWN",
+        P.build(verifier_json(runtime("netframe-joi-adapter", "CURRENT_AND_INTACT")),
+                P.RC_INTACT, 2)["status"] == P.UNKNOWN)
+    chk("exit 3 with unparseable output stays DRIFT (a real finding is not downgraded)",
+        P.build("<<garbage>>", P.RC_DRIFT, 2)["status"] == P.DRIFT)
+    chk("absent verifier is UNKNOWN", P.build("", P.RC_ABSENT, 2)["status"] == P.UNKNOWN)
+    chk("stale checkout (exit 2) is UNKNOWN and says so",
+        P.build("", P.RC_USAGE, 2)["status"] == P.UNKNOWN
+        and "predate" in P.build("", P.RC_USAGE, 2)["reason"])
+
+
+
+# no remediation, no secrets
+def test_no_remediation_no_secrets():
+    src = open(os.path.join(SCHED, "provenance-drift.sh")).read()
+    body = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
+    for forbidden in ("systemctl restart", "systemctl start", "ln -sfn", "rsync", "git pull",
+                      "git fetch", "git checkout", "scp "):
+        chk("wrapper never runs %r" % forbidden, forbidden not in body)
+    chk("wrapper bounds the verifier with timeout(1)", "timeout \"${timeout_s}\"" in body)
+    chk("wrapper runs from a configurable pinned deploy, not a hard-coded operator worktree",
+        "netframe-current" not in src and ".local/share/netframe/deploy" in src)
+    rep = P.build(BOTH_INTACT, P.RC_INTACT, 2)
+    blob = json.dumps(rep).lower()
+    for secret in ("private", "passphrase", "ssh-ed25519", "begin openssh"):
+        chk("report carries no %r" % secret, secret not in blob)
+    for field in ("runtime", "composite_state", "classes", "intended_sha", "deployed_sha",
+                  "signature_status", "artifact_integrity", "active_target_status"):
+        chk("operator can distinguish %s" % field, field in rep["runtimes"][0])
+
+
+
+# the wrapper end to end, against recorded verifier output
+def test_the_wrapper_end_to_end_against_recorded_verifier_output():
+    with tempfile.TemporaryDirectory() as td:
+        fx = os.path.join(td, "verifier.json")
+        open(fx, "w").write(BOTH_INTACT)
+        env = dict(os.environ, NETFRAME_PROVENANCE_FIXTURE=fx, NETFRAME_PROVENANCE_FIXTURE_RC="0")
+        p = subprocess.run(["bash", WRAPPER], capture_output=True, text=True, env=env, timeout=60)
+        out = json.loads(p.stdout)
+        chk("wrapper exits 0 and emits JSON", p.returncode == 0 and out["status"] == P.INTACT)
+        chk("a fixture run is stamped as one and can never read as a measurement",
+            out.get("fixture") is True and "FIXTURE MODE" in out["reason"])
+
+        open(fx, "w").write(verifier_json(runtime("netframe-joi-adapter", "CURRENT_BUT_MUTATED",
+                                                  ["ARTIFACT_MUTATION"], art="MUTATED"),
+                                          runtime("netframe-pipeline-canary", "CURRENT_AND_INTACT")))
+        env["NETFRAME_PROVENANCE_FIXTURE_RC"] = "3"
+        p = subprocess.run(["bash", WRAPPER], capture_output=True, text=True, env=env, timeout=60)
+        out = json.loads(p.stdout)
+        chk("wrapper surfaces drift with its class", out["status"] == P.DRIFT
+            and out["classes"] == ["ARTIFACT_MUTATION"])
+
+        env2 = dict(os.environ, NETFRAME_DEPLOY=os.path.join(td, "no-such-checkout"))
+        env2.pop("NETFRAME_PROVENANCE_FIXTURE", None)
+        p = subprocess.run(["bash", WRAPPER], capture_output=True, text=True, env=env2, timeout=60)
+        out = json.loads(p.stdout)
+        chk("wrapper with no verifier present is UNKNOWN and contacts nothing",
+            out["status"] == P.UNKNOWN and out["exit_code"] == P.RC_ABSENT)
+        chk("a real (non-fixture) run is not stamped fixture", out.get("fixture") is not True)
+
+
+
+# the existing hardening report's consumer must not regress
+def test_the_existing_hardening_report_s_consumer_must_not_regress():
+    # netframe_monitor's parse_hardening_drift reads exactly these keys off the daily report. The
+    # provenance section is ADDITIVE: if adding it ever removed one of them, the dashboard's
+    # hardening_drift check would go quiet rather than loud, which is the worst possible failure for a
+    # monitoring change.
+    wrapper = open(os.path.join(SCHED, "run-hardening-drift-check.sh")).read()
+    for key in ("generated_epoch", "generated", "any_drift", "drifted_nodes", "nodes"):
+        chk("daily report still carries %r for netframe_monitor" % key,
+            '"%s"' % key in wrapper)
+    chk("the provenance section is appended, not substituted for the node report",
+        '"nodes":{%s}%s' in wrapper)
+    chk("an invalid combined document falls back to the original report",
+        "write_report \"\"" in wrapper and "without it" in wrapper)
+    chk("provenance that is not proven-intact raises the flag the dashboard reads",
+        'if [[ "${prov_status}" != "intact" ]]; then' in wrapper and 'any_drift="true"' in wrapper)
+    chk("the daily check still does not enforce anything",
+        "--check" in wrapper and "systemctl restart" not in wrapper)
+    chk("the scheduled path invokes the wrapper rather than reimplementing it",
+        "scheduling/provenance-drift.sh" in wrapper)
+
+
+
+if __name__ == "__main__":
+    fns = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_") and callable(f)]
+    failed = 0
+    for name, fn in fns:
+        try:
+            fn()
+            print("  PASS  %s" % name)
+        except AssertionError as exc:
+            failed += 1
+            print("  FAIL  %s: %s" % (name, exc))
+        except Exception as exc:
+            # Recorded, not swallowed: a non-assertion failure must not abort the rest.
+            # `Exception` deliberately does not catch KeyboardInterrupt or SystemExit.
+            failed += 1
+            print("  FAIL  %s: %s: %s" % (name, type(exc).__name__, exc))
+    print("%d/%d passed" % (len(fns) - failed, len(fns)))
+    sys.exit(1 if failed else 0)

@@ -26,15 +26,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCHED = os.path.abspath(os.path.join(HERE, ".."))
 SCRIPT = os.path.join(SCHED, "ares-restore-verify.sh")
 
-FAILURES = []
 
 
 def chk(label, cond, detail=""):
-    if cond:
-        print("  PASS  %s" % label)
-    else:
-        print("  FAIL  %s%s" % (label, ("  [%s]" % detail) if detail else ""))
-        FAILURES.append(label)
+    """Assert one invariant.
+
+    Kept as a helper so every check label below is preserved verbatim from the
+    original script. It raises instead of appending to a module-level list, so a
+    violated invariant is a named failing test rather than a bare exit code.
+    """
+    assert cond, "%s%s" % (label, ("  [%s]" % detail) if detail else "")
 
 
 STUB = r'''#!/usr/bin/env bash
@@ -131,99 +132,120 @@ def run(**env):
     return p.returncode, data, logtxt, calls
 
 
-print("== the happy path ==")
-rc, ev, log, calls = run()
-chk("a healthy repository passes", rc == 0 and ev and ev["status"] == "pass", "rc=%s" % rc)
-chk("it reaches LEVEL 2 RESTORE_EXTRACTED and says so",
-    ev and ev["level"] == 2 and ev["level_name"] == "RESTORE_EXTRACTED")
-chk("the evidence names the snapshot it restored", ev and ev["snapshot"] == "aa11bb22")
-chk("the evidence records restored size and digest",
-    ev and ev["restored_bytes"] > 0 and len(ev["restored_sha256"]) == 64)
-chk("it restores the resolved snapshot id, not 'latest'",
-    "restore aa11bb22" in calls and "restore latest" not in calls, calls.replace("\n", " | "))
-chk("the log records the level, not just OK", "LEVEL 2 RESTORE_EXTRACTED" in log)
 
-print()
-print("== the 2026-09-01 failure, and the distinction it destroyed ==")
-rc, ev, log, calls = run(STUB_CHECK1_ERR="unable to create lock in backend: repository is already"
-                                         " locked by PID 3814969 on ares by machismo")
-chk("a stale lock is now recovered rather than fatal", rc == 0 and ev and ev["status"] == "pass")
-chk("recovery ran unlock exactly once", calls.count("unlock") == 1, calls.replace("\n", " | "))
-chk("the recovery is recorded in the evidence, not hidden",
-    ev and ev["stale_lock_recovered"] is True)
 
-rc, ev, log, calls = run(STUB_CHECK1_ERR="repository is already locked", STUB_UNLOCK_FAIL=1)
-chk("a lock that cannot be cleared fails as REPOSITORY_LOCKED",
-    rc != 0 and ev and ev["failure_class"] == "REPOSITORY_LOCKED", ev and ev["failure_class"])
-chk("a lock is NEVER reported as an integrity problem",
-    ev and ev["failure_class"] != "INTEGRITY_FAILED")
+# the happy path
+def test_the_happy_path():
+    rc, ev, log, calls = run()
+    chk("a healthy repository passes", rc == 0 and ev and ev["status"] == "pass", "rc=%s" % rc)
+    chk("it reaches LEVEL 2 RESTORE_EXTRACTED and says so",
+        ev and ev["level"] == 2 and ev["level_name"] == "RESTORE_EXTRACTED")
+    chk("the evidence names the snapshot it restored", ev and ev["snapshot"] == "aa11bb22")
+    chk("the evidence records restored size and digest",
+        ev and ev["restored_bytes"] > 0 and len(ev["restored_sha256"]) == 64)
+    chk("it restores the resolved snapshot id, not 'latest'",
+        "restore aa11bb22" in calls and "restore latest" not in calls, calls.replace("\n", " | "))
+    chk("the log records the level, not just OK", "LEVEL 2 RESTORE_EXTRACTED" in log)
 
-rc, ev, log, calls = run(STUB_CHECK_ERR="Pack ID does not match, want 1a2b, got 9f8e")
-chk("genuine integrity failure is INTEGRITY_FAILED",
-    rc != 0 and ev and ev["failure_class"] == "INTEGRITY_FAILED", ev and ev["failure_class"])
-chk("the captured restic error is preserved in the evidence",
-    ev and "Pack ID does not match" in ev["detail"], ev and ev["detail"])
-chk("integrity failure and lock failure are different classes",
-    ev["failure_class"] != "REPOSITORY_LOCKED")
 
-print()
-print("== no false PASS (section 17) ==")
-cases = [
-    ("backup absent", {"STUB_SNAPSHOTS": "[]"}, "BACKUP_UNAVAILABLE"),
-    ("verification command failure", {"STUB_CHECK_ERR": "fatal: repository not found"},
-     "INTEGRITY_FAILED"),
-    ("restore extraction failure", {"STUB_RESTORE_FAIL": 1}, "RESTORE_FAILED"),
-    ("restored file empty", {"STUB_RESTORE_EMPTY": 1}, "RESTORE_FAILED"),
-    ("malformed verifier output", {"STUB_SNAPSHOTS": "{not json"}, "MALFORMED_OUTPUT"),
-    ("snapshot record without an id", {"STUB_SNAPSHOTS": '[{"time":"x"}]'}, "MALFORMED_OUTPUT"),
-    ("timeout", {"STUB_CHECK_SLEEP": 3, "ARES_RESTORE_VERIFY_CHECK_TIMEOUT": 1}, "TIMEOUT"),
-    ("cleanup failure", {"STUB_BLOCK_CLEANUP": 1}, "CLEANUP_FAILED"),
-    ("restic missing", {"_no_restic": True}, "MISSING_DEPENDENCY"),
-]
-for label, env, want in cases:
-    rc, ev, log, calls = run(**env)
-    chk("%s -> exit non-zero" % label, rc != 0, "rc=%s" % rc)
-    chk("%s -> classified %s" % (label, want),
-        isinstance(ev, dict) and ev["failure_class"] == want,
-        ev.get("failure_class") if isinstance(ev, dict) else str(ev))
-    chk("%s -> never reports status pass" % label,
-        isinstance(ev, dict) and ev["status"] != "pass")
-    chk("%s -> evidence is still valid JSON" % label, isinstance(ev, dict))
-    if want != "CLEANUP_FAILED":
-        # Cleanup failure is the one case where LEVEL 2 is still truthful: the extraction really did
-        # happen, and only the removal of the temporary directory failed. Zeroing the level there
-        # would erase a fact that was actually established. `status` is what says the drill failed.
-        chk("%s -> never claims LEVEL 2" % label,
-            isinstance(ev, dict) and ev["level"] < 2, ev.get("level") if isinstance(ev, dict) else "")
 
-chk("a failed drill NEVER reports status pass at any level",
-    all(run(**e)[1]["status"] != "pass" for _, e, _ in cases if "_no_restic" not in e))
+# the 2026-09-01 failure, and the distinction it destroyed
+def test_the_2026_09_01_failure_and_the_distinction_it_destroyed():
+    rc, ev, log, calls = run(STUB_CHECK1_ERR="unable to create lock in backend: repository is already"
+                                             " locked by PID 3814969 on ares by machismo")
+    chk("a stale lock is now recovered rather than fatal", rc == 0 and ev and ev["status"] == "pass")
+    chk("recovery ran unlock exactly once", calls.count("unlock") == 1, calls.replace("\n", " | "))
+    chk("the recovery is recorded in the evidence, not hidden",
+        ev and ev["stale_lock_recovered"] is True)
 
-print()
-print("== it stays non-destructive ==")
-src = open(SCRIPT).read()
-body = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
-for forbidden in ("restic forget", "restic prune", "--remove-all", "systemctl", "pct ", "qm ",
-                  "mkfs", "dd if="):
-    chk("the drill never runs %r" % forbidden, forbidden not in body)
-chk("it only ever restores into a mktemp directory",
-    "--target \"${dest}\"" in body and 'dest="$(mktemp -d' in body)
-# Look only at EXECUTION, not at prose. Quoted spans are stripped first, so a failure message that
-# mentions "restic check" cannot be mistaken for an unbounded invocation of it.
-import re  # noqa: E402
-_unbounded = []
-for line in body.splitlines():
-    bare = re.sub(r'"[^"]*"', " ", re.sub(r"'[^']*'", " ", line))
-    if re.search(r"\brestic (check|unlock|snapshots|restore)\b", bare) and "timeout" not in bare:
-        _unbounded.append(line.strip())
-chk("every restic invocation is bounded by timeout(1)", not _unbounded, "; ".join(_unbounded))
-chk("stderr from check is captured, not discarded",
-    'check_err="$(timeout "${t_check}" restic check 2>&1 >/dev/null)"' in body)
+    rc, ev, log, calls = run(STUB_CHECK1_ERR="repository is already locked", STUB_UNLOCK_FAIL=1)
+    chk("a lock that cannot be cleared fails as REPOSITORY_LOCKED",
+        rc != 0 and ev and ev["failure_class"] == "REPOSITORY_LOCKED", ev and ev["failure_class"])
+    chk("a lock is NEVER reported as an integrity problem",
+        ev and ev["failure_class"] != "INTEGRITY_FAILED")
 
-print()
-if FAILURES:
-    print("FAILED: %d" % len(FAILURES))
-    for f in FAILURES:
-        print("  - %s" % f)
-    sys.exit(1)
-print("ALL PASS")
+    rc, ev, log, calls = run(STUB_CHECK_ERR="Pack ID does not match, want 1a2b, got 9f8e")
+    chk("genuine integrity failure is INTEGRITY_FAILED",
+        rc != 0 and ev and ev["failure_class"] == "INTEGRITY_FAILED", ev and ev["failure_class"])
+    chk("the captured restic error is preserved in the evidence",
+        ev and "Pack ID does not match" in ev["detail"], ev and ev["detail"])
+    chk("integrity failure and lock failure are different classes",
+        ev["failure_class"] != "REPOSITORY_LOCKED")
+
+
+
+# no false PASS (section 17)
+def test_no_false_pass_section_17():
+    cases = [
+        ("backup absent", {"STUB_SNAPSHOTS": "[]"}, "BACKUP_UNAVAILABLE"),
+        ("verification command failure", {"STUB_CHECK_ERR": "fatal: repository not found"},
+         "INTEGRITY_FAILED"),
+        ("restore extraction failure", {"STUB_RESTORE_FAIL": 1}, "RESTORE_FAILED"),
+        ("restored file empty", {"STUB_RESTORE_EMPTY": 1}, "RESTORE_FAILED"),
+        ("malformed verifier output", {"STUB_SNAPSHOTS": "{not json"}, "MALFORMED_OUTPUT"),
+        ("snapshot record without an id", {"STUB_SNAPSHOTS": '[{"time":"x"}]'}, "MALFORMED_OUTPUT"),
+        ("timeout", {"STUB_CHECK_SLEEP": 3, "ARES_RESTORE_VERIFY_CHECK_TIMEOUT": 1}, "TIMEOUT"),
+        ("cleanup failure", {"STUB_BLOCK_CLEANUP": 1}, "CLEANUP_FAILED"),
+        ("restic missing", {"_no_restic": True}, "MISSING_DEPENDENCY"),
+    ]
+    for label, env, want in cases:
+        rc, ev, log, calls = run(**env)
+        chk("%s -> exit non-zero" % label, rc != 0, "rc=%s" % rc)
+        chk("%s -> classified %s" % (label, want),
+            isinstance(ev, dict) and ev["failure_class"] == want,
+            ev.get("failure_class") if isinstance(ev, dict) else str(ev))
+        chk("%s -> never reports status pass" % label,
+            isinstance(ev, dict) and ev["status"] != "pass")
+        chk("%s -> evidence is still valid JSON" % label, isinstance(ev, dict))
+        if want != "CLEANUP_FAILED":
+            # Cleanup failure is the one case where LEVEL 2 is still truthful: the extraction really did
+            # happen, and only the removal of the temporary directory failed. Zeroing the level there
+            # would erase a fact that was actually established. `status` is what says the drill failed.
+            chk("%s -> never claims LEVEL 2" % label,
+                isinstance(ev, dict) and ev["level"] < 2, ev.get("level") if isinstance(ev, dict) else "")
+
+    chk("a failed drill NEVER reports status pass at any level",
+        all(run(**e)[1]["status"] != "pass" for _, e, _ in cases if "_no_restic" not in e))
+
+
+
+# it stays non-destructive
+def test_it_stays_non_destructive():
+    src = open(SCRIPT).read()
+    body = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
+    for forbidden in ("restic forget", "restic prune", "--remove-all", "systemctl", "pct ", "qm ",
+                      "mkfs", "dd if="):
+        chk("the drill never runs %r" % forbidden, forbidden not in body)
+    chk("it only ever restores into a mktemp directory",
+        "--target \"${dest}\"" in body and 'dest="$(mktemp -d' in body)
+    # Look only at EXECUTION, not at prose. Quoted spans are stripped first, so a failure message that
+    # mentions "restic check" cannot be mistaken for an unbounded invocation of it.
+    import re  # noqa: E402
+    _unbounded = []
+    for line in body.splitlines():
+        bare = re.sub(r'"[^"]*"', " ", re.sub(r"'[^']*'", " ", line))
+        if re.search(r"\brestic (check|unlock|snapshots|restore)\b", bare) and "timeout" not in bare:
+            _unbounded.append(line.strip())
+    chk("every restic invocation is bounded by timeout(1)", not _unbounded, "; ".join(_unbounded))
+    chk("stderr from check is captured, not discarded",
+        'check_err="$(timeout "${t_check}" restic check 2>&1 >/dev/null)"' in body)
+
+
+
+if __name__ == "__main__":
+    fns = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_") and callable(f)]
+    failed = 0
+    for name, fn in fns:
+        try:
+            fn()
+            print("  PASS  %s" % name)
+        except AssertionError as exc:
+            failed += 1
+            print("  FAIL  %s: %s" % (name, exc))
+        except Exception as exc:
+            # Recorded, not swallowed: a non-assertion failure must not abort the rest.
+            # `Exception` deliberately does not catch KeyboardInterrupt or SystemExit.
+            failed += 1
+            print("  FAIL  %s: %s: %s" % (name, type(exc).__name__, exc))
+    print("%d/%d passed" % (len(fns) - failed, len(fns)))
+    sys.exit(1 if failed else 0)
