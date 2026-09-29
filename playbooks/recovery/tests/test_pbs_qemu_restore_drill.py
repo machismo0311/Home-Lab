@@ -216,7 +216,7 @@ def test_a_source_vm_without_an_agent_is_refused_before_any_restore():
 
 
 # host-coupled devices are refusals, not silent fixups
-def test_s_present_refused_before_boot():
+def test_host_coupled_devices_are_refused_before_boot():
     for label, env in (("hostpci", {"STUB_HOSTPCI": 1}), ("usb", {"STUB_USB": 1}),
                        ("args", {"STUB_ARGS": 1}), ("hookscript", {"STUB_HOOKSCRIPT": 1})):
         rc, out, art, calls, left = run(**env)
@@ -235,7 +235,7 @@ def test_a_raw_host_block_device_is_refused_before_boot():
 
 
 # the other refusals
-def test_s_refused():
+def test_every_precondition_failure_is_refused_before_restore():
     cases = [
         ("occupied vmid", {"STUB_ID_OCCUPIED": 1}, "occupied"),
         ("source == target", {"STUB_NEXTID": 110}, "equals the source"),

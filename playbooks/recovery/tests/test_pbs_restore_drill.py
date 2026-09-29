@@ -197,7 +197,7 @@ def test_source_target_is_refused():
 
 
 # the drill never claims what it did not prove
-def test_s_artifact_status_fail():
+def test_every_refusal_records_fail_and_claims_no_evidence_level():
     for label, env in (("missing backup", {"STUB_CONTENT": "missing"}),
                        ("occupied id", {"STUB_ID_OCCUPIED": 1}),
                        ("id collision", {"STUB_NEXTID": 106})):
