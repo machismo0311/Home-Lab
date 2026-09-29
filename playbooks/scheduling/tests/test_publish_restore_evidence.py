@@ -22,15 +22,16 @@ SCHED = os.path.abspath(os.path.join(HERE, ".."))
 PUBLISH = os.path.join(SCHED, "publish-restore-evidence.sh")
 DRILL = os.path.join(SCHED, "ares-restore-verify.sh")
 
-FAILURES = []
 
 
 def chk(label, cond, detail=""):
-    if cond:
-        print("  PASS  %s" % label)
-    else:
-        print("  FAIL  %s%s" % (label, ("  [%s]" % detail) if detail else ""))
-        FAILURES.append(label)
+    """Assert one invariant.
+
+    Kept as a helper so every check label below is preserved verbatim from the
+    original script. It raises instead of appending to a module-level list, so a
+    violated invariant is a named failing test rather than a bare exit code.
+    """
+    assert cond, "%s%s" % (label, ("  [%s]" % detail) if detail else "")
 
 
 STUB_ANSIBLE = r'''#!/usr/bin/env bash
@@ -120,100 +121,125 @@ def run_publish(evidence=EVIDENCE_PASS, raw=None, write_evidence=True, **env):
     return p.returncode, delivered, src_after, logtxt, calls
 
 
-print("== a PASS result publishes verbatim ==")
-rc, delivered, src, log, calls = run_publish()
-chk("publication succeeds", rc == 0, "rc=%s stdout" % rc)
-chk("the destination holds the complete document", delivered is not None
-    and json.loads(delivered)["snapshot"] == "33102858")
-chk("the evidence is copied verbatim, not rewritten",
-    delivered == json.dumps(EVIDENCE_PASS, sort_keys=True) + "\n")
-chk("the source evidence is unchanged by publication",
-    src == json.dumps(EVIDENCE_PASS, sort_keys=True) + "\n")
-chk("delivery is confirmed by reading the destination back", "sha256sum" in calls)
-chk("the transport used is an atomic copy, not a shell redirect",
-    "ansible.builtin.copy" in calls and ">" not in calls.split("\n")[0])
 
-print()
-print("== a FAIL result is published too, so it surfaces as FAIL and not as staleness ==")
-rc, delivered, src, log, calls = run_publish(EVIDENCE_FAIL)
-chk("a failed drill still publishes", rc == 0)
-chk("the failure class survives transport",
-    delivered and json.loads(delivered)["failure_class"] == "REPOSITORY_LOCKED")
-chk("a failed drill does not publish a passing status",
-    delivered and json.loads(delivered)["status"] == "fail")
 
-print()
-print("== publication failures are reported, never assumed ==")
-rc, delivered, src, log, calls = run_publish(STUB_COPY_FAIL=1)
-chk("transport failure exits non-zero", rc != 0)
-chk("transport failure is logged as a publication failure", "PUBLISH: FAILED" in log)
-chk("nothing is left at the destination", delivered is None)
+# a PASS result publishes verbatim
+def test_a_pass_result_publishes_verbatim():
+    rc, delivered, src, log, calls = run_publish()
+    chk("publication succeeds", rc == 0, "rc=%s stdout" % rc)
+    chk("the destination holds the complete document", delivered is not None
+        and json.loads(delivered)["snapshot"] == "33102858")
+    chk("the evidence is copied verbatim, not rewritten",
+        delivered == json.dumps(EVIDENCE_PASS, sort_keys=True) + "\n")
+    chk("the source evidence is unchanged by publication",
+        src == json.dumps(EVIDENCE_PASS, sort_keys=True) + "\n")
+    chk("delivery is confirmed by reading the destination back", "sha256sum" in calls)
+    chk("the transport used is an atomic copy, not a shell redirect",
+        "ansible.builtin.copy" in calls and ">" not in calls.split("\n")[0])
 
-rc, delivered, src, log, calls = run_publish(STUB_READBACK_FAIL=1)
-chk("an unverifiable delivery is a failure", rc != 0 and "could not read back" in log)
 
-rc, delivered, src, log, calls = run_publish(STUB_READBACK_SHA="b" * 64)
-chk("a delivered copy that does not match the source is a failure",
-    rc != 0 and "does not match" in log)
 
-rc, delivered, src, log, calls = run_publish(STUB_PARTIAL=1)
-chk("a truncated delivery is detected and reported, never accepted", rc != 0)
-chk("a partial document is never treated as published", "does not match" in log)
+# a FAIL result is published too, so it surfaces as FAIL and not as staleness
+def test_a_fail_result_is_published_too_so_it_surfaces_as_fail_and():
+    rc, delivered, src, log, calls = run_publish(EVIDENCE_FAIL)
+    chk("a failed drill still publishes", rc == 0)
+    chk("the failure class survives transport",
+        delivered and json.loads(delivered)["failure_class"] == "REPOSITORY_LOCKED")
+    chk("a failed drill does not publish a passing status",
+        delivered and json.loads(delivered)["status"] == "fail")
 
-print()
-print("== ansible exits 0 when it does nothing at all (measured 2026-09-02) ==")
-# Both of these were observed returning rc=0 while copying nothing. Trusting the transport's exit
-# status would have reported a successful publication with an empty destination.
-rc, delivered, src, log, calls = run_publish(
-    STUB_SILENT_NOOP="[WARNING]: Could not match supplied host pattern, ignoring: randy")
-chk("a host pattern that matches nothing is a publication failure, not a success",
-    rc != 0 and delivered is None)
-chk("the operator is told the transport could not reach the target",
-    "could not reach" in log, log.strip().splitlines()[-1] if log else "")
 
-rc, delivered, src, log, calls = run_publish(
-    STUB_SILENT_NOOP="[ERROR]: Attempting to decrypt but no vault secrets found.")
-chk("a vault failure is a publication failure, not a success",
-    rc != 0 and delivered is None)
 
-rc, delivered, src, log, calls = run_publish(STUB_SILENT_NOOP="randy | SUCCESS => changed=false")
-chk("a transport that exits 0 having copied nothing is still caught by the read-back",
-    rc != 0 and delivered is None)
+# publication failures are reported, never assumed
+def test_publication_failures_are_reported_never_assumed():
+    rc, delivered, src, log, calls = run_publish(STUB_COPY_FAIL=1)
+    chk("transport failure exits non-zero", rc != 0)
+    chk("transport failure is logged as a publication failure", "PUBLISH: FAILED" in log)
+    chk("nothing is left at the destination", delivered is None)
 
-print()
-print("== it refuses to publish what it should not ==")
-rc, delivered, src, log, calls = run_publish(raw="{not json at all")
-chk("malformed local evidence is not published", rc != 0 and delivered is None)
-chk("refusal says why", "not valid JSON" in log)
-rc, delivered, src, log, calls = run_publish(write_evidence=False)
-chk("missing local evidence is not published", rc != 0 and delivered is None)
-chk("no transport is even attempted when there is nothing valid to send", calls == "")
+    rc, delivered, src, log, calls = run_publish(STUB_READBACK_FAIL=1)
+    chk("an unverifiable delivery is a failure", rc != 0 and "could not read back" in log)
 
-print()
-print("== no secrets, and the two verdicts stay separate ==")
-rc, delivered, src, log, calls = run_publish()
-blob = (delivered or "") + log + calls
-for secret in ("ares-randy.pass", "RESTIC_PASSWORD", "vault-pass", "BEGIN OPENSSH"):
-    chk("published material carries no %r" % secret, secret not in blob)
+    rc, delivered, src, log, calls = run_publish(STUB_READBACK_SHA="b" * 64)
+    chk("a delivered copy that does not match the source is a failure",
+        rc != 0 and "does not match" in log)
 
-pub_src = open(PUBLISH).read()
-drill_src = open(DRILL).read()
-chk("the drill treats publication as non-fatal to the restore verdict",
-    "publish_evidence" in drill_src and "restore verdict unaffected" in drill_src)
-chk("a failed publication cannot change the drill's exit code",
-    "|| echo" in drill_src and "return 0" in drill_src)
-chk("publication never touches the restic repository",
-    all(t not in pub_src for t in ("restic ", "unlock", "forget", "prune")))
-chk("the drill publishes on failure as well as success",
-    drill_src.count("publish_evidence") >= 4, drill_src.count("publish_evidence"))
-chk("the shipping unit does not disable publication",
-    "ARES_RESTORE_VERIFY_PUBLISH" not in
-    open(os.path.join(SCHED, "systemd", "ares-restore-verify.service")).read())
+    rc, delivered, src, log, calls = run_publish(STUB_PARTIAL=1)
+    chk("a truncated delivery is detected and reported, never accepted", rc != 0)
+    chk("a partial document is never treated as published", "does not match" in log)
 
-print()
-if FAILURES:
-    print("FAILED: %d" % len(FAILURES))
-    for f in FAILURES:
-        print("  - %s" % f)
-    sys.exit(1)
-print("ALL PASS")
+
+
+# ansible exits 0 when it does nothing at all (measured 2026-09-02)
+def test_ansible_exits_0_when_it_does_nothing_at_all_measured_2026():
+    # Both of these were observed returning rc=0 while copying nothing. Trusting the transport's exit
+    # status would have reported a successful publication with an empty destination.
+    rc, delivered, src, log, calls = run_publish(
+        STUB_SILENT_NOOP="[WARNING]: Could not match supplied host pattern, ignoring: randy")
+    chk("a host pattern that matches nothing is a publication failure, not a success",
+        rc != 0 and delivered is None)
+    chk("the operator is told the transport could not reach the target",
+        "could not reach" in log, log.strip().splitlines()[-1] if log else "")
+
+    rc, delivered, src, log, calls = run_publish(
+        STUB_SILENT_NOOP="[ERROR]: Attempting to decrypt but no vault secrets found.")
+    chk("a vault failure is a publication failure, not a success",
+        rc != 0 and delivered is None)
+
+    rc, delivered, src, log, calls = run_publish(STUB_SILENT_NOOP="randy | SUCCESS => changed=false")
+    chk("a transport that exits 0 having copied nothing is still caught by the read-back",
+        rc != 0 and delivered is None)
+
+
+
+# it refuses to publish what it should not
+def test_it_refuses_to_publish_what_it_should_not():
+    rc, delivered, src, log, calls = run_publish(raw="{not json at all")
+    chk("malformed local evidence is not published", rc != 0 and delivered is None)
+    chk("refusal says why", "not valid JSON" in log)
+    rc, delivered, src, log, calls = run_publish(write_evidence=False)
+    chk("missing local evidence is not published", rc != 0 and delivered is None)
+    chk("no transport is even attempted when there is nothing valid to send", calls == "")
+
+
+
+# no secrets, and the two verdicts stay separate
+def test_no_secrets_and_the_two_verdicts_stay_separate():
+    rc, delivered, src, log, calls = run_publish()
+    blob = (delivered or "") + log + calls
+    for secret in ("ares-randy.pass", "RESTIC_PASSWORD", "vault-pass", "BEGIN OPENSSH"):
+        chk("published material carries no %r" % secret, secret not in blob)
+
+    pub_src = open(PUBLISH).read()
+    drill_src = open(DRILL).read()
+    chk("the drill treats publication as non-fatal to the restore verdict",
+        "publish_evidence" in drill_src and "restore verdict unaffected" in drill_src)
+    chk("a failed publication cannot change the drill's exit code",
+        "|| echo" in drill_src and "return 0" in drill_src)
+    chk("publication never touches the restic repository",
+        all(t not in pub_src for t in ("restic ", "unlock", "forget", "prune")))
+    chk("the drill publishes on failure as well as success",
+        drill_src.count("publish_evidence") >= 4, drill_src.count("publish_evidence"))
+    chk("the shipping unit does not disable publication",
+        "ARES_RESTORE_VERIFY_PUBLISH" not in
+        open(os.path.join(SCHED, "systemd", "ares-restore-verify.service")).read())
+
+
+
+if __name__ == "__main__":
+    fns = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_") and callable(f)]
+    failed = 0
+    for name, fn in fns:
+        try:
+            fn()
+            print("  PASS  %s" % name)
+        except AssertionError as exc:
+            failed += 1
+            print("  FAIL  %s: %s" % (name, exc))
+        except Exception as exc:
+            # Recorded, not swallowed: a non-assertion failure must not abort the rest.
+            # `Exception` deliberately does not catch KeyboardInterrupt or SystemExit.
+            failed += 1
+            print("  FAIL  %s: %s: %s" % (name, type(exc).__name__, exc))
+    print("%d/%d passed" % (len(fns) - failed, len(fns)))
+    sys.exit(1 if failed else 0)
