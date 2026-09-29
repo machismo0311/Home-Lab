@@ -60,6 +60,20 @@ jobs:
             python3 "$t"
           done
 
+      # Script-local suites under scripts/. These were linted by the ruff step and
+      # py_compiled, but never EXECUTED: the loops in this job only reach playbooks/.
+      # test_joi_routing.py (the netframe-jarvis fail-closed guarantee) and
+      # test_nodes_registry.py (the zpool-name registry bug) both sat unrun.
+      # Globbed rather than named, for the same reason stated above.
+      - name: Script suites (llm_router, jarvis-oncall)
+        run: |
+          set -e
+          pip install fastapi httpx pyyaml
+          for t in scripts/*/test_*.py; do
+            echo "== $t"
+            python3 "$t"
+          done
+
       # Recovery drills create and destroy real guests when an operator runs them, so their guards
       # are tested here against stubs on every push.
       - name: Recovery drill tests
