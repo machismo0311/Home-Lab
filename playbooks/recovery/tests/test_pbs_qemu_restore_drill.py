@@ -235,7 +235,7 @@ def test_a_raw_host_block_device_is_refused_before_boot():
 
 
 # the other refusals
-def test_the_other_refusals_1():
+def test_s_refused():
     cases = [
         ("occupied vmid", {"STUB_ID_OCCUPIED": 1}, "occupied"),
         ("source == target", {"STUB_NEXTID": 110}, "equals the source"),
@@ -254,9 +254,6 @@ def test_the_other_refusals_1():
         ("start failure", {"STUB_START_FAIL": 1}, "qm start failed"),
         ("cleanup failure", {"STUB_DESTROY_FAIL": 1}, "cleanup failed"),
     ]
-
-
-def test_s_refused():
     for label, env, needle in cases:
         rc, out, art, calls, left = run(**env)
         chk("%s -> refused" % label, rc != 0 and needle in out, out.strip().splitlines()[-2:] if out else "")
@@ -330,9 +327,6 @@ def test_level_3_is_only_set_after_cleanup_succeeds():
     chk("destroy always uses --destroy-unreferenced-disks so EFI/TPM volumes go too",
         "--destroy-unreferenced-disks 1" in body)
     chk("no generic shell runner", all(x not in body for x in ("eval ", 'bash -c "$')))
-
-
-def test_bounded_timeout_s_wraps_its_command():
     for t in ("t_restore", "t_stop", "t_cmd"):
         chk("bounded timeout %s wraps its command" % t, ('timeout "${%s}"' % t) in body)
     chk("the boot wait is bounded by a deadline",

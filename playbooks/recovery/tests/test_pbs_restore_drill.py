@@ -403,9 +403,6 @@ def test_restore_always_passes_onboot_0():
         body.index("cleanup_result=\"ok\"") < body.index("level=3"))
     chk("no generic shell runner exists in the tool",
         all(x not in body for x in ("eval ", "$(cat ", "bash -c \"$")))
-
-
-def test_bounded_timeout_s_wraps_its_command():
     for t in ("t_restore", "t_stop", "t_cmd"):
         chk("bounded timeout %s wraps its command" % t, ('timeout "${%s}"' % t) in body)
     # t_boot bounds a polling loop rather than a single command, so it is asserted on its own mechanism:
