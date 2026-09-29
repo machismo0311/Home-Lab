@@ -1,0 +1,12 @@
+# Lint contract for Home-Lab.
+#
+# The ruff version is pinned in .github/workflows/ci.yml. `select` is stated
+# here explicitly so that bumping that pin cannot silently redefine what CI
+# enforces. This mirrors the same guard added to netframe-monitor, where an
+# unpinned ruff widened its defaults and held CI red from 2026-08-04.
+#
+# This set matches what the repo is already green against; it is a no-op today
+# and a guard on the next bump.
+
+[lint]
+select = ["E4", "E7", "E9", "F"]

@@ -301,8 +301,9 @@ else:
 # original branch called _r.json() on that body unconditionally, the first byte is 'd' from
 # "data: {", and the resulting JSONDecodeError surfaced to the operator as
 # "503 evidence path unavailable: Expecting value: line 1 column 1 (char 0)".
-OWUI = lambda **kw: dict({"model": "netframe-jarvis", "stream": True,
-                          "messages": [{"role": "user", "content": "Why is pve4 unhealthy?"}]}, **kw)
+def OWUI(**kw):
+    return dict({"model": "netframe-jarvis", "stream": True,
+                 "messages": [{"role": "user", "content": "Why is pve4 unhealthy?"}]}, **kw)
 
 # T1 - STREAMING SUCCESS
 reset()
