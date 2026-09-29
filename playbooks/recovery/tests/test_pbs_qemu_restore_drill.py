@@ -23,15 +23,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REC = os.path.abspath(os.path.join(HERE, ".."))
 SCRIPT = os.path.join(REC, "pbs-qemu-restore-drill.sh")
 
-FAILURES = []
 
 
 def chk(label, cond, detail=""):
-    if cond:
-        print("  PASS  %s" % label)
-    else:
-        print("  FAIL  %s%s" % (label, ("  [%s]" % detail) if detail else ""))
-        FAILURES.append(label)
+    """Assert one invariant.
+
+    Kept as a helper so every check label below is preserved verbatim from the
+    original script. It raises instead of appending to a module-level list, so a
+    violated invariant is a named failing test rather than a bare exit code.
+    """
+    assert cond, "%s%s" % (label, ("  [%s]" % detail) if detail else "")
 
 
 STUB_PVESH = r'''#!/usr/bin/env bash
@@ -161,154 +162,193 @@ def run(**env):
     return p.returncode, (p.stdout + p.stderr), art, calls, leftover
 
 
-print("== the healthy path ==")
-rc, out, art, calls, left = run()
-chk("a healthy drill succeeds", rc == 0, out.strip().splitlines()[-1] if out.strip() else "")
-chk("LEVEL 3 is claimed only on success", art and art["evidence_level"] == 3)
-chk("guest_type is qemu", art and art["source_guest_type"] == "qemu")
-chk("boot evidence method is recorded", art and art["boot_evidence_method"] == "guest_agent")
-chk("the agent answer is the evidence", art and "guest-agent responded" in art["boot_detail"])
-chk("application recovery is never claimed", art and art["application_recovery_claimed"] is False)
-chk("the level name is RESTORED_SYSTEM_BOOTABLE, never application recovery",
-    art and art["evidence_level_name"] == "RESTORED_SYSTEM_BOOTABLE")
-chk("no VALUE anywhere claims application recovery",
-    art and not any("APPLICATION_RECOVERY" in str(v).upper() for v in art.values()))
-chk("isolation method recorded", art and art["network_isolation_method"] == "all_nics_removed")
-chk("removed devices recorded", art and art["removed_devices"] == ["net0"])
-chk("no config left behind", left == [])
-chk("exactly one restore", len([x for x in calls.splitlines() if x.startswith("qmrestore")]) == 1)
-chk("exactly one destroy", len([x for x in calls.splitlines() if x.startswith("qm destroy")]) == 1)
-chk("every destroy targets the disposable id",
-    all(x.split()[2] == "112" for x in calls.splitlines() if x.startswith("qm destroy")))
-chk("no command is ever aimed at the source vm",
-    not any(x.startswith(("qm ", "qmrestore ")) and len(x.split()) > 2 and x.split()[2] == "110"
-            for x in calls.splitlines()))
-chk("no destroy is aimed at a PBS snapshot",
-    not any("backup/vm/" in x for x in calls.splitlines() if x.startswith("qm destroy")))
-chk("restore never uses --force, --start or --ha-managed",
-    not any(f in calls for f in ("--force", "--start", "--ha-managed")))
-chk("the NIC is removed before the VM is started",
-    calls.index("qm set 112 --delete net0") < calls.index("qm start"))
 
-print()
-print("== a running QEMU process is not a booted guest ==")
-rc, out, art, calls, left = run(STUB_AGENT_DEAD=1)
-chk("qemu running with no agent answer is NOT level 3",
-    rc != 0 and art and art["evidence_level"] == 0)
-chk("...it is recorded as no_guest_evidence", art and art["boot_result"] == "no_guest_evidence")
-chk("...and says the process ran but the guest did not answer",
-    art and "qemu process ran" in art["boot_detail"])
-chk("...and the vm is still cleaned up", "qm destroy" in calls and left == [])
 
-rc, out, art, calls, left = run(STUB_NO_AGENT=1)
-chk("a source vm without an agent is refused before any restore",
-    rc != 0 and "no guest agent" in out and "qmrestore" not in calls)
+# the healthy path
+def test_a_healthy_drill_succeeds():
+    rc, out, art, calls, left = run()
+    chk("a healthy drill succeeds", rc == 0, out.strip().splitlines()[-1] if out.strip() else "")
+    chk("LEVEL 3 is claimed only on success", art and art["evidence_level"] == 3)
+    chk("guest_type is qemu", art and art["source_guest_type"] == "qemu")
+    chk("boot evidence method is recorded", art and art["boot_evidence_method"] == "guest_agent")
+    chk("the agent answer is the evidence", art and "guest-agent responded" in art["boot_detail"])
+    chk("application recovery is never claimed", art and art["application_recovery_claimed"] is False)
+    chk("the level name is RESTORED_SYSTEM_BOOTABLE, never application recovery",
+        art and art["evidence_level_name"] == "RESTORED_SYSTEM_BOOTABLE")
+    chk("no VALUE anywhere claims application recovery",
+        art and not any("APPLICATION_RECOVERY" in str(v).upper() for v in art.values()))
+    chk("isolation method recorded", art and art["network_isolation_method"] == "all_nics_removed")
+    chk("removed devices recorded", art and art["removed_devices"] == ["net0"])
+    chk("no config left behind", left == [])
+    chk("exactly one restore", len([x for x in calls.splitlines() if x.startswith("qmrestore")]) == 1)
+    chk("exactly one destroy", len([x for x in calls.splitlines() if x.startswith("qm destroy")]) == 1)
+    chk("every destroy targets the disposable id",
+        all(x.split()[2] == "112" for x in calls.splitlines() if x.startswith("qm destroy")))
+    chk("no command is ever aimed at the source vm",
+        not any(x.startswith(("qm ", "qmrestore ")) and len(x.split()) > 2 and x.split()[2] == "110"
+                for x in calls.splitlines()))
+    chk("no destroy is aimed at a PBS snapshot",
+        not any("backup/vm/" in x for x in calls.splitlines() if x.startswith("qm destroy")))
+    chk("restore never uses --force, --start or --ha-managed",
+        not any(f in calls for f in ("--force", "--start", "--ha-managed")))
+    chk("the NIC is removed before the VM is started",
+        calls.index("qm set 112 --delete net0") < calls.index("qm start"))
 
-print()
-print("== host-coupled devices are refusals, not silent fixups ==")
-for label, env in (("hostpci", {"STUB_HOSTPCI": 1}), ("usb", {"STUB_USB": 1}),
-                   ("args", {"STUB_ARGS": 1}), ("hookscript", {"STUB_HOOKSCRIPT": 1})):
-    rc, out, art, calls, left = run(**env)
-    chk("%s present -> refused before boot" % label,
-        rc != 0 and "host-coupled" in out and "qm start" not in calls)
-    chk("%s present -> not level 3, and cleaned up" % label,
-        art and art["evidence_level"] == 0 and left == [])
 
-rc, out, art, calls, left = run(STUB_RAWDISK=1)
-chk("a raw host block device is refused before boot",
-    rc != 0 and "raw host block device" in out and "qm start" not in calls)
 
-print()
-print("== the other refusals ==")
-cases = [
-    ("occupied vmid", {"STUB_ID_OCCUPIED": 1}, "occupied"),
-    ("source == target", {"STUB_NEXTID": 110}, "equals the source"),
-    ("missing snapshot", {"STUB_CONTENT": "missing"}, "not found"),
-    ("verification none", {"STUB_CONTENT": "unverified"}, "unverified backup"),
-    ("verification failed", {"STUB_CONTENT": "failed"}, "unverified backup"),
-    ("malformed metadata", {"STUB_CONTENT": "malformed"}, "malformed"),
-    ("restore failure", {"STUB_RESTORE_FAIL": 1}, "qmrestore failed"),
-    ("restore exit 0 with no config", {"STUB_RESTORE_NOCONFIG": 1}, "no config exists"),
-    ("no boot disk", {"STUB_NO_DISK": 1}, "no boot disk"),
-    ("nic survives deletion", {"STUB_DELETE_SILENT_NOOP": 1}, "isolation failed"),
-    ("autostart disable silently fails", {"STUB_ONBOOT": 1, "STUB_ONBOOT_SET_NOOP": 1},
-     "autostart is enabled"),
-    ("HA membership", {"STUB_HA": 1}, "HA-managed"),
-    ("replication job", {"STUB_REPL": 1}, "replication job"),
-    ("start failure", {"STUB_START_FAIL": 1}, "qm start failed"),
-    ("cleanup failure", {"STUB_DESTROY_FAIL": 1}, "cleanup failed"),
-]
-for label, env, needle in cases:
-    rc, out, art, calls, left = run(**env)
-    chk("%s -> refused" % label, rc != 0 and needle in out, out.strip().splitlines()[-2:] if out else "")
-    chk("%s -> never claims LEVEL 3" % label,
-        art and art["evidence_level"] == 0 and art["evidence_level_name"] == "NOTHING_PROVEN")
+# a running QEMU process is not a booted guest
+def test_qemu_running_with_no_agent_answer_is_not_level_3():
+    rc, out, art, calls, left = run(STUB_AGENT_DEAD=1)
+    chk("qemu running with no agent answer is NOT level 3",
+        rc != 0 and art and art["evidence_level"] == 0)
+    chk("...it is recorded as no_guest_evidence", art and art["boot_result"] == "no_guest_evidence")
+    chk("...and says the process ran but the guest did not answer",
+        art and "qemu process ran" in art["boot_detail"])
+    chk("...and the vm is still cleaned up", "qm destroy" in calls and left == [])
 
-rc, out, art, calls, left = run(STUB_ONBOOT=1, STUB_ONBOOT_SET_NOOP=1)
-chk("autostart refusal happens before the vm is started", "qm start" not in calls)
-rc, out, art, calls, left = run(STUB_ONBOOT=1)
-chk("a restored onboot=1 is actively disabled, not merely detected",
-    rc == 0 and "qm set 112 --onboot 0" in calls and art["evidence_level"] == 3)
-rc, out, art, calls, left = run(STUB_HA=1)
-chk("HA refusal happens before the vm is started", "qm start" not in calls)
 
-print()
-print("== dry-run mutates nothing ==")
-rc, out, art, calls, left = run(_DRY=1) if False else (None, None, None, None, None)
-td = tempfile.mkdtemp(prefix="qdry.")
-try:
-    bindir = os.path.join(td, "bin")
-    os.makedirs(bindir)
-    for name, body in (("pvesh", STUB_PVESH), ("qm", STUB_QM), ("qmrestore", STUB_QMRESTORE)):
-        p = os.path.join(bindir, name)
-        with open(p, "w") as fh:
-            fh.write(body)
-        os.chmod(p, 0o755)
-    st = os.path.join(td, "state")
-    os.makedirs(st)
-    cf = os.path.join(td, "conf")
-    os.makedirs(cf)
-    ev = os.path.join(td, "ev")
-    e = dict(os.environ, PATH=bindir + ":" + os.environ["PATH"],
-             STUB_CALLS=os.path.join(td, "calls"), STUB_STATE=st,
-             PBSDRILL_EVIDENCE_DIR=ev, PBSDRILL_QEMU_CONF_DIR=cf)
-    p = subprocess.run(["/bin/bash", SCRIPT, "--source-vmid", "110",
-                        "--snapshot", "randy-pbs:backup/vm/110/S", "--dry-run"],
-                       capture_output=True, text=True, env=e, timeout=120)
-    calls = open(e["STUB_CALLS"]).read() if os.path.exists(e["STUB_CALLS"]) else ""
-    art = None
-    if os.path.isdir(ev):
-        for f in os.listdir(ev):
-            with open(os.path.join(ev, f)) as fh:
-                art = json.load(fh)
-    chk("dry-run exits 0", p.returncode == 0)
-    chk("dry-run performs no restore, start or destroy",
-        all(x not in calls for x in ("qmrestore", "qm start", "qm destroy")))
-    chk("dry-run claims no level", art and art["evidence_level"] == 0)
-finally:
-    shutil.rmtree(td, ignore_errors=True)
 
-print()
-print("== structural properties ==")
-src = open(SCRIPT).read()
-body = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
-chk("LEVEL 3 is only set after cleanup succeeds",
-    body.index('cleanup_result="ok"') < body.index("level=3"))
-chk("the drill never prunes or forgets a backup",
-    all(x not in body for x in ("prune", "forget", "--remove-vanished")))
-chk("destroy always uses --destroy-unreferenced-disks so EFI/TPM volumes go too",
-    "--destroy-unreferenced-disks 1" in body)
-chk("no generic shell runner", all(x not in body for x in ("eval ", 'bash -c "$')))
-for t in ("t_restore", "t_stop", "t_cmd"):
-    chk("bounded timeout %s wraps its command" % t, ('timeout "${%s}"' % t) in body)
-chk("the boot wait is bounded by a deadline",
-    "deadline=$((SECONDS + t_boot))" in body and "(( SECONDS < deadline ))" in body)
-chk("cleanup refuses on a source/target collision", "refused_source_collision" in body)
+def test_a_source_vm_without_an_agent_is_refused_before_any_restore():
+    rc, out, art, calls, left = run(STUB_NO_AGENT=1)
+    chk("a source vm without an agent is refused before any restore",
+        rc != 0 and "no guest agent" in out and "qmrestore" not in calls)
 
-print()
-if FAILURES:
-    print("FAILED: %d" % len(FAILURES))
-    for f in FAILURES:
-        print("  - %s" % f)
-    sys.exit(1)
-print("ALL PASS")
+
+
+# host-coupled devices are refusals, not silent fixups
+def test_host_coupled_devices_are_refused_before_boot():
+    for label, env in (("hostpci", {"STUB_HOSTPCI": 1}), ("usb", {"STUB_USB": 1}),
+                       ("args", {"STUB_ARGS": 1}), ("hookscript", {"STUB_HOOKSCRIPT": 1})):
+        rc, out, art, calls, left = run(**env)
+        chk("%s present -> refused before boot" % label,
+            rc != 0 and "host-coupled" in out and "qm start" not in calls)
+        chk("%s present -> not level 3, and cleaned up" % label,
+            art and art["evidence_level"] == 0 and left == [])
+
+
+
+def test_a_raw_host_block_device_is_refused_before_boot():
+    rc, out, art, calls, left = run(STUB_RAWDISK=1)
+    chk("a raw host block device is refused before boot",
+        rc != 0 and "raw host block device" in out and "qm start" not in calls)
+
+
+
+# the other refusals
+def test_every_precondition_failure_is_refused_before_restore():
+    cases = [
+        ("occupied vmid", {"STUB_ID_OCCUPIED": 1}, "occupied"),
+        ("source == target", {"STUB_NEXTID": 110}, "equals the source"),
+        ("missing snapshot", {"STUB_CONTENT": "missing"}, "not found"),
+        ("verification none", {"STUB_CONTENT": "unverified"}, "unverified backup"),
+        ("verification failed", {"STUB_CONTENT": "failed"}, "unverified backup"),
+        ("malformed metadata", {"STUB_CONTENT": "malformed"}, "malformed"),
+        ("restore failure", {"STUB_RESTORE_FAIL": 1}, "qmrestore failed"),
+        ("restore exit 0 with no config", {"STUB_RESTORE_NOCONFIG": 1}, "no config exists"),
+        ("no boot disk", {"STUB_NO_DISK": 1}, "no boot disk"),
+        ("nic survives deletion", {"STUB_DELETE_SILENT_NOOP": 1}, "isolation failed"),
+        ("autostart disable silently fails", {"STUB_ONBOOT": 1, "STUB_ONBOOT_SET_NOOP": 1},
+         "autostart is enabled"),
+        ("HA membership", {"STUB_HA": 1}, "HA-managed"),
+        ("replication job", {"STUB_REPL": 1}, "replication job"),
+        ("start failure", {"STUB_START_FAIL": 1}, "qm start failed"),
+        ("cleanup failure", {"STUB_DESTROY_FAIL": 1}, "cleanup failed"),
+    ]
+    for label, env, needle in cases:
+        rc, out, art, calls, left = run(**env)
+        chk("%s -> refused" % label, rc != 0 and needle in out, out.strip().splitlines()[-2:] if out else "")
+        chk("%s -> never claims LEVEL 3" % label,
+            art and art["evidence_level"] == 0 and art["evidence_level_name"] == "NOTHING_PROVEN")
+
+
+
+def test_autostart_refusal_happens_before_the_vm_is_started():
+    rc, out, art, calls, left = run(STUB_ONBOOT=1, STUB_ONBOOT_SET_NOOP=1)
+    chk("autostart refusal happens before the vm is started", "qm start" not in calls)
+
+
+def test_a_restored_onboot_1_is_actively_disabled_not_merely_detected():
+    rc, out, art, calls, left = run(STUB_ONBOOT=1)
+    chk("a restored onboot=1 is actively disabled, not merely detected",
+        rc == 0 and "qm set 112 --onboot 0" in calls and art["evidence_level"] == 3)
+
+
+def test_ha_refusal_happens_before_the_vm_is_started():
+    rc, out, art, calls, left = run(STUB_HA=1)
+    chk("HA refusal happens before the vm is started", "qm start" not in calls)
+
+
+
+# dry-run mutates nothing
+def test_dry_run_exits_0():
+    td = tempfile.mkdtemp(prefix="qdry.")
+    try:
+        bindir = os.path.join(td, "bin")
+        os.makedirs(bindir)
+        for name, body in (("pvesh", STUB_PVESH), ("qm", STUB_QM), ("qmrestore", STUB_QMRESTORE)):
+            p = os.path.join(bindir, name)
+            with open(p, "w") as fh:
+                fh.write(body)
+            os.chmod(p, 0o755)
+        st = os.path.join(td, "state")
+        os.makedirs(st)
+        cf = os.path.join(td, "conf")
+        os.makedirs(cf)
+        ev = os.path.join(td, "ev")
+        e = dict(os.environ, PATH=bindir + ":" + os.environ["PATH"],
+                 STUB_CALLS=os.path.join(td, "calls"), STUB_STATE=st,
+                 PBSDRILL_EVIDENCE_DIR=ev, PBSDRILL_QEMU_CONF_DIR=cf)
+        p = subprocess.run(["/bin/bash", SCRIPT, "--source-vmid", "110",
+                            "--snapshot", "randy-pbs:backup/vm/110/S", "--dry-run"],
+                           capture_output=True, text=True, env=e, timeout=120)
+        calls = open(e["STUB_CALLS"]).read() if os.path.exists(e["STUB_CALLS"]) else ""
+        art = None
+        if os.path.isdir(ev):
+            for f in os.listdir(ev):
+                with open(os.path.join(ev, f)) as fh:
+                    art = json.load(fh)
+        chk("dry-run exits 0", p.returncode == 0)
+        chk("dry-run performs no restore, start or destroy",
+            all(x not in calls for x in ("qmrestore", "qm start", "qm destroy")))
+        chk("dry-run claims no level", art and art["evidence_level"] == 0)
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+
+# structural properties
+def test_level_3_is_only_set_after_cleanup_succeeds():
+    src = open(SCRIPT).read()
+    body = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
+    chk("LEVEL 3 is only set after cleanup succeeds",
+        body.index('cleanup_result="ok"') < body.index("level=3"))
+    chk("the drill never prunes or forgets a backup",
+        all(x not in body for x in ("prune", "forget", "--remove-vanished")))
+    chk("destroy always uses --destroy-unreferenced-disks so EFI/TPM volumes go too",
+        "--destroy-unreferenced-disks 1" in body)
+    chk("no generic shell runner", all(x not in body for x in ("eval ", 'bash -c "$')))
+    for t in ("t_restore", "t_stop", "t_cmd"):
+        chk("bounded timeout %s wraps its command" % t, ('timeout "${%s}"' % t) in body)
+    chk("the boot wait is bounded by a deadline",
+        "deadline=$((SECONDS + t_boot))" in body and "(( SECONDS < deadline ))" in body)
+    chk("cleanup refuses on a source/target collision", "refused_source_collision" in body)
+
+
+
+if __name__ == "__main__":
+    fns = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_") and callable(f)]
+    failed = 0
+    for name, fn in fns:
+        try:
+            fn()
+            print("  PASS  %s" % name)
+        except AssertionError as exc:
+            failed += 1
+            print("  FAIL  %s: %s" % (name, exc))
+        except Exception as exc:
+            # Recorded, not swallowed: a non-assertion failure must not abort the rest.
+            # `Exception` deliberately does not catch KeyboardInterrupt or SystemExit.
+            failed += 1
+            print("  FAIL  %s: %s: %s" % (name, type(exc).__name__, exc))
+    print("%d/%d passed" % (len(fns) - failed, len(fns)))
+    sys.exit(1 if failed else 0)
