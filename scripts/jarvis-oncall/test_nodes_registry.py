@@ -139,5 +139,12 @@ if __name__ == "__main__":
         except AssertionError as exc:
             failed += 1
             print("  FAIL  %s: %s" % (name, exc))
+        except Exception as exc:
+            # A wrong declaration makes executors raise ToolError, not AssertionError.
+            # Catching only AssertionError let that abort the whole runner, which is the
+            # abort-at-first-failure behaviour this conversion exists to remove. The
+            # exception is reported, never swallowed.
+            failed += 1
+            print("  FAIL  %s: %s: %s" % (name, type(exc).__name__, exc))
     print("NODE REGISTRY: %d/%d passed" % (len(fns) - failed, len(fns)))
     sys.exit(1 if failed else 0)
