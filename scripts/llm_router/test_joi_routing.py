@@ -445,5 +445,14 @@ if __name__ == "__main__":
         except AssertionError as exc:
             failed += 1
             print("  FAIL  %s: %s" % (name, exc))
+        except Exception as exc:
+            # A test can fail by raising something that is not an AssertionError. Catching
+            # only AssertionError let that escape and abort the whole runner, which is the
+            # abort-at-first-failure behaviour these named tests exist to remove. Ordinary
+            # exceptions are recorded and reporting continues; the type and message are
+            # printed, never swallowed. `Exception` deliberately does not catch
+            # KeyboardInterrupt or SystemExit.
+            failed += 1
+            print("  FAIL  %s: %s: %s" % (name, type(exc).__name__, exc))
     print("JOI ROUTING: %d/%d passed" % (len(fns) - failed, len(fns)))
     sys.exit(1 if failed else 0)
