@@ -68,7 +68,10 @@ jobs:
       - name: Script suites (llm_router, jarvis-oncall)
         run: |
           set -e
-          pip install fastapi httpx pyyaml
+          # Pinned to the versions the suites are known green against. Unpinned, a
+          # breaking fastapi/httpx/PyYAML release fails the JOI suite with no change
+          # here, which is the drift that held netframe-monitor red for two months.
+          pip install fastapi==0.142.1 httpx==0.28.1 pyyaml==6.0.3
           for t in scripts/*/test_*.py; do
             echo "== $t"
             python3 "$t"
