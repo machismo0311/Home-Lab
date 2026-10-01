@@ -18,7 +18,7 @@ Stood up a **3-node HA control plane**. CPU-only (GPU scheduling deferred - see 
 | kubectl | Ares: `export KUBECONFIG=~/.kube/config-rke2` (→ VIP `.54`); kubectl in `~/.local/bin` |
 
 ## Build method (reproducible)
-1. **VMs:** Debian 12 genericcloud qcow2 → `qm create`/`importdisk` + cloud-init (`--ipconfig0`, `--sshkeys`, `--ciuser rke2`). Script: scratchpad `mkvm.sh`.
+1. **VMs:** Debian 12 genericcloud qcow2 → `qm create`/`importdisk` + cloud-init (`--ipconfig0`, `--sshkeys`, `--ciuser rke2`). Script: scratchpad `mkvm.sh`. **Never** put `ssh_deletekeys: false` in a template or a new VM's first-boot config; it is a per-VM exception on the existing CP nodes only (see §Cloud-init host-key preservation).
 2. **RKE2:** `/etc/rancher/rke2/config.yaml` with `token`, `cni: cilium`, `node-ip`, `tls-san` (all 3 IPs + `.54` + `rke2.netframe.local`); joins add `server: https://192.168.10.51:9345`. `curl -sfL https://get.rke2.io | sh -` + `systemctl enable --now rke2-server`.
 3. **kube-vip:** RBAC + DaemonSet (`cp_enable`, `address: .54`, `vip_interface: eth0`, ARP, leader election).
 4. **MetalLB:** `metallb-native.yaml` + IPAddressPool `.71-.75` + L2Advertisement.
@@ -156,3 +156,32 @@ configs:
       ca_file: /etc/rancher/rke2/tls/netframe-root-ca.crt
 ```
 Applied by **restarting rke2** - **rolling, one node at a time, waiting for `Ready`** to preserve etcd quorum (`rke2-server` on cp1/cp2/cp3, `rke2-agent` on Randy). RKE2 (containerd 2.x) renders this to `certs.d/registry.netframe.local/hosts.toml` (`config_path` in `config.toml`), **not** inline. Verified with canary pods (`imagePullPolicy: Always`) pulling `registry.netframe.local/busybox` on both a CP node and Randy. Randy's host services (quorum 7/7, pools ONLINE, PBS/NFS) re-verified intact after its `rke2-agent` restart.
+
+## Cloud-init host-key preservation (2026-10-01, existing cp1/cp2/cp3 only)
+
+**What:** `/etc/cloud/cloud.cfg.d/99-netframe-preserve-hostkeys.cfg` on rke2-cp1, cp2 and cp3, `root:root 0644`, sha256 `9078da27d6c17f4c4c5a2996d6ba13043f477edc8895ee00e18aa1ee5ddfb0ea`:
+```
+# NetFRAME: keep SSH host identity across cloud-init new-instance events.
+# Per-VM only. Never bake into a template.
+ssh_deletekeys: false
+```
+
+**Why:** Proxmox derives the NoCloud instance-id from the generated user-data, so **any** `qm set --sshkeys` / `--ci*` change makes the next **Proxmox-initiated** start (`qm start`, `qm reboot`, or a reboot of pve3 / Randy / Jarvis, since all three VMs are `onboot=1`) a **new cloud-init instance**. An in-guest reboot does not, and neither does a snapshot-mode backup. cloud-init 22.4.2 then reruns per-instance modules, and `cc_ssh` deletes and regenerates the SSH host keys unless `ssh_deletekeys` is false. This already happened once on every node (cp1 2026-08-14, cp2/cp3 2026-08-15; the host keys date from it, and the `package_upgrade` in that boot changed no packages). It was re-armed 2026-10-01 when the revoked old-Ares key (`SHA256:0aX9Q3RL...`, misleading comment `fernanda@quarkylab`) was removed from `sshkeys` on 201/202/203. With the drop-in, cloud-init keeps the existing host keys and only generates missing key types.
+
+**Scope:** applies **only** to these three existing VMs, to preserve their established SSH host identity through the pending NoCloud new-instance transition. **It MUST NOT be included in VM templates, base images, or a fresh VM's first-boot config**: first-boot key deletion is what stops clones sharing host keys. Enforced in netframe-enterprise-assessment by `security-controls` (register row `rke2-hostkey-preservation`, tracked copy `infrastructure/rke2/cloud-init/`).
+
+**Verify** with cloud-init's own config merge, not file presence (the read is side-effect free):
+```
+sudo python3 -c 'from cloudinit import util; print(util.read_conf_with_confd("/etc/cloud/cloud.cfg").get("ssh_deletekeys"))'   # -> False
+```
+Proxmox user-data does not set the key, so nothing overrides it at the next boot.
+
+**Rollback:** `sudo rm /etc/cloud/cloud.cfg.d/99-netframe-preserve-hostkeys.cfg` (default deletion returns at the next new-instance boot).
+
+**Still pending, separate approved transaction:** the attached cloud-init drives were deliberately **not** regenerated, so the new-instance boot is still armed. It is retired by a rolling restart, **cp3 → cp2 (API VIP `.54` holder) → cp1 (etcd leader, bootstrap server)**, one node at a time:
+- `kubectl cordon` only, **no drain**: CP CPU requests are 65-81% and Randy is tainted, so drained pods could strand Pending.
+- `qm shutdown` + `qm start` on the owning node.
+- Full gates between nodes: etcd 3/3, 4/4 Ready, `readyz` via the VIP, 0 alerts, pods recovered.
+- Host keys proven unchanged with `ssh -o StrictHostKeyChecking=yes`, then a 10-minute soak.
+
+Do **not** run `qm cloudinit update` casually: it hot-swaps the drive, so even an in-guest reboot would then fire the transition. Record: netframe-enterprise-assessment `operations/maintenance/2026-10-01-rke2-cloudinit-hostkey-preservation.md`.
