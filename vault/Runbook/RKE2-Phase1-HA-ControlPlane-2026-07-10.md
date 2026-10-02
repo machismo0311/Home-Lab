@@ -182,7 +182,10 @@ Proxmox user-data does not set the key, so nothing overrides it at the next boot
 - **Instance-ids:** all three moved to their expected new values, the `[special:cloudinit]` pending sections are gone, and the regenerated drives no longer carry the revoked key.
 - **No regressions:** **0 SSH host keys were generated** (the drop-in worked), and the package set, authorized keys and netplan were unchanged.
 - **Cluster:** etcd leadership moved cp1 to cp3 during cp1's shutdown, and the API VIP now sits on cp2.
-- **Watch for:** during cp2's graceful shutdown the VIP lingered on the stopping node and lease reads timed out for about 70 s, until it was fully off. This was not reproduced on cp1, and the root cause is not proven.
+- **Watch for (root cause evidenced):** on every control-plane shutdown, kube-apiserver's container ignores the stop for 90 s after etcd exits, until systemd SIGKILLs it. That is also why ACPI shutdowns take about 96 s. While it hangs, API calls routed to it return 504.
+  - **cp2, the VIP holder:** no node held the VIP for about 91 s (04:17:06 to 04:18:37 UTC), because the peers could not read the kube-vip lease. cp1 took it 1 s after the SIGKILL.
+  - **cp1:** the VIP moved in about 6 s, but 504s still hit clients and cilium-operator restarted once.
+  - **Mitigation for future rolling restarts (not yet adopted):** stop the static control-plane pods or run `rke2-killall.sh` before the ACPI shutdown, or move the kube-vip lease first.
 - **Record:** netframe-enterprise-assessment `operations/maintenance/2026-10-01-rke2-cloudinit-hostkey-preservation.md`.
 
 *History:* before the transition, the attached cloud-init drives were deliberately **not** regenerated, so the new-instance boot stayed armed. It is retired by a rolling restart, **cp3 → cp2 (API VIP `.54` holder) → cp1 (etcd leader, bootstrap server)**, one node at a time:
