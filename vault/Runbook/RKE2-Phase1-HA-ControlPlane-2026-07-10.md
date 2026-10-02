@@ -178,7 +178,14 @@ Proxmox user-data does not set the key, so nothing overrides it at the next boot
 
 **Rollback:** `sudo rm /etc/cloud/cloud.cfg.d/99-netframe-preserve-hostkeys.cfg` (default deletion returns at the next new-instance boot).
 
-**Still pending, separate approved transaction:** the attached cloud-init drives were deliberately **not** regenerated, so the new-instance boot is still armed. It is retired by a rolling restart, **cp3 → cp2 (API VIP `.54` holder) → cp1 (etcd leader, bootstrap server)**, one node at a time:
+**Retired 2026-10-02 (Transition A, COMPLETE):** rolling restart cp3, then cp2, then cp1, cordon only, no drain.
+- **Instance-ids:** all three moved to their expected new values, the `[special:cloudinit]` pending sections are gone, and the regenerated drives no longer carry the revoked key.
+- **No regressions:** **0 SSH host keys were generated** (the drop-in worked), and the package set, authorized keys and netplan were unchanged.
+- **Cluster:** etcd leadership moved cp1 to cp3 during cp1's shutdown, and the API VIP now sits on cp2.
+- **Watch for:** during cp2's graceful shutdown the VIP lingered on the stopping node and lease reads timed out for about 70 s, until it was fully off. This was not reproduced on cp1, and the root cause is not proven.
+- **Record:** netframe-enterprise-assessment `operations/maintenance/2026-10-01-rke2-cloudinit-hostkey-preservation.md`.
+
+*History:* before the transition, the attached cloud-init drives were deliberately **not** regenerated, so the new-instance boot stayed armed. It is retired by a rolling restart, **cp3 → cp2 (API VIP `.54` holder) → cp1 (etcd leader, bootstrap server)**, one node at a time:
 - `kubectl cordon` only, **no drain**: CP CPU requests are 65-81% and Randy is tainted, so drained pods could strand Pending.
 - `qm shutdown` + `qm start` on the owning node.
 - Full gates between nodes: etcd 3/3, 4/4 Ready, `readyz` via the VIP, 0 alerts, pods recovered.
