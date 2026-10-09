@@ -53,7 +53,7 @@
 | pve3 | 192.168.10.201 | |
 | pve4 | 192.168.10.202 | |
 | pve5 | 192.168.10.203 | |
-| Ares (Dell laptop) | DHCP / 192.168.10.100 (wired) | Tailscale: 100.x.x.x |
+| Ares (laptop) | `ares.netframe.local` 192.168.10.152 (Wi-Fi, Kea-reserved); 192.168.10.131 (wired USB, Kea-reserved) | No tailscale client; Headscale node `ares` 100.64.0.1 is stale |
 | Juniper EX3400 | 192.168.10.50 | SSH: `ssh mason@192.168.10.50` |
 | quarkylab iDRAC | 192.168.10.20 | R730 svc tag (in ops vault) |
 | Jarvis iDRAC | 192.168.10.21 | R730 (MAC: XX:XX:XX:XX:XX:XX) |

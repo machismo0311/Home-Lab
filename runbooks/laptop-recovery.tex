@@ -166,7 +166,7 @@ Passphrase (offsite) & Vaultwarden entry
 \texttt{Ares\ restic\ backup\ -\textgreater{}\ Randy\ (repo\ password)}
 (pve3 LXC 102) \\
 Hostname & \texttt{ares} --- \textbf{reuse it} (see §2) \\
-Ares IP & \texttt{192.168.10.199} (mgmt VLAN 1) \\
+Ares IP & \texttt{ares.netframe.local} = \texttt{192.168.10.152} (Wi-Fi, mgmt VLAN 1, Kea reservation by MAC); wired \texttt{192.168.10.131} (Kea reservation by MAC). A replacement laptop has new MACs: update both reservations \\
 \bottomrule
 \end{longtable}
 
@@ -323,7 +323,9 @@ new box:
 \begin{Shaded}
 \begin{Highlighting}[]
 \FunctionTok{ssh{-}keygen} \AttributeTok{{-}R}\NormalTok{ ares}
-\FunctionTok{ssh{-}keygen} \AttributeTok{{-}R}\NormalTok{ 192.168.10.199}
+\FunctionTok{ssh{-}keygen} \AttributeTok{{-}R}\NormalTok{ ares.netframe.local}
+\FunctionTok{ssh{-}keygen} \AttributeTok{{-}R}\NormalTok{ 192.168.10.152}
+\FunctionTok{ssh{-}keygen} \AttributeTok{{-}R}\NormalTok{ 192.168.10.131}
 \end{Highlighting}
 \end{Shaded}
 
