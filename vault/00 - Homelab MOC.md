@@ -91,7 +91,7 @@ mindmap
 | Pi-hole (secondary) | 192.168.10.178 | CT 108 on pve5 (nebula-sync mirror, 2026-07-10) |
 | RKE2 API VIP | 192.168.10.54 | kube-vip; CP = rke2-cp1/2/3 (.51/.52/.53 = VMs 201-203 on pve3/4/5); Randy = bare-metal worker |
 | RKE2 MetalLB LBs | 192.168.10.71–.75 | .71 Uptime Kuma (status.netframe.local), .72 registry (registry.netframe.local, TLS) |
-| Ares (laptop) | 192.168.10.100 wired | TS: 100.x.x.x |
+| Ares (laptop) | `ares.netframe.local` 192.168.10.152 Wi-Fi; 192.168.10.131 wired (both Kea-reserved 2026-10-09) | No tailscale client; Headscale node stale |
 
 ---
 

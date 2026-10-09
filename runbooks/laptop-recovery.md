@@ -31,7 +31,7 @@ this runbook is the wider "hardware is dead, rebuild everything" superset.
 | Passphrase (on-disk) | `~/.config/restic/ares-randy.pass` (mode 600) |
 | Passphrase (offsite) | Vaultwarden entry `Ares restic backup -> Randy (repo password)` (pve3 LXC 102) |
 | Hostname | `ares` — **reuse it** (see §2) |
-| Ares IP | `192.168.10.199` (mgmt VLAN 1) |
+| Ares IP | `ares.netframe.local` = `192.168.10.152` (Wi-Fi, mgmt VLAN 1, Kea reservation by MAC); wired `192.168.10.131` (Kea reservation by MAC). A replacement laptop has new MACs: update both reservations |
 
 ---
 
@@ -133,7 +133,9 @@ don't hit "host key verification failed" against the new box:
 
 ```bash
 ssh-keygen -R ares
-ssh-keygen -R 192.168.10.199
+ssh-keygen -R ares.netframe.local
+ssh-keygen -R 192.168.10.152
+ssh-keygen -R 192.168.10.131
 ```
 Removes the old fingerprint for the name and the IP from `known_hosts`. (This
 exact class of stale-key failure once masqueraded as an "auth failure" against the
