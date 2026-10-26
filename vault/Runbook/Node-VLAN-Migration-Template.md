@@ -23,7 +23,7 @@ A reusable, low-downtime procedure for moving **any** km-cluster node onto a tag
 ```bash
 ssh <node> 'pvecm status | egrep -i "Quorate|Total votes"'         # must be Quorate
 ping -c1 192.168.10.<i>                                             # iDRAC lifeline UP
-ssh <node> 'tailscale ip -4 | head -1'                             # out-of-band lifeline
+ssh <node> 'tailscale ip -4 | head -1'                             # alternate network path (same host OS; NOT out-of-band)
 ping -c2 192.168.<VID>.1                                            # new VLAN gateway reachable
 # Identify the switch port: match the node vmbr0 MAC in the EX3400 MAC table
 #   ssh mason@192.168.10.50 'show ethernet-switching table | match <mac>'

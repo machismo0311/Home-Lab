@@ -100,18 +100,31 @@ systemctl enable --now prometheus-node-exporter
 
 ---
 
-## Step 3 — Remote Access via Tailscale
+## Step 3: Tailnet Access via Tailscale (alternate network path)
 
-Tailscale provides zero-config WireGuard-based remote access with no open ports required on the WAN.
+Tailscale gives the node a WireGuard-based path into the self-hosted Headscale tailnet (`http://192.168.10.186:8080`, CT105 on pve5) with no open WAN ports.
 
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
-tailscale up --ssh
+tailscale up --login-server http://192.168.10.186:8080
 ```
 
-The `--ssh` flag enables Tailscale SSH, which uses Tailscale's identity system for authentication rather than SSH keys. This provides out-of-band access to the hypervisor even if the VMs running on it (including the network gateway) are down — critical for remote recovery scenarios.
+Do **not** pass `--ssh`. Tailscale SSH is disabled estate-wide (on pve1, the last node that had it, since 2026-10-26, Tailworm remediation M1). Administrative access to a node is OpenSSH with keys, reached over the LAN or over the tailnet.
 
-> **Architecture note:** Each Proxmox host runs its own Tailscale agent. A separate subnet router (OPNsense) advertises the LAN subnet `192.168.1.0/24` to the tailnet. These are complementary, not redundant: host-level agents provide out-of-band access to the bare metal; the subnet router provides access to everything else on the LAN.
+The tailnet is an **alternate network path, not out-of-band management.** It runs on the same host OS, kernel, and network stack as everything else, and it depends on the Headscale control plane (a guest on pve5) and on DNS. If the host is powered off, hung, or has lost its network, the tailnet is down with it. True out-of-band management means a BMC or console that works independently of the host OS (iDRAC on the R730s, IPMI on Randy, on VLAN 20). As of 2026-10-26 that BMC plane is unreachable from every tested vantage point (risk R-71), so no node currently has a verified out-of-band console. Do not count the tailnet as a recovery path in a DR plan.
+
+> **Architecture note:** Each Proxmox host runs its own Tailscale agent, tagged by Headscale policy (`tag:infra`, `tag:recovery`, `tag:ssh`). pve3 is the only subnet router and advertises two host routes, `192.168.10.181/32` (NPM) and `192.168.10.201/32` (pve3 web UI). Both routes are approved in Headscale, and policy limits their use to `kyle@` devices. Network ACLs, not Tailscale SSH rules, decide which tailnet sources may reach TCP 22.
+
+> **Access evidence levels.** When recording an access path for a node, state which level of evidence it has. An HTTP 200 or a listening SSH port alone does not verify administrative access.
+> - **Verified:** a fresh, authenticated administrative session over that path, recorded with its date.
+> - **Reachable, unauthenticated:** the service answers, but nobody has logged in over that path.
+> - **Inferred from configuration:** the ACL, firewall, and listener should allow it, but nothing has tested it.
+>
+> pve1 (standalone Mac mini, `192.168.10.193`), as of 2026-10-26:
+> - **Verified:** OpenSSH over the LAN, key-only.
+> - **Reachable, unauthenticated:** Proxmox web UI `:8006` returns HTTP 200.
+> - **Inferred from configuration:** OpenSSH over the tailnet from `kyle@` devices.
+> - **None:** pve1 has no out-of-band console. There is no BMC and Wake-on-LAN is falsified, so a power-off needs someone at the machine.
 
 ---
 
@@ -250,7 +263,7 @@ The enterprise `.sources` files were not removed. Check `ls /etc/apt/sources.lis
 Two repo files point to the same component. Check for both a `.list` and `.sources` file for the same repo and remove the duplicate.
 
 ### SSH locked out after PasswordAuthentication change
-If key-based auth was not confirmed before disabling passwords, access via Tailscale SSH (`tailscale ssh root@<node>`) or the Proxmox web shell at `https://<node-ip>:8006` as a recovery path.
+If key-based auth was not confirmed before disabling passwords, recover from the Proxmox web shell at `https://<node-ip>:8006` (another cluster node's web UI can open a shell on this node), from the iDRAC/IPMI console where the node has one, or from the physical console. Tailscale SSH is not a recovery path: it is disabled estate-wide, and the tailnet only reaches the same OpenSSH daemon that is locked out.
 
 ### vlan_filtering remains 0 after ifreload
 Toggling `vlan_filtering` on a live bridge via `ifreload -a` or `ip link set` is unreliable in some configurations. Always apply via a clean reboot when using the interfaces file method.
