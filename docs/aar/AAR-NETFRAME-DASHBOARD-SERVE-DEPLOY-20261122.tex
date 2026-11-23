@@ -1,0 +1,228 @@
+\documentclass[10pt]{article}
+\usepackage{netframe-doc}
+
+\newcommand{\CL}[1]{CL~#1}
+\newcommand{\cli}[1]{\texttt{-{}-#1}}
+\newcommand{\dashesc}{\texttt{\textbackslash xe2\textbackslash x80\textbackslash x94}}
+\newcommand{\relay}{\textit{(relayed)}}
+\newcommand{\unk}{\textbf{UNKNOWN}}
+\newcommand{\draftmark}{\textbf{\color{nfred}DRAFT}}
+
+\begin{document}
+
+\doccontrol{After-Action Review (DRAFT): NetFRAME Dashboard serve.py Deploy to Ares, r4 through r6}%
+{AAR-NETFRAME-DASHBOARD-SERVE-DEPLOY-20261122}%
+{Infrastructure Engineering}%
+{CHANGE-RECORD-NETFRAME-DASHBOARD-SERVE-DEPLOY-20261122; CL 339, 360, 433 to 457, 460 to 462 and 465 in the master change log}
+
+\begin{docmeta}
+\textbf{Status:} \draftmark{} (documentation revision r3). This document is not a run yes and not a push yes. Review history: r1 of this AAR received one inline Codex check on 2026-11-23 with verdict BLOCK on six factual errors (\CL{460}); r2 (authority \CL{461}) fixed them and received one inline Codex check with verdict BLOCK on one finding (\CL{462}), that both documents said \CL{339} and \CL{360} were not pasted. This r3 (authority \CL{465}) is a diff-only fix of that finding. This r3 has not been Codex-checked. SUMS for this document are not sealed (sealing only on sign-off). Corrective actions below are proposals; none is adopted.
+
+\textbf{Purpose:} Review the incidents in the serve.py deploy to Ares (r4 precheck-05 STOP, r5 missing space, r6 CHANGE-01 double run, and the marker-line noise seen while running the r6 block files): what happened, why, the impact, what went right, who decided, and what remains open.
+
+\textbf{Scope:} 2026-11-22, \CL{433} to \CL{456}, plus \CL{339}, \CL{342}, \CL{343}, \CL{347}, \CL{349}, \CL{353}, \CL{360} and \CL{362} for earlier revision history and \CL{460}, \CL{461}, \CL{462} and \CL{465} for this documentation. The full change description, approvals and artifacts are in the companion CHANGE-RECORD-NETFRAME-DASHBOARD-SERVE-DEPLOY-20261122 (Markdown).
+
+\textbf{Assumptions:} Facts come only from the pasted sources. Points the sources do not establish are marked UNKNOWN or ``not in the record''. Facts from Rocky's relay of Kyle's run outputs are marked \relay{}. Times are America/New\_York, EST, 24-hour clock; UTC (Z) stamps in file names were converted by subtracting five hours. Costs are not cited in this document.
+
+\textbf{Document ID:} Descriptive ID. An NF-series ID (NF-OP or NF-GV) has not been assigned and none is invented here.
+
+\textbf{Date note:} The header line ``Last updated: 2026-07-13'' is hard-coded in the shared style file netframe-doc.sty and is not the date of this draft (r1 written 2026-11-22; r2 and this r3 written 2026-11-23).
+\end{docmeta}
+
+\section{Summary}
+
+The serve.py change from \texttt{e7c5d72c} to \texttt{656ee904} on Ares completed on 2026-11-22 with no outage attributed to it in the record, no rollback, and every postcheck passing (\CL{455}) \relay{}. It took six revisions. Three events in r4 to r6 are reviewed here, plus a recurring noise defect. All three events were found by the package's own fail-closed design or by a human cross-check before any harm; none changed a live file wrongly.
+
+\begin{longtable}{@{}L{1.25in}L{1.6in}L{3.45in}@{}}
+\toprule
+\textbf{Event} & \textbf{Where it stopped} & \textbf{Impact} \\
+\midrule
+\endhead
+r4 precheck-05 STOP (\CL{442}) & Run on Ares, 18:33 EST & Nothing changed. Service untouched. \\
+r5 missing space (\CL{449}) & Before any copy or run, 19:14 EST & Nothing copied, nothing run, nothing changed. \\
+r6 CHANGE-01 double run (\CL{453}, \CL{454}) & Run on Ares, CHANGE-01, about 20:15 EST & No second backup; guard refused. Run continued after Kyle's yes and completed. \\
+Marker-line noise (\CL{454}, \CL{455}) & Every block run with \texttt{source} & Cosmetic noise lines only, harmless. \\
+\bottomrule
+\end{longtable}
+
+\section{Timeline (EST, 2026-11-22 unless stated)}
+
+\begin{longtable}{@{}L{0.85in}L{0.6in}L{4.85in}@{}}
+\toprule
+\textbf{Time} & \textbf{CL} & \textbf{Event} \\
+\midrule
+\endhead
+2026-11-21 17:22 & 343 & Kyle approves a draft-only serve.py deploy r2 (fixes the \CL{342} Codex BLOCK). \\
+2026-11-21 18:03 to 18:42 & 347 & r2 drafted; Codex BLOCK (sidecar test compared only printed text). \\
+2026-11-21 18:55 & 349 & Kyle approves a diff-only serve.py r3. \\
+2026-11-21 20:22 to 20:24 & 362 & r3 Codex retry1: SIGN-OFF; official SUMS \texttt{01b7d335} sealed. \\
+18:06 to 18:15 & 433 & Kyle asks to start r3; Rocky halts before delivery on the three-column SUMS defect. Confirmed by Stratt, logged 18:17. \\
+18:07 & 434 & Kyle approves a draft-only r4 fix of SUMS format and naming. \\
+18:20 to 18:21 & 437 & r4 Codex SIGN-OFF (inline, no tools); SUMS sealed 18:21:46. \\
+18:23 & 439 & Kyle's run yes for r4. \\
+18:33 & 442 & r4 run HALTs at precheck-05 (halt logged 18:36). Prechecks 01 to 04 had passed. \\
+18:33 & 443 & Kyle approves a draft-only r5 (same minute as the halt; order within the minute not in the record). \\
+18:40 to 18:54 & 447 & r5 drafted, tested (911 ok), Codex SIGN-OFF, SUMS sealed 18:54. Logged 19:15. \\
+19:14 & 449 & Rocky relays that r5 WANT omits the space before U+2014. r5 HELD; not copied, not run. \\
+19:17 & 450 & Kyle approves a draft-only r6 with an independent live-bytes test. \\
+19:20 to 19:33 & 451 & r6 drafted, tested (987 ok after one false-positive fix), Codex SIGN-OFF, SUMS sealed 19:33. Logged 19:35. \\
+19:47 & 452 & Kyle's run yes for r6. Rocky's independent byte check PASS. \\
+19:54:56 & 452, run & precheck-01 PASS on Ares \relay{}. \\
+20:12:22 & run & precheck-05 record written (from a Z stamp) and PASS; the live Description matches; \texttt{Restart=always} printed \relay{}. \\
+20:14:51 & 454 & A complete CHANGE-01 run finishes; backup and sidecar written (stamp from the backup name). The output of this run was not captured. \\
+20:15 & 453 & Second CHANGE-01 run, started with \texttt{source}, prints noise and HALT on the existing \texttt{backup.path}. Relayed, logged 20:20. \\
+20:15 & 454 & Kyle's read-only verification (backup.path, sidecar OK, live and backup both \texttt{e7c5d72c}) and his continue yes. \\
+20:20 & 455 & CHANGE-02 and CHANGE-03 PASS; postchecks 01 to 06 PASS; capture at 20:20:06. Logged 20:22. \\
+20:26 & 456 & Kyle approves drafting this change record and AAR (draft only, no push). Logged 20:28. \\
+2026-11-23 10:31 & 460 & One inline Codex check of the r1 documents: BLOCK on six factual errors. Logged 10:35. \\
+2026-11-23 10:34 & 461 & Kyle approves an r2 fix round (six findings; change record to Markdown; AAR stays LaTeX). Logged 10:36. \\
+\bottomrule
+\end{longtable}
+
+The order of events inside the 20:15 minute (second run, read-only verification, Kyle's yes) is not separated by the record.
+
+\section{Incident 1: r4 STOP at precheck-05 (\CL{442})}
+
+\subsection{What happened}
+
+After D1 and D2 (rc 0) and prechecks 01 to 04, precheck-05 printed ``STOP precheck-05 Description is not that unit'' together with the live unit Description, which contains U+2014 (UTF-8 bytes \texttt{e2 80 94}) between ``dashboard'' and ``serve''. The compared literal WANT, the Gate G row, the runpath, the NOTES, the CHANGE-LOG-ENTRY and the test fixtures (lines 239 and 282) all expected a comma at that position.
+
+\subsection{Why}
+
+Stratt's own defect, as logged in \CL{442}: the prose no-dash rule (no typographic dashes in written text) was applied to a literal that is compared against live bytes. The test fixtures were typed from the same rewritten text, so the tests used the same wrong expectation and could not catch the error. The r4 Codex check also did not catch it (r4 CODEX-RESULT \texttt{11aab94e} reviewed the SUMS format and naming scope, per its own text).
+
+\subsection{Impact and response}
+
+None. Nothing changed on Ares; the r4 \texttt{rec/} directory exists and the service was untouched. A sweep (\texttt{grep -c}) found WANT in precheck-05 to be the only compared literal holding this text. Stratt proposed a diff-only r5; rerunning from precheck-01 needed a new run yes. Kyle gave the draft yes at 18:33 (\CL{443}).
+
+\subsection{What worked}
+
+The check failed closed on a wrong expectation, printed the offending live value, and the run stopped at the first mismatch with exit status nonzero. The package had already separated read-only prechecks from changing blocks, so the STOP cost nothing.
+
+\section{Incident 2: r5 missing space (\CL{449})}
+
+\subsection{What happened}
+
+r5 set WANT with the byte escape \dashesc{} inside \texttt{\$'...'}, which was a sound way to keep the file ASCII and locale-independent. But the literal omitted the space before the escape (50 bytes), and the r5 package said in several places that WANT matched the live bytes byte for byte (r5 runpath, NOTES, SHA-PIN, CHANGE-LOG-ENTRY). At 19:14 EST Rocky compared WANT with the relayed live STOP text from \CL{442}, which has a space before and after U+2014, and found the mismatch. Local inspection confirmed it.
+
+\subsection{Why}
+
+The tests and the Codex check shared the same expected bytes. The r5 official test decoded its fixtures from a hex value whose source was the same reading as WANT, so a fault in that reading could not be detected (the r6 NOTES say so directly). The r5 test even held a case that expected STOP on the correct spacing. The Codex residual note on r5 was about a fixture-wording claim and did not reach this (\texttt{fddae3f1}). The expected bytes were not anchored to Kyle's verbatim output independently of WANT. Who first carried the wrong bytes into the package (the r5 SHA-PIN labels them ``FACTS CL442'') is not fully resolved by the pasted sources.
+
+\subsection{Impact and response}
+
+None on any host. r5 was not copied to Ares and not run; no run yes had been given for r5. All r5 evidence was preserved. \CL{449} proposed an r6 that corrects WANT and the fixtures to space, U+2014, space, anchors a regression test to Kyle's verbatim STOP output independently of WANT, corrects the associated claims, and uses one limited inline Codex check. Kyle approved at 19:17 (\CL{450}). The r6 block ``C1b'' holds a hardcoded 102-digit hex literal, not read from WANT or the FACTS file, and covers PASS (also under \texttt{LC\_ALL=C}) and STOP for the r5 form, a missing space after, a comma and U+2013.
+
+\subsection{What worked}
+
+Rocky's independent human cross-check, comparing code with the original live output, caught what two automated reviews could not. The hold happened before delivery, so no run yes was spent. The first live proof of the corrected bytes was precheck-05 at the r6 run, which printed PASS \relay{}.
+
+\section{Incident 3: r6 CHANGE-01 double run (\CL{453}, \CL{454})}
+
+\subsection{What happened}
+
+D1, D2 and prechecks 01 to 11 PASS and Gate G held (per Rocky; outputs not yet seen by Stratt at \CL{453}). Kyle ran the CHANGE-01 block file with \texttt{source}. The captured output was two ``-bash: ===: command not found'' lines and ``HALT a backup is already recorded: /home/machismo/netframe-dashboard/serve.py.pre-nfmdash-serve-r2-20261123T011451Z'' followed by ``HALT block-CHANGE-01-backup''. The runpath says to paste from BEGIN to END as one paste.
+
+\subsection{Diagnosis (read-only, from box package files)}
+
+\begin{enumerate}[leftmargin=1.5em,itemsep=0.1em]
+\item The \texttt{===} lines come from the BEGIN and END marker lines, which sit in the block file as bare text and run as commands when included in shell input; they fail harmlessly. Comment lines are inert. \CL{453} ties this to sourcing the whole file; see Incident 4 for why sourcing is the recorded method but not the only trigger.
+\item The HALT is the guard that refuses when \texttt{rec/backup.path} already exists.
+\item In the block, \texttt{backup.path} is written only as the last step, after \texttt{cp -p -n}, the backup sha check against \texttt{e7c5d72c} and a verified sidecar, all under \texttt{bash -euo pipefail}. An existing \texttt{backup.path} therefore implies an earlier run reached the record step and would have printed PASS.
+\item The single output relayed cannot both have created the backup and then refused, because the guard runs before the copy. \CL{453}: ``most likely the block ran twice, and only the second run's output was captured. Unconfirmed.''
+\end{enumerate}
+
+\subsection{Confirmation}
+
+Kyle's read-only verification (per Rocky) \relay{}: \texttt{rec/backup.path} names the backup; the sidecar check is OK; live serve.py and the backup both have sha \texttt{e7c5d72c}. \CL{454} records this as confirming the diagnosis: a complete CHANGE-01 run finished at 20:14:51 EST and a second run then HALTed correctly. The first run's PASS line was not captured (RUN-OUTPUTS). Why the block was run twice is not in the record: \unk{}.
+
+\subsection{Decision}
+
+Kyle, \CL{454}: ``Yes, treat serve.py r6 CHANGE-01 as passed on the verified 20:14:51 backup, lift the HALT, and continue the r6 run at CHANGE-02 with me pasting each line, stop on any STOP, rollback per the package if a postcheck fails''. The backup and its sidecar were declared evidence, not to be deleted.
+
+\subsection{Impact}
+
+None. There was no double backup. The live serve.py was untouched by CHANGE-01. CHANGE-02 and CHANGE-03 then passed (\CL{455}).
+
+\subsection{What worked}
+
+The \texttt{backup.path} guard did what it was built for: single-shot protection, refusal before any copy, fail-closed output with the existing path named. The backup was verified three ways (sha, sidecar, record) before the run continued. Nothing was retried, cleaned or deleted while the state was unknown.
+
+\section{Incident 4: BEGIN and END marker lines are not shell-safe (\CL{454}, \CL{455})}
+
+``-bash: ===: command not found'' printed on every block run with \texttt{source}, not only CHANGE-01 (\CL{455}; the relayed RUN-OUTPUTS show it on CHANGE-02 and CHANGE-03 as well). The cause is in the block files themselves: the BEGIN and END marker lines (\texttt{=== BEGIN block-... ===} and the matching END line, shown in the pasted block-CHANGE-01 file) are bare text lines, not comments. Bare marker lines are attempted as commands whenever they are included in shell input, whether the file is sourced or the markers are pasted along with the body. Sourcing explains the recorded r6 execution method (Kyle ran the block files with \texttt{source}, per \CL{454}, \CL{455} and the RUN-OUTPUTS), but it does not uniquely cause the defect: a paste from BEGIN to END that includes the two marker lines would print the same noise.
+
+Per \CL{454} the noise was harmless, but the markers are not safe in any input path that includes them. The package guidance said ``paste from BEGIN to END as one paste'' and did not say ``do not source''; it also did not say whether the marker lines themselves belong in the paste. The noise also made the captured CHANGE-01 output harder to read; whether it contributed to the double run is \unk{}.
+
+\section{The D1-3 paste into PowerShell (\CL{456}, RUN-OUTPUTS) \relay{}}
+
+The first D1-3 paste went into Quixote PowerShell by mistake. It was a parse error and nothing ran. Kyle then pasted it on Ares, where it printed \texttt{MKDIR\_OK}. Impact: none. This record does not say the paste instructions named the host or shell for each line; whether they did is not in the record, so no corrective action beyond the general one in the table below is proposed.
+
+\section{What went right}
+
+\begin{itemize}[leftmargin=1.5em,itemsep=0.1em]
+\item \textbf{Fail-closed STOPs.} r4's STOP and r6's CHANGE-01 HALT both stopped with a message naming the cause; no step after a failure ran.
+\item \textbf{No outage, no rollback.} The record shows no outage attributed to the change; the unit's restart was clean (pid 677518, \texttt{/healthz} ok) and no rollback was needed (\CL{455}) \relay{}. The restart gap duration is not in the record.
+\item \textbf{Independent byte check.} Rocky's check before the r6 run (SUMS 29 of 29 under strict mode, tgz \texttt{909e770e}, WANT spaced; \CL{452}) and his r5 catch (\CL{449}) were human checks outside the shared test source.
+\item \textbf{Evidence kept.} r3, r4, r5 and their delivery copies, the backup with its sidecar, and the Ares \texttt{rec/} directories were left intact. Ares directories were not all fresh: r2, r3 and r4 used \texttt{\$HOME/nfmdash-serve-r2-20261121} (the r4 runpath and \CL{439} keep the r2 name, and r2 and r3 were never delivered). A fresh, revision-specific directory was specified for r5 (\texttt{\$HOME/nfmdash-serve-r5-20261122}, never delivered, so it should not exist per \CL{451}) and for r6 (\texttt{\$HOME/nfmdash-serve-r6-20261122}, delivered and used, \CL{452}). The r4 and r6 directories are the two that hold run records.
+\item \textbf{Findings logged promptly} with root cause stated plainly, including the drafter's own defects (\CL{433}, \CL{442}, \CL{449}).
+\item \textbf{Scope control.} Each revision was diff-only and draft-only. The r4, r5 and r6 packages each received a single inline Codex check with no tools (\texttt{11aab94e}, \texttt{fddae3f1}, \texttt{78ccc60d}). The r3 package had a Codex retry1 recorded in \CL{362}, which references a preceding attempt whose result is not pasted here; r1 and r2 each ended in a Codex BLOCK (\CL{342}, \CL{347}). Run yeses were specific to a package and a SUMS prefix.
+\end{itemize}
+
+\section{Root causes in common}
+
+\begin{enumerate}[leftmargin=1.5em,itemsep=0.1em]
+\item A check's expected value shared its source with the value under test (r3 seal format versus D2; r4 and r5 fixtures versus WANT), so neither the tests nor the Codex checks could catch a fault in that source.
+\item A rule meant for prose (no typographic dashes) was applied to bytes that are compared against a live system.
+\item Operator ergonomics were treated as secondary: marker lines that are not shell-safe and no capture of a block's PASS line, in blocks that are meant to be run exactly once.
+\end{enumerate}
+
+\section{Corrective actions (proposed; none adopted)}
+
+No owner is named in \CL{433} to \CL{456} for any of these. Owners below are proposals for Kyle to confirm. The master log adopted two earlier standing rules (\CL{438}: grep the records before drafting, and count-based absence checks); they do not cover these actions. Actions 1 to 3 are the three required by \CL{456} and the incident analysis; actions 4 and 5 are extra proposals, not requested by Kyle.
+
+\begin{longtable}{@{}L{0.3in}L{2.9in}L{1.6in}L{1.5in}@{}}
+\toprule
+\textbf{\#} & \textbf{Action} & \textbf{Owner (proposed)} & \textbf{Status} \\
+\midrule
+\endhead
+1 & \textbf{Marker-safe blocks.} Make the BEGIN and END marker lines in every block file comment-prefixed (a leading hash and space), or, as a floor, state in the runpath ``paste, do not source'' (and say whether the marker lines are part of the paste) and add a test. Proposed test: feed each block file to a shell in a sandbox with stubbed commands, by both sourcing and pasting, and fail if any ``command not found'' appears, plus a static check that every non-comment line outside the heredoc is intended. Required by \CL{456}. & Stratt, proposed (drafts and tests); Kyle decides whether it is applied in a new revision of the package. & Not started. Applies only to a future revision; the r6 files are sealed. \\
+2 & \textbf{Independent hardcoded-hex anchor.} For any compared live literal, the expected value must be anchored to a hex string taken directly from Kyle's verbatim live output and held in the test separately from the literal under test and from any FACTS file. A reviewer question: ``where does the expected value come from, and does it share a source with the value under test?'' r6's ``C1b'' block is the pattern. & Stratt, proposed (author); Rocky, proposed (independent byte check at sign-off) & Pattern exists in r6; not adopted as a rule. \\
+3 & \textbf{No-dash rule is for prose only.} State in the drafting rules that the no-typographic-dash rule applies to written prose, never to bytes that are compared, copied from, or tested against live output. Compared literals use byte escapes (for example \dashesc{}) and are listed in a sweep. & Stratt, proposed; Kyle to confirm as a standing rule & Not adopted. \\
+4 & \textbf{Capture each block's first PASS or HALT (PASS/HALT log).} Add a one-line record (for example appended to a log under \texttt{rec/}) so a block's result survives an uncaptured terminal. Not requested by Kyle; proposed because the first CHANGE-01 PASS line was lost. & Stratt, proposed & Proposal only; needs Kyle's yes and a new revision. \\
+5 & \textbf{Paste instructions name the host and shell} for every line, and say once that blocks are pasted, not sourced. Prompted by the PowerShell paste. Evidence for the root cause is thin (see the section above). & Stratt, proposed & Proposal only. \\
+\bottomrule
+\end{longtable}
+
+\section{What remains open}
+
+\begin{enumerate}[leftmargin=1.5em,itemsep=0.1em]
+\item \textbf{Push.} These two documents are drafts; push needs its own yes from Kyle. Proposed paths (not approved): \texttt{docs/90-governance/aar-netframe-dashboard-serve-deploy.tex} and \texttt{docs/03-operations/change-record-netframe-dashboard-serve-deploy.md}.
+\item \textbf{Codex check} of these r3 documents: asked for in \CL{465}, not started by this draft. SUMS for these documents are sealed only on sign-off.
+\item \textbf{Adoption of the corrective actions} above, and who owns them.
+\item \textbf{Memory notes on Quixote.} \CL{447} and \CL{455} record two memory notes written by the r5 drafting run outside its workdir, left in place; Kyle decides. No decision is in the record.
+\item \textbf{NF-series IDs} are unassigned.
+\item \textbf{Unknowns:} why the unit restarted itself before CHANGE-03 (pid 677259), given that the unit's \texttt{Restart=always} value is recorded \relay{} (the value is known; the cause of this particular restart is not); why CHANGE-01 was run twice; the restart gap duration; whether Kyle appended the r4, r5 and r6 package CHANGE-LOG-ENTRY texts; whether the r5 Ares directory exists.
+\item \textbf{Evidence on Ares} (r4 directory and \texttt{rec/}, r6 directory and \texttt{rec/}, the backup and its sidecar) stays until Kyle says otherwise; no retention end date is in the record.
+\end{enumerate}
+
+\section{Differences and gaps in the sources}
+
+\begin{itemize}[leftmargin=1.5em,itemsep=0.1em]
+\item The r5 package says WANT matched the live bytes; \CL{449} and the r6 package say it did not (see Incident 2). Reported, not resolved; the r5 files are unchanged evidence.
+\item \CL{453} lists both noise lines before the HALT lines; the relayed RUN-OUTPUTS show one before and one after, which is the order BEGIN and END markers would produce. Both are reported.
+\item \CL{453}, \CL{454} and \CL{455} attribute the noise to sourcing the block files; the pasted block file shows bare marker lines that run as commands in any shell input that includes them. Both are reported; sourcing is the recorded method, not the sole cause.
+\item \CL{442} and \CL{443} carry the same minute (18:33); \CL{453} and \CL{454} are both headed 20:15.
+\item \CL{453} says the outputs of prechecks 01 to 11 had not been seen; the RUN-OUTPUTS later relay them.
+\item The r4, r5 and r6 package text calls the Restart= value unknown to the drafter; the relayed RUN-OUTPUTS print \texttt{Restart=always} at precheck-05. The precheck-05 record file itself is not pasted.
+\item \CL{362} references the preceding attempt of the r3 Codex check; that attempt's result is not pasted here.
+\item Not in the pasted sources: the DEPENDENCY-REVIEW, test scripts, the diffs' bodies, the FACTS files.
+\item The r2 documents said \CL{339} and \CL{360} were not pasted. That was incorrect (\CL{462}); both entries are pasted. \CL{339} (2026-11-21 16:13 EST, logged 16:15) is Kyle's initial draft approval for the serve.py deploy to Ares, relayed by Rocky: ``Yes, have Stratt draft the NetFRAME dashboard serve.py deploy to Ares (e7c5d72c to 656ee904, backup plus restart plus rollback), [model name omitted here], one Codex check, draft only''. \CL{360} (2026-11-21 20:15 EST, relayed by Rocky, logged by Stratt) is Kyle's approval to run one more Codex check on the serve.py deploy r3 diff: ``Yes, run one more Codex check on Stratt's serve.py deploy r3 diff (SHA-PIN 1c873b7d), read-only, node\_repl with absolute paths, every list printed in batches of 60 or fewer, text in line ranges of 60 lines or fewer, one expected-hash table, seal SUMS only on sign-off, draft only''. \CL{362} records the result of that check, run under \CL{360}.
+\item The r1 AAR said the Restart= value was UNKNOWN and not pasted, that sourcing alone caused the marker noise, that each revision was checked once, and that fresh directories were used at each revision. All four were incorrect (\CL{460}) and were corrected in r2.
+\end{itemize}
+
+\section{Sources cited}
+
+Master CL entries 339, 342, 343, 347, 349, 353, 360, 362, 433 to 457, 460 to 462 and 465; RUN-OUTPUTS-r6-20261122-as-relayed; the r1 documents and r1 CODEX-RESULT; the r2 documents and r2 CODEX-RESULT; for r4, r5 and r6: SHA-PIN, CODEX-RESULT, CHANGE-LOG-ENTRY, TEST-RESULTS, SHA256SUMS, runpath, NOTES, precheck-05 and block-CHANGE-01; the three delivery tgz listings; PACKAGE-FILE-INVENTORY; PASTED-SOURCE-SHAS; REPO-CONVENTION; MARKDOWN-CONVENTION; netframe-doc.sty.
+
+\end{document}

@@ -1,0 +1,86 @@
+
+% netframe-doc.sty - shared style for the NetFRAME enterprise documentation set.
+% pdflatex-compatible (no fontspec). Every document \usepackage{../style/netframe-doc} or relative path.
+\ProvidesPackage{netframe-doc}[2026/07/13 NetFRAME enterprise documentation style]
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{amssymb}
+\usepackage{needspace}
+\usepackage[hidelinks]{hyperref}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,backgrounds,calc}
+
+\definecolor{nfblue}{HTML}{1F3A5F}
+\definecolor{nfteal}{HTML}{2F6F5B}
+\definecolor{nfred}{HTML}{9E2B25}
+\definecolor{nfamber}{HTML}{B8802A}
+\definecolor{nfgray}{HTML}{5F6B64}
+\definecolor{nflight}{HTML}{EEF2F0}
+\definecolor{nfrowb}{HTML}{F5F7F6}
+
+\titleformat{\section}{\large\bfseries\color{nfblue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{nfteal}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\small\bfseries\color{nfgray}}{\thesubsubsection}{0.6em}{}
+
+\emergencystretch=3em
+\hbadness=10000
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{0pt}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\rowcol}{\rowcolors{2}{nfrowb}{white}}
+\newcommand{\ip}[1]{\texttt{#1}}
+\newcommand{\crit}{\textbf{\color{nfred}CRITICAL}}
+\newcommand{\high}{\textbf{\color{nfred}HIGH}}
+\newcommand{\med}{\textbf{\color{nfamber}MEDIUM}}
+\newcommand{\low}{\textbf{\color{nfteal}LOW}}
+\newcommand{\ok}{\textbf{\color{nfteal}OK}}
+
+% Document control header. Usage: \doccontrol{Title}{Doc ID}{Owner}{Related docs}
+\newcommand{\doccontrol}[4]{%
+  \thispagestyle{plain}%
+  {\color{nfblue}\rule{\textwidth}{1.5pt}}\par
+  {\Large\bfseries\color{nfblue} #1}\par
+  \vspace{0.3em}{\color{nfblue}\rule{\textwidth}{0.6pt}}\par
+  \vspace{0.4em}
+  \begin{tabular}{@{}ll@{}}
+   \textbf{Document ID:} & \texttt{#2} \\
+   \textbf{Owner:} & #3 \\
+   \textbf{Classification:} & PRIVATE / Internal \\
+   \textbf{Last updated:} & 2026-07-13 \\
+   \textbf{Related documents:} & #4 \\
+  \end{tabular}\par\vspace{0.6em}
+}
+
+% Purpose / scope / assumptions / prerequisites metadata block
+\newenvironment{docmeta}{%
+  \par\vspace{0.3em}\begin{tikzpicture}\node[draw=nfteal,fill=nflight,rounded corners=3pt,inner sep=8pt,text width=\dimexpr\textwidth-20pt]\bgroup\begin{minipage}{\dimexpr\textwidth-24pt}%
+  \small
+}{%
+  \end{minipage}\egroup;\end{tikzpicture}\par\vspace{0.4em}
+}
+
+% Callouts
+\newcommand{\note}[1]{\par\vspace{0.2em}\noindent\colorbox{nflight}{\parbox{\dimexpr\textwidth-2\fboxsep}{\small\textbf{\color{nfteal}Note:} #1}}\par\vspace{0.2em}}
+\newcommand{\warn}[1]{\par\vspace{0.2em}\noindent\colorbox{nfred!10}{\parbox{\dimexpr\textwidth-2\fboxsep}{\small\textbf{\color{nfred}Caution:} #1}}\par\vspace{0.2em}}
+\newcommand{\related}[1]{\par\vspace{0.3em}\noindent{\small\textbf{\color{nfgray}See also:} #1}\par}
+
+\pagestyle{fancy}\fancyhf{}
+\lhead{\small\color{nfgray}NetFRAME Operations}
+\rhead{\small\color{nfgray}PRIVATE}
+\cfoot{\small\color{nfgray}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\endinput
+
+
